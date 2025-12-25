@@ -6,31 +6,8 @@
 #define UNTITLED_VEXCOMPUTE_H
 #include <array>
 #include <cmath>
-#include <cstdint>
-#include <iosfwd>
-// struct Vec3;
-// struct Vec2;
-//
-// struct Vec3 {
-//     float x, y, z;
-//
-//     Vec3 operator + (const Vec3 &other) const;
-//     Vec3 operator - (const Vec3 &other) const;
-//     Vec3 operator * (float scalar) const;
-//     Vec3 operator / (float scalar) const;
-//
-//     float operator * (const Vec3 &other) const;
-//
-//     bool operator == (const Vec3 &other) const;
-//     bool operator > (float scalar) const;
-// };
-//
-// struct Vec2 {
-//     float x, y;
-//
-// };
-//
-//
+
+
 template<size_t N>
 struct VecN {
     std::array<float, N> data;
@@ -45,7 +22,6 @@ struct VecN {
 
     static float getN();
 
-
     float& operator[] (size_t index);
     const float& operator[](size_t index) const;
     VecN operator + (const VecN &other) const;
@@ -58,7 +34,6 @@ struct VecN {
 
     template<size_t M>
     friend std::istream& operator>>(std::istream& is, VecN<M>& vec);
-
 };
 
 template<size_t N>
@@ -147,20 +122,10 @@ std::istream& operator>>(std::istream& is, VecN<M>& vec) {
     }
     return is;
 }
-// // Vec3版本
-// float getLength(const Vec3 &a);
-// float dot(const Vec3 &a, const Vec3 &b);
-// float cosAngle(const Vec3 &a, const Vec3 &b);
-//
-// bool sameDirection(const Vec3 &a, const Vec3 &b);
-// bool inLeft(const Vec3 &a, const Vec3 &b);
-//
-// Vec3 project(const Vec3 &a, const Vec3 &b);
-// Vec3 cross(const Vec3 &a, const Vec3 &b);
-// Vec3 normalize(const Vec3 &a);
 
 
 // 通用泛型
+// 计算模长
 template<size_t N>
 float getLength(const VecN<N> &a) {
     float result{};
@@ -170,11 +135,13 @@ float getLength(const VecN<N> &a) {
     return std::sqrt(result);
 }
 
+// 点乘
 template<size_t N>
 float dot(const VecN<N> &a, const VecN<N> &b) {
     return a * b;
 }
 
+// 计算夹角余弦值
 template<size_t N>
 float cosAngle(const VecN<N> &a, const VecN<N> &b) {
     const float lenA = getLength(a);
@@ -183,29 +150,33 @@ float cosAngle(const VecN<N> &a, const VecN<N> &b) {
     return a * b / (lenA * lenB);
 }
 
+// 判断是否同向(非严格)
 template<size_t N>
 bool sameWay(const VecN<N> &a, const VecN<N> &b) {
     return a * b > 0;
 }
 
-// 仅限二维向量比较
+// 是否在左侧 仅限二维向量比较
 template<size_t N>
 bool inLeft(const VecN<N> &a, const VecN<N> &b) {
     static_assert(N == 2, "inLeft() is only defined for 2D vectors");
     return a[0] * b[1] - a[1] * b[0] > 0;
 }
 
+// 是否在右侧 仅限二维
 template<size_t N>
 bool inRight(const VecN<N> &a, const VecN<N> &b) {
     static_assert(N == 2, "inRight() is only defined for 2D vectors");
     return a[0] * b[1] - a[1] * b[0] < 0;
 }
 
+// a 在 b 方向上的投影
 template<size_t N>
 VecN<N> project(const VecN<N> &a, const VecN<N> &b) {
     return b  * ( a * b / (b * b) );
 }
 
+// a x b 仅限二三维
 template<size_t N>
 VecN<N> cross(const VecN<N> &a, const VecN<N> &b) {
     if constexpr (N == 2) {
@@ -230,6 +201,7 @@ VecN<N> cross(const VecN<N> &a, const VecN<N> &b) {
     }
 }
 
+// 标准化向量
 template<size_t N>
 VecN<N> normalize(const VecN<N> &a) {
     return a / getLength(a);

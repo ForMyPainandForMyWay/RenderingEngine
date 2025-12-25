@@ -11,4 +11,5 @@ add_executable(untitled ${SRC})
 target_include_directories(untitled PUBLIC
         ${PROJECT_SOURCE_DIR}/source/include
         ${PROJECT_SOURCE_DIR}/math/include
+        ${PROJECT_SOURCE_DIR}/model/include
 )
