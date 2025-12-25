@@ -10,6 +10,8 @@
 #include <sstream>
 #include <unordered_map>
 
+
+
 // 解析材质文件
 void ModelReader::readMTLFile(const std::string &mtlFilename,
                  std::unordered_map<std::string, Material*> &materialMap) {
@@ -34,9 +36,9 @@ void ModelReader::readMTLFile(const std::string &mtlFilename,
             currentMat->name = matName;
             materialMap[matName] = currentMat;
         } else if (currentMat) {
-            if (prefix == "Ka") ss >> currentMat->Ka.x >> currentMat->Ka.y >> currentMat->Ka.z;
-            else if (prefix == "Kd") ss >> currentMat->Kd.x >> currentMat->Kd.y >> currentMat->Kd.z;
-            else if (prefix == "Ks") ss >> currentMat->Ks.x >> currentMat->Ks.y >> currentMat->Ks.z;
+            if (prefix == "Ka") ss >> currentMat->Ka[0] >> currentMat->Ka[1] >> currentMat->Ka[2];
+            else if (prefix == "Kd") ss >> currentMat->Kd[0] >> currentMat->Kd[1] >> currentMat->Kd[2];
+            else if (prefix == "Ks") ss >> currentMat->Ks[0] >> currentMat->Ks[1] >> currentMat->Ks[2];
             else if (prefix == "Ns") ss >> currentMat->Ns;
             else if (prefix == "map_Kd") ss >> currentMat->map_Kd;
         }
@@ -57,9 +59,9 @@ void ModelReader::readModelFile(const std::string &filename,
     std::filesystem::path p(filename);
     std::string parent_path = p.parent_path().string();
 
-    std::vector<Vec3> positions;
-    std::vector<Vec3> normals;
-    std::vector<Vec2> uvs;
+    std::vector<VecN<3>> positions;
+    std::vector<VecN<3>> normals;
+    std::vector<VecN<2>> uvs;
     Mesh currentMesh;
     std::string line;
 
@@ -78,20 +80,20 @@ void ModelReader::readModelFile(const std::string &filename,
         ss >> prefix;
 
         if (prefix == "v") {
-            Vec3 pos{};
-            ss >> pos.x >> pos.y >> pos.z;
+            VecN<3> pos{};
+            ss >> pos[0] >> pos[1] >> pos[2];
             positions.emplace_back(pos);
             currentMesh.vertices.emplace_back();
         }
         else if (prefix == "vn") {
-            Vec3 n{};
-            ss >> n.x >> n.y >> n.z;
+            VecN<3> n{};
+            ss >> n[0] >> n[1] >> n[3];
             normals.emplace_back(n);
         }
         else if (prefix == "vt") {
-            Vec2 uv{};
-            ss >> uv.x >> uv.y;
-            uv.y = 1.0f - uv.y;  // 这里是为了blender反转
+            VecN<2> uv{};
+            ss >> uv[0] >> uv[1];
+            uv[1] = 1.0f - uv[1];  // 这里是为了blender反转
             uvs.emplace_back(uv);
         }
         else if (prefix == "f") {

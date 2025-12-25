@@ -6,7 +6,7 @@
 #define UNTITLED_SHAPE_H
 #include <string>
 #include <vector>
-#include "VexCompute.h"
+#include "Vec.hpp"
 
 struct Vertex;
 struct Triangle;
@@ -16,9 +16,9 @@ struct Material;
 // 表面材质
 struct Material {
     std::string name;
-    Vec3 Ka;   // 环境光
-    Vec3 Kd;   // 漫反射
-    Vec3 Ks;   // 高光
+    VecN<3> Ka;   // 环境光
+    VecN<3> Kd;   // 漫反射
+    VecN<3> Ks;   // 高光
     float Ns;  // 光泽指数
     std::string map_Kd; // 漫反射贴图
 };
@@ -26,14 +26,14 @@ struct Material {
 
 // 空间点
 struct Vertex {
-    Vec3 position;  // 物理坐标
-    Vec3 normal;    // 法向量
-    Vec2 uv;   // 纹理坐标
+    VecN<3> position;  // 物理坐标
+    VecN<3> normal;    // 法向量
+    VecN<2> uv;   // 纹理坐标
 
     bool operator==(const Vertex &other) const {
-        return position.x == other.position.x && position.y == other.position.y && position.z == other.position.z &&
-               normal.x == other.normal.x && normal.y == other.normal.y && normal.z == other.normal.z &&
-               uv.x == other.uv.x && uv.y == other.uv.y;
+        return position == other.position &&
+                normal == other.normal &&
+                uv == other.uv;
     }
 
 };
@@ -44,9 +44,9 @@ struct Triangle {
     Vertex vex[3];  // 顶点
 
     // 渲染阶段常用缓存
-    Vec3 screenPos[3];   // 屏幕坐标
-    float depth[3];      // 深度
-    Vec3 getNormal() const;    // 求平面法向量
+    VecN<3> screenPos[3];   // 屏幕坐标
+    float depth[3]{};      // 深度
+    VecN<3> getNormal() const;    // 求平面法向量
 };
 
 

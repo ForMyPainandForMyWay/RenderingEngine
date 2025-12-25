@@ -1,105 +1,65 @@
 //
 // Created by yyd on 2025/12/24.
 //
-#include "VexCompute.h"
 
+#ifndef UNTITLED_VEXCOMPUTE_H
+#define UNTITLED_VEXCOMPUTE_H
+#include <array>
 #include <cmath>
-#include <iostream>
-#include <ostream>
+#include <cstdint>
+#include <iosfwd>
+// struct Vec3;
+// struct Vec2;
+//
+// struct Vec3 {
+//     float x, y, z;
+//
+//     Vec3 operator + (const Vec3 &other) const;
+//     Vec3 operator - (const Vec3 &other) const;
+//     Vec3 operator * (float scalar) const;
+//     Vec3 operator / (float scalar) const;
+//
+//     float operator * (const Vec3 &other) const;
+//
+//     bool operator == (const Vec3 &other) const;
+//     bool operator > (float scalar) const;
+// };
+//
+// struct Vec2 {
+//     float x, y;
+//
+// };
+//
+//
+template<size_t N>
+struct VecN {
+    std::array<float, N> data;
+
+    VecN() {data.fill(0.0f);}
+
+    explicit VecN(float scalar) {data.fill(scalar);}
+
+    explicit VecN(float *arr) {
+        std::copy(arr, arr + N, data.begin());
+    }
+
+    static float getN();
 
 
-Vec3 Vec3::operator+ (const Vec3 &other) const {
-    Vec3 result{};
-    result.x = this->x + other.x;
-    result.y = this->y + other.y;
-    result.z = this->z + other.z;
-    return result;
-}
+    float& operator[] (size_t index);
+    const float& operator[](size_t index) const;
+    VecN operator + (const VecN &other) const;
+    VecN operator - (const VecN &other) const;
+    VecN operator * (float scalar) const;
+    float operator * (const VecN &other) const;
+    VecN operator / (float scalar) const;
+    bool operator == (const VecN &other) const;
+    bool operator > (float scalar) const;
 
-Vec3 Vec3::operator- (const Vec3 &other) const {
-    Vec3 result{};
-    result.x = this->x - other.x;
-    result.y = this->y - other.y;
-    result.z = this->z - other.z;
-    return result;
-}
+    template<size_t M>
+    friend std::istream& operator>>(std::istream& is, VecN<M>& vec);
 
-Vec3 Vec3::operator* (const float scalar) const {
-    Vec3 result{};
-    result.x = this->x * scalar;
-    result.y = this->y * scalar;
-    result.z = this->z * scalar;
-    return result;
-}
-
-float Vec3::operator* (const Vec3 &other) const {
-    return this->x * other.x + this->y * other.y + this->z * other.z;
-}
-
-Vec3 Vec3::operator/ (const float scalar) const {
-    Vec3 result{};
-    result.x = this->x / scalar;
-    result.y = this->y / scalar;
-    result.z = this->z / scalar;
-    return result;
-}
-
-bool Vec3::operator== (const Vec3 &other) const {
-    return this->x == other.x && this->y == other.y && this->z == other.z;
-}
-
-bool Vec3::operator > (const float scalar) const {
-    return this->x > scalar && this->y > scalar && this->z > scalar;
-}
-
-
-// Vec3 版本
-// 获取长度
-float getLength(const Vec3 &a) {
-    return std::sqrt(a.x * a.x + a.y * a.y + a.z * a.z);
-}
-
-// 内积
-float dot(const Vec3 &a, const Vec3 &b) {
-    return a.x * b.x + a.y * b.y + a.z * b.z;
-}
-
-// cos theta
-float cosAngle(const Vec3 &a, const Vec3 &b) {
-    const float lenA = getLength(a);
-    if (const float lenB = getLength(b); lenA == 0 || lenB == 0) return INFINITY;
-    return a * b / (getLength(a) * getLength(b));
-}
-
-// 判断方向趋同
-bool sameDirection(const Vec3 &a, const Vec3 &b) {
-    return dot(a, b) > 0;
-}
-
-// 投影长度: a在b的投影向量
-Vec3 project(const Vec3 &a, const Vec3 &b) {
-    return b  * ( a * b / (b * b) );
-}
-
-// 向量积 a x b
-Vec3 cross(const Vec3 &a, const Vec3 &b) {
-    Vec3 result{};
-    result.x = a.y * b.z - a.z * b.y;
-    result.y = a.z * b.x - a.x * b.z;
-    result.z = a.x * b.y - a.y * b.x;
-    return result;
-}
-
-// 标准化
-Vec3 normalize(const Vec3 &a) {
-    Vec3 result{};
-    const float length = getLength(a);
-    result.x = a.x / length;
-    result.y = a.y / length;
-    result.z = a.z / length;
-    return result;
-}
-
+};
 
 template<size_t N>
 float VecN<N>::getN() {
@@ -107,7 +67,12 @@ float VecN<N>::getN() {
 }
 
 template<size_t N>
-float VecN<N>::operator[](size_t index) const {
+float& VecN<N>::operator[](size_t index) {
+    return data[index];
+}
+
+template<size_t N>
+const float& VecN<N>::operator[](size_t index) const{
     return data[index];
 }
 
@@ -175,6 +140,27 @@ bool VecN<N>::operator>(float scalar) const {
     return true;
 }
 
+template<size_t M>
+std::istream& operator>>(std::istream& is, VecN<M>& vec) {
+    for (size_t i = 0; i < M; ++i) {
+        if (!(is >> vec.data[i])) break;
+    }
+    return is;
+}
+// // Vec3版本
+// float getLength(const Vec3 &a);
+// float dot(const Vec3 &a, const Vec3 &b);
+// float cosAngle(const Vec3 &a, const Vec3 &b);
+//
+// bool sameDirection(const Vec3 &a, const Vec3 &b);
+// bool inLeft(const Vec3 &a, const Vec3 &b);
+//
+// Vec3 project(const Vec3 &a, const Vec3 &b);
+// Vec3 cross(const Vec3 &a, const Vec3 &b);
+// Vec3 normalize(const Vec3 &a);
+
+
+// 通用泛型
 template<size_t N>
 float getLength(const VecN<N> &a) {
     float result{};
@@ -240,11 +226,13 @@ VecN<N> cross(const VecN<N> &a, const VecN<N> &b) {
         // 编译时错误或运行时错误
         static_assert(N == 2 || N == 3,
             "cross() is only defined for 2D and 3D vectors");
+        return VecN<1>{};
     }
-    return VecN<1>{};
 }
 
 template<size_t N>
 VecN<N> normalize(const VecN<N> &a) {
     return a / getLength(a);
 }
+
+#endif //UNTITLED_VEXCOMPUTE_H

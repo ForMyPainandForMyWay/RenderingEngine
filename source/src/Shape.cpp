@@ -3,7 +3,8 @@
 //
 
 #include "Shape.h"
-#include "VexCompute.h"
+#include "Vec.hpp"
+
 
 // 组装三角形
 Triangle makeTriangle(const Vertex &v0, const Vertex &v1, const Vertex &v2) {
@@ -24,8 +25,8 @@ void processPolygon(const std::vector<Vertex> &inVerts,
     }
 }
 
-Vec3 Triangle::getNormal() const {
-    const Vec3 e1 = this->vex[0].position - this->vex[1].position;
-    const Vec3 e2 = this->vex[0].position - this->vex[2].position;
+VecN<3> Triangle::getNormal() const {
+    const VecN<3> e1 = this->vex[0].position - this->vex[1].position;
+    const VecN<3> e2 = this->vex[0].position - this->vex[2].position;
     return normalize(cross(e1, e2));
 }
