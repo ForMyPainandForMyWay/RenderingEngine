@@ -62,3 +62,7 @@ void Film::setPixel(const size_t x, const size_t y,
     this->image[y * this->width + x].b = b;
     this->image[y * this->width + x].a = a;
 }
+
+void Film::copyFromPtr(const unsigned char *data) const {
+    std::memcpy(this->image, data, width * height * 4);
+}
