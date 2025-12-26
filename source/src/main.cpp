@@ -21,8 +21,8 @@ int main() {
     std::cout << "mat " <<materialMap.size() << std::endl;
     std::cout << "mesh " << meshes.size() << std::endl;
     std::cout << "subMeshes " << meshes[0]->getSubMeshNums() << std::endl;
-    std::cout << "tri " << (*meshes[0])[0]->getVexNums() << std::endl;
-    std::cout << "vex " << (*meshes[0])[0]->getTriNums() << std::endl;
+    std::cout << "vex " << (*meshes[0])[0]->getVexNums() << std::endl;
+    std::cout << "tri " << (*meshes[0])[0]->getTriNums() << std::endl;
 
     return 0;
 }
