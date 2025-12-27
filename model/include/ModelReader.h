@@ -12,7 +12,7 @@
 class ModelReader {
 public:
     static void readObjFile(const std::string &filename,
-                            std::vector<Mesh*>& meshes,
+                            std::unordered_map<std::string, Mesh*>& meshes,
                             std::unordered_map<std::string, Material*> &materialMap,
                             std::unordered_map<std::string, TextureMap*> &textureMap);
     static void readMTLFile(const std::string &mtlFilename,

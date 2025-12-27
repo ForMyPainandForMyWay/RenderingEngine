@@ -34,11 +34,11 @@ struct Triangle {
     // 渲染阶段常用缓存
     VecN<3> screenPos[3];   // 屏幕坐标
     float depth[3]{};      // 深度
-    VecN<3> getNormal() const;    // 求平面法向量
+    [[nodiscard]] VecN<3> getNormal() const;    // 求平面法向量
 };
 
 
 Triangle makeTriangle(const Vertex &v0, const Vertex &v1, const Vertex &v2);
-void processPolygon(const std::vector<Vertex> &inVerts,
+void processPolygon(const std::vector<Vertex> &inVertex,
                         std::vector<Triangle> &triangles);
 #endif //UNTITLED_SHAPE_H

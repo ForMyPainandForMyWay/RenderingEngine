@@ -8,33 +8,34 @@
 #include <cmath>
 
 
+// 非齐次坐标,运行时升纬度
 template<size_t N>
 struct VecN {
     std::array<float, N> data;
 
-    VecN() {data.fill(0.0f);}
-
-    explicit VecN(float scalar) {data.fill(scalar);}
-
-    explicit VecN(float *arr) {
-        std::copy(arr, arr + N, data.begin());
-    }
+    explicit VecN(float scalar = 0.0f) {data.fill(scalar);}
+    explicit VecN(float *arr) {std::copy(arr, arr+N, data.begin());}
 
     static float getN();
 
     float& operator[] (size_t index);
     const float& operator[](size_t index) const;
     VecN operator + (const VecN &other) const;
+    VecN operator + (float scalar) const;
     VecN operator - (const VecN &other) const;
+    VecN operator - (float scalar) const;
     VecN operator * (float scalar) const;
     float operator * (const VecN &other) const;
     VecN operator / (float scalar) const;
+    void operator += (const VecN &other);
+    void operator *= (const VecN &other);
     bool operator == (const VecN &other) const;
     bool operator > (float scalar) const;
 
     template<size_t M>
     friend std::istream& operator>>(std::istream& is, VecN<M>& vec);
 };
+
 
 template<size_t N>
 float VecN<N>::getN() {
@@ -61,10 +62,28 @@ VecN<N> VecN<N>::operator+(const VecN &other) const {
 }
 
 template<size_t N>
+VecN<N> VecN<N>::operator+(const float scalar) const {
+    VecN result{};
+    for (size_t i = 0; i < N; i++) {
+        result.data[i] = data[i] + scalar;
+    }
+    return result;
+}
+
+template<size_t N>
 VecN<N> VecN<N>::operator-(const VecN &other) const {
     VecN result{};
     for (size_t i = 0; i < N; i++) {
         result.data[i] = data[i] - other.data[i];
+    }
+    return result;
+}
+
+template<size_t N>
+VecN<N> VecN<N>::operator-(float scalar) const {
+    VecN result{};
+    for (size_t i = 0; i < N; i++) {
+        result.data[i] = data[i] - scalar;
     }
     return result;
 }
@@ -88,6 +107,20 @@ VecN<N> VecN<N>::operator/(float scalar) const {
 }
 
 template<size_t N>
+void VecN<N>::operator += (const VecN &other) {
+    for (size_t i = 0; i < N; i++) {
+        this->data[i] += other[i];
+    }
+}
+
+template<size_t N>
+void VecN<N>::operator *= (const VecN &other) {
+    for (size_t i = 0; i < N; i++) {
+        this->data[i] *= other[i];
+    }
+}
+
+template<size_t N>
 float VecN<N>::operator*(const VecN &other) const {
     float result{0.f};
     for (size_t i = 0; i < N; i++) {
@@ -96,7 +129,7 @@ float VecN<N>::operator*(const VecN &other) const {
     return result;
 }
 
-// 比较器，注意浮点数精度问题
+// 比较器,注意浮点数精度问题
 template<size_t N>
 bool VecN<N>::operator==(const VecN &other) const {
     for (size_t i = 0; i < N; ++i) {
@@ -201,7 +234,7 @@ VecN<N> cross(const VecN<N> &a, const VecN<N> &b) {
     }
 }
 
-// 标准化向量
+// 标准化向量,返回新向量
 template<size_t N>
 VecN<N> normalize(const VecN<N> &a) {
     return a / getLength(a);

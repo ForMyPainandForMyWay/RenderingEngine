@@ -34,7 +34,7 @@ void ModelReader::readMTLFile(const std::string &mtlFilename,
         if (prefix == "newmtl") {
             std::string matName;
             ss >> matName;
-            // 查找哈希表,如果没有该元素，则存入哈希表
+            // 查找哈希表,如果没有该元素,则存入哈希表
             if ( materialMap.find(matName) == materialMap.end()) {
                 currentMat = new Material();
                 currentMat->name = matName;
@@ -47,7 +47,7 @@ void ModelReader::readMTLFile(const std::string &mtlFilename,
             else if (prefix == "Ns") ss >> currentMat->Ns;
             else if (prefix == "map_Kd") {
                 ss >> currentMat->map_Kd;  // 记录纹理贴图名字（路径）
-                // 查找哈希表,如果没有该元素，则存入哈希表
+                // 查找哈希表,如果没有该元素,则存入哈希表
                 if (textureMap.find(currentMat->map_Kd) == textureMap.end()) {
                     textureMap[currentMat->map_Kd] = new TextureMap(currentMat->map_Kd);
                 }
@@ -59,12 +59,12 @@ void ModelReader::readMTLFile(const std::string &mtlFilename,
 
 
 /*
-  读取模型obj文件，处理顶点、平面，再整合为若干模型输出，连带读取MTL文件与纹理
+  读取模型obj文件,处理顶点、平面,再整合为若干模型输出,连带读取MTL文件与纹理
   注意传入的Mesh表、材质表、uv表
 */
 void ModelReader::readObjFile(
     const std::string& filename,
-    std::vector<Mesh*>& meshes,
+    std::unordered_map<std::string, Mesh*>& meshes,
     std::unordered_map<std::string, Material*>& materialMap,
     std::unordered_map<std::string, TextureMap*>& textureMap)
 {
@@ -93,8 +93,8 @@ void ModelReader::readObjFile(
 
     auto pushMesh = [&]() {
         pushSubMesh();
-        if (!currentMesh->subIsEmpty()) {
-            meshes.emplace_back(currentMesh);
+        if (!currentMesh->subIsEmpty() && meshes.find(currentMesh->getName()) == meshes.end()) {
+            meshes[currentMesh->getName()] = currentMesh;
             currentMesh = new Mesh();
         }
     };
@@ -143,7 +143,7 @@ void ModelReader::readObjFile(
                     vnIdx = std::stoi(vertexStr.substr(last + 1));
                 }
 
-                Vertex vert{};
+                Vertex vert;
                 if (vIdx)  vert.position = positions[vIdx - 1];
                 if (vtIdx) vert.uv       = uvs[vtIdx - 1];
                 if (vnIdx) vert.normal   = normals[vnIdx - 1];
@@ -168,6 +168,9 @@ void ModelReader::readObjFile(
             currentSubMesh->setMaterial(it != materialMap.end() ? it->second : nullptr);
         }
         else if (prefix == "o" || prefix == "g") {
+            std::string modelName;
+            ss >> modelName;
+            currentMesh->setName(modelName);
             pushMesh();
         }
     }

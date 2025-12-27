@@ -13,7 +13,7 @@ enum class Channel: uint8_t {
     B = 2,
 };
 
-// 像素点，内存顺序布局
+// 像素点,内存顺序布局
 struct Pixel {
     uint8_t r;
     uint8_t g;

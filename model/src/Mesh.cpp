@@ -35,7 +35,7 @@ bool SubMesh::triIsEmpty() const {
     return this->triangles.empty();
 }
 
-// 扇形分割，多边形分割为三角形
+// 扇形分割,多边形分割为三角形
 void SubMesh::Poly2Tri(const std::vector<Vertex> &inVerts){
     processPolygon(inVerts, this->triangles);
 }
@@ -54,6 +54,14 @@ void Mesh::addSubMesh(SubMesh *submesh) {
 
 bool Mesh::subIsEmpty() const {
     return this->subMeshes.empty();
+}
+
+void Mesh::setName(const std::string &name) {
+    this->MeshName = name;
+}
+
+std::string Mesh::getName() {
+    return this->MeshName;
 }
 
 SubMesh*& Mesh::operator[](const size_t index) {

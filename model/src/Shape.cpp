@@ -8,19 +8,19 @@
 
 // 组装三角形
 Triangle makeTriangle(const Vertex &v0, const Vertex &v1, const Vertex &v2) {
-    Triangle t{};
+    Triangle t;
     t.vex[0] = v0;
     t.vex[1] = v1;
     t.vex[2] = v2;
     return t;
 }
 
-// 扇形分割，多边形分割为三角形
-void processPolygon(const std::vector<Vertex> &inVerts,
+// 扇形分割,多边形分割为三角形
+void processPolygon(const std::vector<Vertex> &inVertex,
                         std::vector<Triangle> &triangles){
-    if (inVerts.size() < 3) return;
-    for (size_t i = 1; i < inVerts.size()-1; ++i) {
-        Triangle t = makeTriangle(inVerts[0], inVerts[i], inVerts[i+1]);
+    if (inVertex.size() < 3) return;
+    for (size_t i = 1; i < inVertex.size()-1; ++i) {
+        Triangle t = makeTriangle(inVertex[0], inVertex[i], inVertex[i+1]);
         triangles.emplace_back(t);
     }
 }

@@ -41,11 +41,11 @@ public:
     [[nodiscard]] bool vexIsEmpty() const;
     [[nodiscard]] bool triIsEmpty() const;
     void Poly2Tri(const std::vector<Vertex> &inVerts);
-    void setMaterial(Material *material);
+    void setMaterial(Material *mat);
 private:
-    std::vector<Vertex> vertices;     // 渲染顶点表(非逻辑顶点表，暂时没用)
+    std::vector<Vertex> vertices;     // 渲染顶点表(非逻辑顶点表,暂时没用)
     std::vector<Triangle> triangles;  // 三角面
-    Material* material;               // 材质，默认为nullptr
+    Material* material;               // 材质,默认为nullptr
 
 };
 
@@ -55,12 +55,15 @@ public:
     [[nodiscard]] size_t getSubMeshNums() const;
     void addSubMesh(SubMesh *submesh);
     [[nodiscard]] bool subIsEmpty() const;
+    void setName(const std::string &name);
+    std::string getName();
 
     SubMesh*& operator[](size_t index);
     SubMesh* const& operator[](size_t index) const;
 
 private:
     std::vector<SubMesh*> subMeshes;
+    std::string MeshName;
 };
 
 

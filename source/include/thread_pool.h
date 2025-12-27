@@ -17,6 +17,16 @@ public:
     virtual void run() = 0;
 };
 
+
+class FuncTask : public Task{
+    std::function<void()> func;
+public:
+    explicit FuncTask(auto f) : func(std::move(f)) {}
+    void run() override {
+        func();
+    }
+};
+
 class ThreadPool {
 public:
     static void WorkerThread(ThreadPool *master);

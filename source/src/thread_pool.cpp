@@ -4,8 +4,6 @@
 
 #include "thread_pool.h"
 
-#include <iostream>
-
 //子线程调度
 void ThreadPool::WorkerThread(ThreadPool *master) {
     while (master->alive) {
