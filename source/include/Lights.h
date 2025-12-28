@@ -13,7 +13,7 @@ class Lights {
     // 光源类型:平行光、点光源、聚光灯、环境光
     enum LightType{Direct, Point, Spot, Ambient};
     LightType LightType = Ambient;
-    Transform Ltf;
+    ObjTransform Ltf;
     Pixel color = {255, 255, 255, 255};
     float intensity = 1;   // 光照强度
     float range = 0;       // 点光/聚光衰减

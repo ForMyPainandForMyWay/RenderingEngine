@@ -8,38 +8,59 @@
 #include "Vec.hpp"
 
 
-class Transform {
+
+// 用于生成世界坐标、以及其他变换矩阵
+class Transform{
 public:
+    virtual ~Transform() = default;
     Transform();
 
+    // 直接设置状态
     void setQuaternion(float x, float y, float z, float w);
     void setPosition(float x, float y, float z);
-
-    void updateTfMat();      // 更新变换矩阵
-    [[nodiscard]] MatMN<4, 4> getTfMat() const;  // 获取变换矩阵(仅返回不计算)
-
-    // 更新单一变换不更新tf
-    void multR(const VecN<4> &deltaQ);  // 累积旋转,更新四元数
-    void multT(const VecN<3> &deltaT);  // 累积位移,更新位移
-
-protected:
-    // 注：累计变换中,位移是加和,旋转与放缩是累乘
-    VecN<3> position;
-    VecN<4> quaternion;  // 四元数,注意四元素要满足归一化条件
-    MatMN<4, 4> tf;      // 变换矩阵
-};
-
-// 带有scale的tf
-class TransformWithScale : Transform{
-public:
-    TransformWithScale();
     void setScale(float x, float y, float z);
-    void updateTfMat();      // 更新变换矩阵
+    void setQ(VecN<4> newQ);
+    void setP(VecN<3> newT);
+    void setS(VecN<3> newS);
 
+    // 累积更新单一变换
+    void multQ(const VecN<4> &deltaQ);  // 累积旋转,更新四元数
+    void multP(const VecN<3> &deltaT);  // 累积位移,更新位移
     void multS(const VecN<3> &deltaS);  // 累积放缩,更新位移,注意非均匀放缩+旋转会对法线矩阵产生影响
 
+    MatMN<4, 4> getRMat();
+    MatMN<4, 4> getTMat();
+    MatMN<4, 4> getSMat();
+
+    virtual void update()=0;  // 更新变换矩阵
+
 protected:
+    bool isDirty = true;  // 脏标记，用于记录变换矩阵是否需要更新
+    VecN<3> position;
+    VecN<4> quaternion;  // 四元数,注意四元素要满足归一化条件
     VecN<3> scale;
 };
 
+
+// 物体变换
+class ObjTransform : public Transform{
+public:
+    ObjTransform();
+    void update() override;
+    const MatMN<4, 4>& getWorldMat();
+protected:
+    MatMN<4, 4> WorldMatrix;
+};
+
+
+// 相机变换
+class CameraTransform : public Transform{
+public:
+    MatMN<4, 4> getNegativeTMat();  // 返回负位移向量构造的矩阵
+    void update() override;
+    const MatMN<4, 4>& getViewMat();  // 返回视角变换矩阵
+protected:
+    MatMN<4, 4> ViewMatrix;
+    MatMN<4, 4> ProjectMatrix;
+};
 #endif //UNTITLED_TRANSFORM_H

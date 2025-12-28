@@ -8,10 +8,16 @@
 #include "Vec.hpp"
 
 
-class Camera {
+class Camera{
 public:
     Camera();
-    // void updateVtf
+    void setParameters(float F, float Near, float Far, float A);
+
+    const MatMN<4, 4>& ViewMat();  // 视角变换矩阵
+    const MatMN<4, 4>& ProjectionMat();  // 投影矩阵
+
+    // 更新投影变换矩阵
+    void updateProject();
 
 private:
     float FOV = 45;  // 视场角,单位为度
@@ -19,8 +25,9 @@ private:
     float FarPlane = 100;  // 远平面
     float AspectRatio = 4.0/3.0;  // 屏幕 宽/高,画面比例
 
-    Transform Vtf;   // 视角变换
-    Transform Ptf;   // 投影变换
+    bool ProjIsDirty = true;  // 修改相机参数脏位
+    CameraTransform tf;  // 视角变换
+    MatMN<4, 4> Projection;  // 投影变换矩阵
     VecN<3> up;      // 摄像头上方向
 };
 

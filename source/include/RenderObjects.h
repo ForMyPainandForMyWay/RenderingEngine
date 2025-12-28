@@ -10,15 +10,16 @@
 
 
 // 用于渲染的物体对象
-class RenderObjects {
+class RenderObjects{
 public:
     explicit RenderObjects(Mesh *m);
     void setMesh(Mesh *m);
+    const MatMN<4,4>& ModelMat();
 
 private:
-    Mesh *mesh = nullptr;   // 所属网格模型
-    Transform Mtf;          // 模型变换M
-    bool visible = true;    // 可见性
+    Mesh *mesh = nullptr;    // 所属网格模型
+    ObjTransform tf;  // 模型变换M
+    bool visible = true;     // 可见性
 };
 
 
