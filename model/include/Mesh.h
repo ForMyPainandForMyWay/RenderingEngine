@@ -32,7 +32,7 @@ struct TextureMap {
     ~TextureMap();
 };
 
-// 子网络模型（共享化））
+// 子网络模型，存储顶点以及三角面顶点索引
 class SubMesh {
 public:
     SubMesh();
@@ -40,12 +40,15 @@ public:
     [[nodiscard]] size_t getTriNums() const;
     [[nodiscard]] bool vexIsEmpty() const;
     [[nodiscard]] bool triIsEmpty() const;
-    void Poly2Tri(const std::vector<Vertex> &inVerts);
     void setMaterial(Material *mat);
+    void addTri(uint32_t p1, uint32_t p2, uint32_t p3);
+    void addVertex(Vertex vex);
+    [[nodiscard]] std::string getMaterialName() const;
+
 private:
-    std::vector<Vertex> vertices;     // 渲染顶点表(非逻辑顶点表,暂时没用)
-    std::vector<Triangle> triangles;  // 三角面
-    Material* material;               // 材质,默认为nullptr
+    std::vector<Vertex> vertices;  // 渲染顶点表
+    std::vector<uint32_t> indices;   // 三角面顶点索引，三个一组
+    Material* material;            // 材质,默认为nullptr
 
 };
 
@@ -53,16 +56,16 @@ private:
 class Mesh {
 public:
     [[nodiscard]] size_t getSubMeshNums() const;
-    void addSubMesh(SubMesh *submesh);
+    void addSubMesh(SubMesh&& submesh);
     [[nodiscard]] bool subIsEmpty() const;
     void setName(const std::string &name);
     std::string getName();
 
-    SubMesh*& operator[](size_t index);
-    SubMesh* const& operator[](size_t index) const;
+    SubMesh& operator[](size_t index);
+    SubMesh const& operator[](size_t index) const;
 
 private:
-    std::vector<SubMesh*> subMeshes;
+    std::vector<SubMesh> subMeshes;
     std::string MeshName;
 };
 

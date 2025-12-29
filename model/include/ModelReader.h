@@ -18,6 +18,7 @@ public:
     static void readMTLFile(const std::string &mtlFilename,
                             std::unordered_map<std::string, Material*> &materialMap,
                             std::unordered_map<std::string, TextureMap*> &textureMap);
+    static void splitPoly2Tri(const ObjFace& face, SubMesh& sm);
 };
 
 

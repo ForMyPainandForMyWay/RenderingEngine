@@ -16,29 +16,30 @@ struct Triangle;
 struct Vertex {
     VecN<3> position;  // 物理坐标
     VecN<3> normal;    // 法向量
-    VecN<2> uv;   // 纹理坐标
+    VecN<2> uv;        // 纹理坐标
 
     bool operator==(const Vertex &other) const {
         return position == other.position &&
                 normal == other.normal &&
                 uv == other.uv;
     }
-
 };
 
 
-// 空间三角形
+// 空间三角形，组装图元时使用
 struct Triangle {
-    Vertex vex[3];  // 顶点
+    size_t vex[3]{};  // 顶点索引
 
     // 渲染阶段常用缓存
     VecN<3> screenPos[3];   // 屏幕坐标
     float depth[3]{};      // 深度
-    [[nodiscard]] VecN<3> getNormal() const;    // 求平面法向量
 };
 
 
-Triangle makeTriangle(const Vertex &v0, const Vertex &v1, const Vertex &v2);
-void processPolygon(const std::vector<Vertex> &inVertex,
-                        std::vector<Triangle> &triangles);
+// Obj文件处理时候的临时结构,存储顶点在subMesh的索引
+struct ObjFace {
+    std::vector<uint32_t> vertexIndices;
+    uint32_t operator[](size_t i) const;
+    void addVexIndex(uint32_t index);
+};
 #endif //UNTITLED_SHAPE_H

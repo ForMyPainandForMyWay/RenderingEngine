@@ -82,12 +82,15 @@ void ModelReader::readObjFile(
     std::vector<VecN<2>> uvs;
 
     auto currentMesh = new Mesh();
-    auto currentSubMesh = new SubMesh();
+    SubMesh currentSubMesh{};
+    // 用于标记顶点的哈希表，key为顶点在f行的“a/b/c”
+    std::unordered_map<std::string, uint32_t> vertexMap;
 
     auto pushSubMesh = [&]() {
-        if (!currentSubMesh->triIsEmpty()) {
-            currentMesh->addSubMesh(currentSubMesh);
-            currentSubMesh = new SubMesh();
+        if (!currentSubMesh.triIsEmpty()) {
+            currentMesh->addSubMesh(std::move(currentSubMesh));
+            currentSubMesh = SubMesh();
+            vertexMap.clear();
         }
     };
 
@@ -124,8 +127,8 @@ void ModelReader::readObjFile(
             uvs.emplace_back(uv);
         }
         else if (prefix == "f") {
-            std::vector<Vertex> faceVerts;
             std::string vertexStr;
+            ObjFace face;
 
             while (ss >> vertexStr) {
                 int vIdx = 0, vtIdx = 0, vnIdx = 0;
@@ -143,15 +146,18 @@ void ModelReader::readObjFile(
                     vnIdx = std::stoi(vertexStr.substr(last + 1));
                 }
 
-                Vertex vert;
-                if (vIdx)  vert.position = positions[vIdx - 1];
-                if (vtIdx) vert.uv       = uvs[vtIdx - 1];
-                if (vnIdx) vert.normal   = normals[vnIdx - 1];
-
-                faceVerts.emplace_back(vert);
+                // 添加逻辑：根据三个Idx确定SubMesh中是否已经存在这个点
+                if (!vertexMap.contains(vertexStr)) {
+                    Vertex vert;
+                    if (vIdx)  vert.position = positions[vIdx - 1];
+                    if (vtIdx) vert.uv       = uvs[vtIdx - 1];
+                    if (vnIdx) vert.normal   = normals[vnIdx - 1];
+                    currentSubMesh.addVertex(vert);
+                    vertexMap[vertexStr] = currentSubMesh.getVexNums()-1;;
+                }
+                face.addVexIndex(vertexMap[vertexStr]);
             }
-
-            currentSubMesh->Poly2Tri(faceVerts);
+            splitPoly2Tri(face, currentSubMesh);
         }
         else if (prefix == "mtllib") {
             std::string mtl;
@@ -165,7 +171,7 @@ void ModelReader::readObjFile(
             std::string matName;
             ss >> matName;
             auto it = materialMap.find(matName);
-            currentSubMesh->setMaterial(it != materialMap.end() ? it->second : nullptr);
+            currentSubMesh.setMaterial(it != materialMap.end() ? it->second : nullptr);
         }
         else if (prefix == "o" || prefix == "g") {
             std::string modelName;
@@ -176,4 +182,11 @@ void ModelReader::readObjFile(
     }
 
     pushMesh(); // 文件结束
+}
+
+// 将多边形切分为若干三角形，并写入各自顶点索引到subMesh的indices中
+void ModelReader::splitPoly2Tri(const ObjFace& face, SubMesh& sm) {
+    for (size_t i=1; i < face.vertexIndices.size(); i++) {
+        sm.addTri(face[0], face[i], face[i+1]);
+    }
 }
