@@ -4,10 +4,13 @@
 #include <ranges>
 
 #include "Graphic.h"
+
+#include "Engine.h"
 #include "MathTool.hpp"
 #include "Mesh.h"
 #include "RenderObjects.h"
 #include "Shader.h"
+#include "Uniform.h"
 
 
 Graphic::Graphic(Engine *eg, FrameBuffer *buffer) {
@@ -36,9 +39,9 @@ void Graphic::DrawModel(const RenderObjects &obj,
         const auto oftEnd = sub.getIdxCount() + oft;
         map[material].reserve((oftEnd-oft) / 3);  // 预分配内存
         for (auto idx = oft; idx < oftEnd; idx+=3) {
-            V2F v1 = VertexShading(mesh->VBO[mesh->EBO[idx]]);
-            V2F v2 = VertexShading(mesh->VBO[mesh->EBO[idx+1]]);
-            V2F v3 = VertexShading(mesh->VBO[mesh->EBO[idx+2]]);
+            V2F v1 = VertexShading(mesh->VBO[mesh->EBO[idx]], u);
+            V2F v2 = VertexShading(mesh->VBO[mesh->EBO[idx+1]], u);
+            V2F v3 = VertexShading(mesh->VBO[mesh->EBO[idx+2]], u);
             map[material].emplace_back(v1, v2, v3);
         }
     }
@@ -47,6 +50,7 @@ void Graphic::DrawModel(const RenderObjects &obj,
     Clip(map);
 
     // 视口变换
+    ScreenMapping(map);
 
     // 光栅化
 
@@ -85,8 +89,19 @@ void Graphic::Clip(std::unordered_map<Material*, std::vector<Triangle>> &map) {
     }
 }
 
+// 视口变换把坐标从NDC转换到Screen
+void Graphic::ScreenMapping(std::unordered_map<Material *, std::vector<Triangle>> &map) const {
+    for (auto& triangles : map | std::views::values) {
+        for (auto& tri : triangles) {
+            tri[0].position = engine->globalU.getViewPort() * tri[0].position;
+            tri[1].position = engine->globalU.getViewPort() * tri[1].position;
+            tri[2].position = engine->globalU.getViewPort() * tri[2].position;
+        }
+    }
+}
 
-V2F Graphic::VertexShading(const Vertex &vex) const {
-    return shader->VertexShader(vex);
+
+V2F Graphic::VertexShading(const Vertex &vex, const Uniform &u) {
+    return Shader::VertexShader(vex, u);
 }
 

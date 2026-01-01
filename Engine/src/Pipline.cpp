@@ -38,7 +38,8 @@ void Engine::Application() {
 }
 
 void Engine::DrawScene(const std::vector<uint8_t>& models) {
-    const auto PV = camera.ProjectionMat() * camera.ViewMat();
+    auto PV = camera.ProjectionMat() * camera.ViewMat();
+    globalU.setProjectView(PV);  // 更新全局Uniform
     for (const auto& model : models) {
         auto obj = renderObjs.at(model);
         auto uniform = Uniform(obj.updateMVP(PV),

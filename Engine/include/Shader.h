@@ -13,12 +13,10 @@ struct Vertex;
 class Shader {
 public:
     static Shader* GetInstance();
-    void SetUniform(Uniform *ufm) { this->uniform = ufm; }
-
-    [[nodiscard]] V2F VertexShader(const Vertex &vex) const;
+    static V2F VertexShader(const Vertex &vex, const Uniform &u) ;
 
 protected:
-    Uniform *uniform = nullptr;
+    // Uniform *uniform = nullptr;
     static Shader *shader;
 };
 

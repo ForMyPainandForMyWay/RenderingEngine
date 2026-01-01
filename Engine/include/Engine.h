@@ -13,10 +13,11 @@
 #include "Camera.h"
 #include "Film.h"
 #include "Graphic.h"
+#include "Uniform.h"
 #include "Vec.hpp"
 
-class Material;
 struct TextureMap;
+class Material;
 class Mesh;
 class RenderObjects;
 class Lights;
@@ -44,12 +45,6 @@ public:
 
     void Application();  // 应用物体、相机与光源的变换
     void DrawScene(const std::vector<uint8_t>& models);  // 绘制场景
-    // void VertexShader();  // 顶点处理
-    // void PrimitiveAssembly();  // 图元组装、裁剪
-    // void ClipProcess();   // 视锥剔除+顶点裁剪+透视除法
-    // void ScreenMapping();  // 视口变换
-    // void SegmentShader
-    // void Rasterization();   // 光栅化
 
     friend class Graphic;
 
@@ -71,6 +66,7 @@ private:
     uint8_t counter=1;  // 计数器用来返回Id，限制场景最多254个渲染对象,0号为Camera
 
     Graphic graphic;
+    GlobalUniform globalU;  // 全局Uniform
 };
 
 

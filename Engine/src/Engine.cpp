@@ -8,10 +8,12 @@
 #include "RenderObjects.h"
 #include "Lights.h"
 
-Engine::Engine(const size_t w, const size_t h) : img(w, h), graphic(this, nullptr) {
-    this->width = w;
-    this->height = h;
-}
+Engine::Engine(const size_t w, const size_t h)
+    : width(w)
+    , height(h)
+    , img(w, h)                     // 直接构造，不经过默认构造 + 赋值
+    , graphic(this, nullptr)
+    , globalU(w, h){}
 
 // 添加变换指令到队列中
 void Engine::addTfCommand(const TransformCommand &cmd) {

@@ -14,9 +14,9 @@ Shader* Shader::GetInstance() {
     return shader;
 }
 
-V2F Shader::VertexShader(const Vertex &vex) const {
-    auto clip = uniform->MVP * vex.getHomoIndex();
+V2F Shader::VertexShader(const Vertex &vex, const Uniform &u) {
+    auto clip = u.MVP * vex.getHomoIndex();
     // 注意这里的法线与uv提前乘了一个w
-    const auto normal = uniform->normalTfMat * vex.getHomoNormal() * clip[3];
+    const auto normal = u.normalTfMat * vex.getHomoNormal() * clip[3];
     return {clip, normal, vex.uv * clip[3], 1/clip[3]};
 }
