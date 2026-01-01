@@ -9,8 +9,10 @@ file(GLOB_RECURSE SRC "${PROJECT_SOURCE_DIR}/*/src/*.cpp")
 
 add_executable(untitled ${SRC})
 target_include_directories(untitled PUBLIC
+        ${PROJECT_SOURCE_DIR}/tool/include
         ${PROJECT_SOURCE_DIR}/source/include
         ${PROJECT_SOURCE_DIR}/math/include
         ${PROJECT_SOURCE_DIR}/model/include
         ${PROJECT_SOURCE_DIR}/Lib
+        ${PROJECT_SOURCE_DIR}/Engine/include
 )

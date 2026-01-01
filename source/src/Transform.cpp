@@ -3,8 +3,8 @@
 //
 
 #include "Transform.h"
+#include "MathTool.hpp"
 
-#include <iostream>
 
 // 注意：初始构造变换类时并不会计算变换矩阵
 Transform::Transform() {
@@ -130,17 +130,29 @@ MatMN<4, 4> Transform::getSMat() {
 
 
 ObjTransform::ObjTransform() {
-     this->WorldMatrix = MatMN<4, 4>(0.0f);
+     this->ModelMatrix = MatMN<4, 4>(0.0f);
 }
 
 void ObjTransform::update() {
-     if (isDirty) this->WorldMatrix = getTMat() * getRMat() * getSMat();
+     if (isDirty) {
+          const auto T = getTMat();
+          const auto R = getRMat();
+          const auto S = getSMat();
+          this->ModelMatrix = T*R*S;
+          this->NormalWorldMat = diagMatInverse(S) * R.Transpose();
+     }
      this->isDirty = false;
 }
 
-const MatMN<4, 4> &ObjTransform::getWorldMat() {
+const MatMN<4, 4>& ObjTransform::getWorldMat() {
      if (isDirty) this->update();
-     return this->WorldMatrix;
+     return this->ModelMatrix;
+}
+
+// 法向量使用的世界坐标，自动更新
+const MatMN<4, 4> &ObjTransform::getNormalWorldMat() {
+     if (isDirty) this->update();
+     return this->NormalWorldMat;
 }
 
 
@@ -158,8 +170,6 @@ MatMN<4, 4> CameraTransform::getNegativeTMat() {
 void CameraTransform::update() {
      // 视角变换
      this->ViewMatrix = getRMat().Transpose() * getNegativeTMat();
-     // 投影变换
-
      isDirty = false;
 }
 

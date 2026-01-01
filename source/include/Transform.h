@@ -48,12 +48,14 @@ public:
     ObjTransform();
     void update() override;
     const MatMN<4, 4>& getWorldMat();
+    const MatMN<4, 4>& getNormalWorldMat();
 protected:
-    MatMN<4, 4> WorldMatrix;
+    MatMN<4, 4> ModelMatrix;
+    MatMN<4, 4> NormalWorldMat;
 };
 
 
-// 相机变换
+// 相机视角变换
 class CameraTransform : public Transform{
 public:
     MatMN<4, 4> getNegativeTMat();  // 返回负位移向量构造的矩阵

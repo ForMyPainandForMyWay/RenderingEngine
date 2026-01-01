@@ -5,8 +5,9 @@
 #ifndef UNTITLED_OBJECTS_H
 #define UNTITLED_OBJECTS_H
 
-#include "Mesh.h"
 #include "Transform.h"
+
+class Mesh;
 
 
 // 用于渲染的物体对象
@@ -15,11 +16,23 @@ public:
     explicit RenderObjects(Mesh *m);
     void setMesh(Mesh *m);
     const MatMN<4,4>& ModelMat();
+    const MatMN<4, 4>& InverseTransposedMat();
+    [[nodiscard]] const Mesh* getMesh() const;
 
-private:
-    Mesh *mesh = nullptr;    // 所属网格模型
+    // 位置变换接口
+    void updateP(const VecN<3> &translate);
+    void updateQ(const VecN<4> &quaternion);
+    void updateS(const VecN<3> &scale);
+
+    // 更新MVP并返回
+    MatMN<4, 4> updateMVP(const MatMN<4, 4> &PV);
+    MatMN<4, 4> MVP;
+
+protected:
     ObjTransform tf;  // 模型变换M
-    bool visible = true;     // 可见性
+    Mesh *mesh = nullptr;  // 所属网格模型
+    bool visible = true;   // 可见性
+    bool isDirty = true;   // MVP标记位
 };
 
 

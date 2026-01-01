@@ -6,8 +6,10 @@
 #define UNTITLED_MODELREADER_H
 #include <unordered_map>
 
-#include "Mesh.h"
-#include <vector>
+class Mesh;
+class Material;
+struct TextureMap;
+struct ObjFace;
 
 class ModelReader {
 public:
@@ -18,7 +20,7 @@ public:
     static void readMTLFile(const std::string &mtlFilename,
                             std::unordered_map<std::string, Material*> &materialMap,
                             std::unordered_map<std::string, TextureMap*> &textureMap);
-    static void splitPoly2Tri(const ObjFace& face, SubMesh& sm);
+    static void splitPoly2Tri(const ObjFace& face, Mesh* mesh);
 };
 
 

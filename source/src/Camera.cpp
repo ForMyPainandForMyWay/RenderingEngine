@@ -3,6 +3,8 @@
 //
 
 #include "Camera.h"
+#include "V2F.h"
+
 
 Camera::Camera() {
     tf = CameraTransform();
@@ -10,7 +12,7 @@ Camera::Camera() {
     up[1] = 1;
 }
 
-void Camera::setParameters(float F, float Near, float Far, float A) {
+void Camera::setParameters(const float F, const float Near, const float Far, const float A) {
     FOV = F;
     NearPlane = Near;
     FarPlane = Far;
@@ -18,10 +20,12 @@ void Camera::setParameters(float F, float Near, float Far, float A) {
     ProjIsDirty = true;
 }
 
+// 返回视角矩阵V，自动更新
 const MatMN<4, 4>& Camera::ViewMat() {
     return tf.getViewMat();
 }
 
+// 返回投影矩阵P，自动更新
 const MatMN<4, 4> &Camera::ProjectionMat() {
     if (ProjIsDirty) this->updateProject();
     return Projection;
@@ -46,3 +50,14 @@ void Camera::updateProject() {
     ProjIsDirty = false;
 }
 
+void Camera::updateP(const VecN<3> &translate) {
+    this->tf.multP(translate);
+}
+
+void Camera::updateQ(const VecN<4> &quaternion) {
+    this->tf.multQ(quaternion);
+}
+
+void Camera::updateS(const VecN<3> &scale) {
+    this->tf.multS(scale);
+}

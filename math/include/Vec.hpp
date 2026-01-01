@@ -13,8 +13,10 @@ template<size_t N>
 struct VecN {
     std::array<float, N> data;
 
-    explicit VecN(float scalar = 0.0f) {data.fill(scalar);}
+    explicit VecN(float scalar) {data.fill(scalar);}
     explicit VecN(float *arr) {std::copy(arr, arr+N, data.begin());}
+    VecN(std::initializer_list<float> il) {std::copy(il.begin(), il.end(), data.begin());}
+    VecN() : data{} {}
 
     static float getN();
 
@@ -29,6 +31,8 @@ struct VecN {
     VecN operator / (float scalar) const;
     void operator += (const VecN &other);
     void operator *= (const VecN &other);
+    void operator *= (const float scalar);
+    void operator /= (float w);
     bool operator == (const VecN &other) const;
     bool operator > (float scalar) const;
 
@@ -117,6 +121,20 @@ template<size_t N>
 void VecN<N>::operator *= (const VecN &other) {
     for (size_t i = 0; i < N; i++) {
         this->data[i] *= other[i];
+    }
+}
+
+template<size_t N>
+void VecN<N>::operator *= (const float scalar) {
+    for (size_t i = 0; i < N; i++) {
+        this->data[i] += scalar;
+    }
+}
+
+template<size_t N>
+void VecN<N>::operator /= (const float w) {
+    for (size_t i = 0; i < N; i++) {
+        this->data[i] /= w;
     }
 }
 
@@ -220,7 +238,7 @@ VecN<N> cross(const VecN<N> &a, const VecN<N> &b) {
     }
     else if constexpr (N == 3) {
         // 3D标准叉乘
-        VecN<3> result;
+        VecN<3> result{};
         result[0] = a[1] * b[2] - a[2] * b[1];
         result[1] = a[2] * b[0] - a[0] * b[2];
         result[2] = a[0] * b[1] - a[1] * b[0];
@@ -232,6 +250,12 @@ VecN<N> cross(const VecN<N> &a, const VecN<N> &b) {
             "cross() is only defined for 2D and 3D vectors");
         return VecN<1>{};
     }
+}
+
+// 任意维度向量的低维坐标的叉积
+template<size_t N>
+float cross2D(const VecN<N> &a, const VecN<N> &b) {
+    return a[0] * b[1] - a[1] * b[0];
 }
 
 // 标准化向量,返回新向量

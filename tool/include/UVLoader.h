@@ -6,7 +6,7 @@
 #define UNTITLED_PNGLOADER_H
 
 #include <string>
-#include "film.h"
+#include "Film.h"
 
 Film* loadPNG(const std::string &path);
 

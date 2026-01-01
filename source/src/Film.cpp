@@ -2,8 +2,7 @@
 // Created by yyd on 2025/12/24.
 //
 
-#include "film.h"
-#include <iostream>
+#include "Film.h"
 
 Film::Film(const size_t width, const std::size_t height) {
     this->width = width;

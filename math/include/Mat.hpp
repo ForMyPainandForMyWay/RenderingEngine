@@ -27,6 +27,7 @@ struct MatMN {
     MatMN operator - (const MatMN &other) const;
     MatMN operator - (float scalar) const;
     MatMN operator * (float scalar) const;
+    VecN<M> operator * (VecN<N>) const;
     MatMN operator / (float scalar) const;
     bool operator == (const MatMN &other) const;
     bool operator > (float scalar) const;
@@ -85,6 +86,14 @@ template<size_t M, size_t N>
 MatMN<M, N> MatMN<M, N>::operator * (float scalar) const {
     MatMN result{};
     for (size_t i = 0; i < M; i++) result[i] = (*this)[i] * scalar;
+    return result;
+}
+
+// [M,N]矩阵乘[N]向量
+template<size_t M, size_t N>
+VecN<M> MatMN<M, N>::operator*(VecN<N> vector) const {
+    VecN<M> result;
+    for (size_t i = 0; i < M; i++) result[i] = (*this)[i] * vector;
     return result;
 }
 

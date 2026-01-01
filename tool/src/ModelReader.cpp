@@ -2,14 +2,13 @@
 // Created by yyd on 2025/12/24.
 //
 
-#include "ModelReader.h"
-
 #include <filesystem>
 #include <fstream>
 #include <iostream>
 #include <sstream>
 #include <unordered_map>
 
+#include "ModelReader.h"
 #include "Mesh.h"
 
 
@@ -35,7 +34,7 @@ void ModelReader::readMTLFile(const std::string &mtlFilename,
             std::string matName;
             ss >> matName;
             // 查找哈希表,如果没有该元素,则存入哈希表
-            if ( materialMap.find(matName) == materialMap.end()) {
+            if (!materialMap.contains(matName)) {
                 currentMat = new Material();
                 currentMat->name = matName;
                 materialMap[matName] = currentMat;
@@ -48,7 +47,7 @@ void ModelReader::readMTLFile(const std::string &mtlFilename,
             else if (prefix == "map_Kd") {
                 ss >> currentMat->map_Kd;  // 记录纹理贴图名字（路径）
                 // 查找哈希表,如果没有该元素,则存入哈希表
-                if (textureMap.find(currentMat->map_Kd) == textureMap.end()) {
+                if (!textureMap.contains(currentMat->map_Kd)) {
                     textureMap[currentMat->map_Kd] = new TextureMap(currentMat->map_Kd);
                 }
             }
@@ -82,23 +81,24 @@ void ModelReader::readObjFile(
     std::vector<VecN<2>> uvs;
 
     auto currentMesh = new Mesh();
-    SubMesh currentSubMesh{};
+    SubMesh currentSubMesh{currentMesh};
     // 用于标记顶点的哈希表，key为顶点在f行的“a/b/c”
     std::unordered_map<std::string, uint32_t> vertexMap;
 
     auto pushSubMesh = [&]() {
-        if (!currentSubMesh.triIsEmpty()) {
-            currentMesh->addSubMesh(std::move(currentSubMesh));
-            currentSubMesh = SubMesh();
-            vertexMap.clear();
+        currentSubMesh.updateCount(currentMesh);
+        if (currentSubMesh.getIdxCount() != 0) {
+            currentMesh->addSubMesh(currentSubMesh);
+            currentSubMesh = SubMesh(currentMesh);
         }
     };
 
     auto pushMesh = [&]() {
         pushSubMesh();
-        if (!currentMesh->subIsEmpty() && meshes.find(currentMesh->getName()) == meshes.end()) {
+        if (!currentMesh->vexIsEmpty() && !meshes.contains(currentMesh->getName())) {
             meshes[currentMesh->getName()] = currentMesh;
             currentMesh = new Mesh();
+            vertexMap.clear();
         }
     };
 
@@ -146,18 +146,18 @@ void ModelReader::readObjFile(
                     vnIdx = std::stoi(vertexStr.substr(last + 1));
                 }
 
-                // 添加逻辑：根据三个Idx确定SubMesh中是否已经存在这个点
+                // 添加逻辑：根据三个Idx确定Mesh中是否已经存在这个点
                 if (!vertexMap.contains(vertexStr)) {
                     Vertex vert;
                     if (vIdx)  vert.position = positions[vIdx - 1];
                     if (vtIdx) vert.uv       = uvs[vtIdx - 1];
                     if (vnIdx) vert.normal   = normals[vnIdx - 1];
-                    currentSubMesh.addVertex(vert);
-                    vertexMap[vertexStr] = currentSubMesh.getVexNums()-1;;
+                    currentMesh->addVertex(vert);
+                    vertexMap[vertexStr] = currentMesh->getVBONums()-1;;
                 }
                 face.addVexIndex(vertexMap[vertexStr]);
             }
-            splitPoly2Tri(face, currentSubMesh);
+            splitPoly2Tri(face, currentMesh);
         }
         else if (prefix == "mtllib") {
             std::string mtl;
@@ -167,7 +167,6 @@ void ModelReader::readObjFile(
         }
         else if (prefix == "usemtl") {
             pushSubMesh();
-
             std::string matName;
             ss >> matName;
             auto it = materialMap.find(matName);
@@ -180,13 +179,12 @@ void ModelReader::readObjFile(
             pushMesh();
         }
     }
-
     pushMesh(); // 文件结束
 }
 
-// 将多边形切分为若干三角形，并写入各自顶点索引到subMesh的indices中
-void ModelReader::splitPoly2Tri(const ObjFace& face, SubMesh& sm) {
+// 将多边形切分为若干三角形，并写入各自顶点索引到Mesh的indices中
+void ModelReader::splitPoly2Tri(const ObjFace& face, Mesh* mesh) {
     for (size_t i=1; i < face.vertexIndices.size(); i++) {
-        sm.addTri(face[0], face[i], face[i+1]);
+        mesh->addTri(face[0], face[i], face[i+1]);
     }
 }
