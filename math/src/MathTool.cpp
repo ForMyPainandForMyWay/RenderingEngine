@@ -1,8 +1,8 @@
 //
 // Created by 冬榆 on 2025/12/29.
 //
-#include "MathTool.hpp"
 
+#include "MathTool.hpp"
 #include "Shape.h"
 #include "V2F.h"
 
@@ -96,9 +96,52 @@ void PersDiv(Triangle &tri) {
 void FaceClip(Triangle &tri) {
     const auto e0 = tri[1].position - tri[0].position;
     const auto e1 = tri[2].position - tri[0].position;
-    tri.alive = cross2D(e0, e1) > 0.0f;
+    tri.alive = crossInLow2D(e0, e1) > 0.0f;
 }
 
+// 屏幕坐标三角形退化检测：三点面积是否为0，注意第一个的误差项是0.5,第二个误差项是1.0
+bool TriangleIsAlive(const Triangle &tri) {
+    float y0 = tri[0].position[1];
+    float y1 = tri[1].position[1];
+    float y2 = tri[2].position[1];
 
+    // 简单退化
+    if (std::max({y0, y1, y2}) - std::min({y0, y1, y2}) < 0.5f)
+        return false;
+    // 叉乘求面积,cross2D函数自动利用低二维计算叉乘
+    if (fabs( crossInLow2D(tri[1].position-tri[0].position, tri[2].position-tri[0].position)) < 1.0f) {
+        return false;
+    }
+    return true;
+}
 
+// 三角形排序，不考虑退化情况
+void sortTriangle(Triangle &tri) {
+    V2F v0 = tri[0];
+    V2F v1 = tri[1];
+    V2F v2 = tri[2];
+    if (v0.position[1] > v1.position[1]) std::swap(v0, v1);
+    if (v1.position[1] > v2.position[1]) std::swap(v1, v2);
+    if (v0.position[1] > v1.position[1]) std::swap(v0, v1);
+    tri[0] = v0;
+    tri[1] = v1;
+    tri[2] = v2;
+}
+
+// 扫描线算法，传入拍好序的三角形
+void ScanLine(const Triangle &sortedTri, std::vector<Fragment> &result) {
+    V2F v0 = sortedTri[0];
+    V2F v1 = sortedTri[1];
+    V2F v2 = sortedTri[2];
+    if (fabs(v1.position[1] - v0.position[1]) < 1e-6) {
+        fillFlatTop(v0, v1, v2, result);
+    } else if (fabs(v1.position[1] - v2.position[1]) < 1e-6) {
+        fillFlatBottom(v0, v1, v2, result);
+    } else {
+        const float t = (v1.position[1] - v0.position[1]) / (v2.position[1] - v0.position[1]);
+        const V2F vi = lerp(v0, v2, t);
+        fillFlatTop(v0, v1, vi, result);
+        fillFlatBottom(v1, vi, v2, result);
+    }
+}
 

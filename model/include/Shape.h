@@ -4,10 +4,12 @@
 
 #ifndef UNTITLED_SHAPE_H
 #define UNTITLED_SHAPE_H
+
 #include <vector>
 
 #include "V2F.h"
 #include "Vec.hpp"
+
 
 struct Pixel;
 struct Vertex;
@@ -47,6 +49,15 @@ struct Triangle {
     const V2F& operator[](const size_t i) const {return vex[i];}
 };
 
+// 片元
+struct Fragment {
+    int x{}, y{};
+    float depth{};
+    VecN<3> normal;
+    VecN<2> uv;
+    Pixel color[4]{};
+    // 可能需要存储Material指针，暂时不设置
+};
 
 // Obj文件处理时候的临时结构,存储顶点在subMesh的索引
 struct ObjFace {

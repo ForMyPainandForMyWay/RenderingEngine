@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 4.1)
-project(untitled)
+project(RenderingEngine)
 
 set(CMAKE_CXX_STANDARD 20)
 set(EXECUTABLE_OUTPUT_PATH "${PROJECT_SOURCE_DIR}/bin")

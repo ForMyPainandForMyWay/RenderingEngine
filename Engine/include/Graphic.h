@@ -18,6 +18,7 @@ class Material;
 struct Triangle;
 struct V2F;
 struct Vertex;
+struct Fragment;
 
 // 用于绘制的类
 class Graphic {
@@ -28,6 +29,10 @@ public:
     void DrawModel(const RenderObjects &obj, const Uniform &u, int pass=0);
     static void Clip(std::unordered_map<Material*, std::vector<Triangle>> &map);
     void ScreenMapping(std::unordered_map<Material*, std::vector<Triangle>> &map) const;
+    static void Rasterization(
+        std::unordered_map<Material*, std::vector<Triangle>> &TriMap,
+        std::unordered_map<Material*, std::vector<Fragment>> &FragMap) ;
+    static std::vector<Fragment> Rasterizing(Triangle &tri) ;
 
     static V2F VertexShading(const Vertex &vex, const Uniform &u) ;  // 顶点处理
     void PrimitiveAssembly();  // 图元组装、裁剪

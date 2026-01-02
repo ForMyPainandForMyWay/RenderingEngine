@@ -4,6 +4,7 @@
 
 #ifndef UNTITLED_VEXCOMPUTE_H
 #define UNTITLED_VEXCOMPUTE_H
+
 #include <array>
 #include <cmath>
 
@@ -254,7 +255,7 @@ VecN<N> cross(const VecN<N> &a, const VecN<N> &b) {
 
 // 任意维度向量的低维坐标的叉积
 template<size_t N>
-float cross2D(const VecN<N> &a, const VecN<N> &b) {
+float crossInLow2D(const VecN<N> &a, const VecN<N> &b) {
     return a[0] * b[1] - a[1] * b[0];
 }
 
