@@ -70,7 +70,7 @@ void rasterizeSpan(const V2F &left, const V2F &right, int y,
         const float rw = lerp(left.invW, right.invW, t);
         frag.uv = lerp(left.uv * left.invW, right.uv * right.invW, t) / rw;
         frag.normal = normalize(lerp(left.normal*left.invW, right.normal*right.invW, t) / rw);
-        frag.depth = lerp(left.position[2], right.position[2], t);
+        frag.depth = lerp(left.position[2] * left.invW, right.position[2] * right.invW, t) / rw;
         out.emplace_back(frag);
     }
 }

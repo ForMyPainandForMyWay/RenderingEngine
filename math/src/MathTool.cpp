@@ -87,8 +87,9 @@ std::vector<Triangle> splitPoly2Tri(const std::vector<V2F>& poly) {
 void PersDiv(Triangle &tri) {
     for (uint8_t i = 0; i < 3; i++) {
         tri[i].position *= tri[i].invW;
-        tri[i].normal *= tri[i].invW;
-        tri[i].uv *= tri[i].invW;
+        // 由于shader阶段不再提前乘w，这里不再除一个w
+        // tri[i].normal *= tri[i].invW;
+        // tri[i].uv *= tri[i].invW;
     }
 }
 
