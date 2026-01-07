@@ -56,7 +56,10 @@ struct Fragment {
     VecN<3> normal;
     VecN<2> uv;
     Pixel color[4]{};
+    bool alive{};  // 用于标记深度测试
     // 可能需要存储Material指针，暂时不设置
+    void drop() { alive = false; }
+    void keep() { alive = true; }
 };
 
 // Obj文件处理时候的临时结构,存储顶点在subMesh的索引

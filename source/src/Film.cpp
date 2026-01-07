@@ -4,23 +4,34 @@
 
 #include "Film.h"
 
+#include "F2P.h"
+
 Film::Film(const size_t width, const std::size_t height) {
     this->width = width;
     this->height = height;
     // 通道组织方式为R:0 G:1 B:2
-    this->image = new Pixel[width * height];
+    // this->image.reserve(width * height);
+    image.resize(width * height);
 }
 
-Film::~Film() {
-    delete[] image;
+const Pixel& Film::getPixel(const size_t i) const {
+     return this->image[i];
 }
 
-// xy起始索引为0
-Pixel Film::getPixel(const size_t x, const size_t y) const {
-    if (x >= this->width || y >= this->height) {
-        throw std::out_of_range("Film::getPixel out of range");
-    }
-    return this->image[y * this->width + x];
+Pixel& Film::operator[](const size_t i) {
+    return image[i];
+}
+
+const Pixel& Film::operator[](const size_t i) const {
+    return image[i];
+}
+
+void Film::clear() {
+    std::ranges::fill(image, Pixel(0, 0, 0, 255));
+}
+
+void Film::WritePixle(const F2P& f2p) {
+    image[f2p.y * width + f2p.x] = f2p.color;
 }
 
 // RGBA模式的PAM格式存储
@@ -29,39 +40,18 @@ void Film::save(const std::string &filename) const {
     if (!fp) { perror("fopen: can not open file"); return; }
     fprintf(fp,
     "P7\n"
-    "WIDTH %zu\n"
-    "HEIGHT %zu\n"
+    "WIDTH %u\n"
+    "HEIGHT %u\n"
     "DEPTH 4\n"
     "MAXVAL 255\n"
     "TUPLTYPE RGB_ALPHA\n"
     "ENDHDR\n",
     this->width, this->height
     );
-    fwrite(this->image, sizeof(Pixel), width * height, fp);
+    fwrite(image.data(), sizeof(Pixel), width * height, fp);
     fclose(fp);
 }
 
-void Film::setPixel(const size_t x, const size_t y, const Pixel pixel) const {
-    if (x >= this->width || y >= this->height) {
-        throw std::out_of_range("Film::setPixel out of range");
-    }
-    this->image[y * this->width + x] = pixel;
-}
-
-void Film::setPixel(const size_t x, const size_t y,
-                    const uint8_t r,
-                    const uint8_t g,
-                    const uint8_t b,
-                    const uint8_t a) const {
-    if (x >= this->width || y >= this->height) {
-        throw std::out_of_range("Film::setPixel out of range");
-    }
-    this->image[y * this->width + x].r = r;
-    this->image[y * this->width + x].g = g;
-    this->image[y * this->width + x].b = b;
-    this->image[y * this->width + x].a = a;
-}
-
-void Film::copyFromPtr(const unsigned char *data) const {
-    std::memcpy(this->image, data, width * height * 4);
+void Film::copyFromPtr(const unsigned char *data) {
+    std::memcpy(image.data(), data, width * height * sizeof(Pixel));;
 }

@@ -10,7 +10,7 @@
 #include "Vec.hpp"
 #include "Shape.h"
 
-class Film;
+struct Film;
 class Shader;
 class Mesh;
 struct Material;
@@ -23,19 +23,21 @@ struct Material {
     VecN<3> Ka;   // 环境光
     VecN<3> Kd;   // 漫反射
     VecN<3> Ks;   // 高光
-    float Ns{};     // 光泽指数
-    std::string map_Kd; // 纹理贴图名字(注：材质实际不止会有一个mak_Kd,需要拓展)
+    float Ns{};   // 光泽指数
+    std::string map_Kd="None"; // 纹理贴图名字(注：材质实际不止会有一个mak_Kd,需要拓展)
+    TextureMap *KdMap{};  // 纹理贴图指针
 
     Material();
 
     std::vector<Shader*> shaders;  // 延迟渲染,0阴影渲染,1光照渲染
     [[nodiscard]] Shader* getShader(const int pass) const
-        { return shaders[pass]; };
+        { return shaders[pass]; }
+    void setKdTexture(TextureMap* kd);
 };
 
 // 纹理贴图
 struct TextureMap {
-    int width{}, height{};
+    uint32_t width{}, height{};
     // std::string map_Kd;  // 贴图名字
     Film *uvImg;             // 贴图数组
 
@@ -81,6 +83,7 @@ public:
     void addTri(uint32_t p1, uint32_t p2, uint32_t p3);
     void addVertex(Vertex vex);
     [[nodiscard]] size_t getVBONums() const;
+    [[nodiscard]] size_t getEBONums() const;
     [[nodiscard]] size_t getTriNums() const;
     [[nodiscard]] bool vexIsEmpty() const;
     [[nodiscard]] bool triIsEmpty() const;

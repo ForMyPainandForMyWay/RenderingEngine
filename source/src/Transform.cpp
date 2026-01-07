@@ -10,7 +10,7 @@
 Transform::Transform() {
      this->position = VecN<3>();
      this->quaternion = VecN<4>();
-     this->quaternion[0] = 1;
+     this->quaternion[3] = 1;  // 表示无旋转的四元数
      this->scale = VecN<3>(1.0f);
      this->isDirty = true;
 }
@@ -82,6 +82,7 @@ void Transform::multS(const VecN<3> &deltaS) {
      isDirty = true;
 }
 
+// 四元数计算旋转矩阵，虚部xyz在前，实部w在后
 MatMN<4, 4> Transform::getRMat() {
      MatMN<4, 4> R;
      for(size_t i = 0; i < 4; ++i) {
@@ -131,6 +132,9 @@ MatMN<4, 4> Transform::getSMat() {
 
 ObjTransform::ObjTransform() {
      this->ModelMatrix = MatMN<4, 4>(0.0f);
+     for (size_t i = 0; i < 4; ++i) {
+          ModelMatrix[i][i] = 1;
+     }
 }
 
 void ObjTransform::update() {

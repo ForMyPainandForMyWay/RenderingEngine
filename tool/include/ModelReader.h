@@ -5,6 +5,7 @@
 #ifndef UNTITLED_MODELREADER_H
 #define UNTITLED_MODELREADER_H
 #include <unordered_map>
+#include <vector>
 
 class Mesh;
 class Material;
@@ -13,13 +14,15 @@ struct ObjFace;
 
 class ModelReader {
 public:
-    static void readObjFile(const std::string &filename,
-                            std::unordered_map<std::string, Mesh*>& meshes,
-                            std::unordered_map<std::string, Material*> &materialMap,
-                            std::unordered_map<std::string, TextureMap*> &textureMap);
-    static void readMTLFile(const std::string &mtlFilename,
-                            std::unordered_map<std::string, Material*> &materialMap,
-                            std::unordered_map<std::string, TextureMap*> &textureMap);
+    static std::vector<std::string> readObjFile(
+        const std::string &filename,
+        std::unordered_map<std::string, Mesh*>& meshes,
+        std::unordered_map<std::string, Material*> &materialMap,
+        std::unordered_map<std::string, TextureMap*> &textureMap);
+    static void readMTLFile(
+        const std::string &mtlFilename,
+        std::unordered_map<std::string, Material*> &materialMap,
+        std::unordered_map<std::string, TextureMap*> &textureMap);
     static void splitPoly2Tri(const ObjFace& face, Mesh* mesh);
 };
 

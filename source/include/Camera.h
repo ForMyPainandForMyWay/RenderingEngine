@@ -25,9 +25,9 @@ public:
 
 private:
     float FOV = 45;        // 视场角,单位为度
-    float NearPlane = 20;  // 近平面
-    float FarPlane = 100;  // 远平面
-    float AspectRatio = 4.0/3.0;  // 屏幕 宽/高,画面比例
+    float NearPlane = 0.1f;  // 近平面
+    float FarPlane = 100.0f;  // 远平面
+    float AspectRatio = 1.0;  // 屏幕 宽/高,画面比例
     bool ProjIsDirty = true;      // 修改相机参数脏位
     CameraTransform tf;      // 视角变换
     MatMN<4, 4> Projection;  // 投影变换矩阵

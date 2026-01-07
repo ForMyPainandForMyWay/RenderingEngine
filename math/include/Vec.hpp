@@ -32,13 +32,14 @@ struct VecN {
     VecN operator / (float scalar) const;
     void operator += (const VecN &other);
     void operator *= (const VecN &other);
-    void operator *= (const float scalar);
+    void operator *= (float scalar);
     void operator /= (float w);
     bool operator == (const VecN &other) const;
     bool operator > (float scalar) const;
 
     template<size_t M>
     friend std::istream& operator>>(std::istream& is, VecN<M>& vec);
+    void show(){ for (auto i=0; i < N; i++) printf("%d ", data[i]); printf("\n"); }
 };
 
 
@@ -128,7 +129,7 @@ void VecN<N>::operator *= (const VecN &other) {
 template<size_t N>
 void VecN<N>::operator *= (const float scalar) {
     for (size_t i = 0; i < N; i++) {
-        this->data[i] += scalar;
+        this->data[i] *= scalar;
     }
 }
 

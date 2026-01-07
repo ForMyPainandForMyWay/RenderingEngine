@@ -37,7 +37,7 @@ public:
 protected:
     bool isDirty = true;  // 脏标记，用于记录变换矩阵是否需要更新
     VecN<3> position;
-    VecN<4> quaternion;  // 四元数,注意四元素要满足归一化条件
+    VecN<4> quaternion;  // 四元数,注意四元素要满足归一化条件.以及内存布局w为实部在后
     VecN<3> scale;
 };
 

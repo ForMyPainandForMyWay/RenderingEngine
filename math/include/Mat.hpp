@@ -34,6 +34,14 @@ struct MatMN {
     MatMN& operator = (MatMN&& other) noexcept;
 
     MatMN<N, M> Transpose() const;  // 获取转置
+    void show() {
+        for (auto i=0; i < M; ++i) {
+            for (auto j=0; j<N; ++j) {
+                printf("%d ", data[i][j]);
+            }
+            printf("\n");
+        }
+    }
 };
 
 // 矩阵乘法

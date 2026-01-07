@@ -2,8 +2,8 @@
 #include <unordered_map>
 #include <string>
 
+#include "Engine.h"
 #include "Mesh.h"
-#include "ModelReader.h"
 
 // 假设 VecN, Vertex, Mesh, SubMesh, Material, TextureMap, Film 已定义
 
@@ -36,7 +36,7 @@ void dumpMeshInfo(const std::unordered_map<std::string, Mesh*>& meshes) {
         if (!mesh) continue;
         std::cout << "网格名称: " << name << "\n";
         std::cout << "  顶点数量: " << mesh->getVBONums() << "\n";
-        std::cout << "  三角形数量: " << mesh->getTriNums() << "\n";
+        std::cout << "  三角形(顶点)数量: " << mesh->getTriNums() << "\n";
         std::cout << "  子网格数量: " << mesh->getSubMeshNums() << "\n";
 
         // 输出所有顶点
@@ -53,6 +53,7 @@ void dumpMeshInfo(const std::unordered_map<std::string, Mesh*>& meshes) {
             const SubMesh& sm = (*mesh)[i];
             std::cout << "  子网格 " << i << ":\n";
             std::cout << "    索引范围: " << sm.getOffset() << " - " << (sm.getOffset() + sm.getIdxCount() - 1) << "\n";
+            std::cout << "    顶点数量: " << sm.getIdxCount() << std::endl;
             std::cout << "    材质: "
                       << (sm.materialIsEmpty() ? "无" : sm.getMaterialName()) << "\n";
         }
@@ -61,28 +62,38 @@ void dumpMeshInfo(const std::unordered_map<std::string, Mesh*>& meshes) {
 }
 
 int main() {
-    std::unordered_map<std::string, Material*> materialMap;
-    std::unordered_map<std::string, TextureMap*> textureMap;
-    std::unordered_map<std::string, Mesh*> meshes;
+    // std::unordered_map<std::string, Material*> materialMap;
+    // std::unordered_map<std::string, TextureMap*> textureMap;
+    // std::unordered_map<std::string, Mesh*> meshes;
+    //
+    // const std::string filename = R"(/Users/dongyu/CLionProjects/RenderEngine/bin/test.obj)";
+    // ModelReader::readObjFile(filename, meshes, materialMap, textureMap);
+    //
+    // std::cout << "加载完成！\n";
+    // std::cout << "材质数量: " << materialMap.size() << "\n";
+    // std::cout << "网格数量: " << meshes.size() << "\n";
+    // std::cout << "纹理数量: " << textureMap.size() << "\n";
+    //
+    // dumpMaterialInfo(materialMap);
+    // dumpTextureInfo(textureMap);
+    // dumpMeshInfo(meshes);
+    //
+    // // 清理内存
+    // for (auto& [_, mat] : materialMap) delete mat;
+    // for (auto& [_, tex] : textureMap) delete tex;
+    // for (auto& [_, mesh] : meshes) delete mesh;
+    //
+    // std::cout << "内存清理完成。\n";
+    //
+    //
+    Engine engine(800, 800);
+    const auto meshName = R"(/Users/dongyu/CLionProjects/RenderEngine/bin/test.obj)";
+    const auto meshId = engine.addMesh(meshName);
+    uint16_t objID = engine.addObjects(meshId[0]);
+    engine.addTfCommand({0, TfCmd::TRANSLATE, {0.0f, 0.0f, 6.0f}});
+    engine.addTfCommand({0, TfCmd::ROTATE, {0.0f, 20.0f, 45.0f}});
+    engine.RenderFrame({objID});
 
-    const std::string filename = R"(/Users/dongyu/CLionProjects/RenderEngine/bin/test.obj)";
-    ModelReader::readObjFile(filename, meshes, materialMap, textureMap);
-
-    std::cout << "加载完成！\n";
-    std::cout << "材质数量: " << materialMap.size() << "\n";
-    std::cout << "网格数量: " << meshes.size() << "\n";
-    std::cout << "纹理数量: " << textureMap.size() << "\n";
-
-    dumpMaterialInfo(materialMap);
-    dumpTextureInfo(textureMap);
-    dumpMeshInfo(meshes);
-
-    // 清理内存
-    for (auto& [_, mat] : materialMap) delete mat;
-    for (auto& [_, tex] : textureMap) delete tex;
-    for (auto& [_, mesh] : meshes) delete mesh;
-
-    std::cout << "内存清理完成。\n";
     return 0;
 }
 

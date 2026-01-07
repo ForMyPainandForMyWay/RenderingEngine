@@ -3,19 +3,18 @@
 //
 
 #include <ranges>
+#include <iostream>
 
 #include "Graphic.h"
 #include "Engine.h"
-#include "MathTool.hpp"
+#include "F2P.h"
 #include "Mesh.h"
 #include "RenderObjects.h"
 #include "Shader.h"
-#include "Uniform.h"
 
 
-Graphic::Graphic(Engine *eg, FrameBuffer *buffer) {
+Graphic::Graphic(Engine *eg) {
     this->engine = eg;
-    this->renderBuffer = buffer;
     this->shader = nullptr;
 }
 
@@ -24,7 +23,6 @@ void Graphic::DrawModel(const RenderObjects &obj,const Uniform &u,const int pass
     const auto mesh = obj.getMesh();
     if (mesh == nullptr) return;
     if (mesh->getVBONums() == 0) return;
-
     // 顶点着色阶段
     // 更新：使用脏标记+Vector更好，不过需要注意
     // 在剔除比例较高时，考虑剔除时直接新建一个vector然后逐个将有效面移动过去
@@ -32,107 +30,35 @@ void Graphic::DrawModel(const RenderObjects &obj,const Uniform &u,const int pass
     std::unordered_map<Material*, std::vector<Fragment>> FragMap;
     {
         std::unordered_map<Material*, std::vector<Triangle>> TriMap;
-        for (const auto &sub : *mesh) {
-            shader = sub.getMaterial()->getShader(pass);
-            Material* material = sub.getMaterial();
-            const auto oft = sub.getOffset();
-            const auto oftEnd = sub.getIdxCount() + oft;
-            TriMap[material].reserve((oftEnd-oft) / 3);  // 预分配内存
-            for (auto idx = oft; idx < oftEnd; idx+=3) {
-                V2F v1 = VertexShading(mesh->VBO[mesh->EBO[idx]], u);
-                V2F v2 = VertexShading(mesh->VBO[mesh->EBO[idx+1]], u);
-                V2F v3 = VertexShading(mesh->VBO[mesh->EBO[idx+2]], u);
-                TriMap[material].emplace_back(v1, v2, v3);
-            }
-        }
+        VertexShading(TriMap, u, mesh, pass);
         // 完成顶点处理阶段后进行剔除、裁剪,最后齐次除法、面剔除
         Clip(TriMap);
         // 视口变换
         ScreenMapping(TriMap);
-        // 光栅化
+        // 退化检测、光栅化
         Rasterization(TriMap, FragMap);
     }
-
     // 片段着色阶段，计算每个片元的颜色、光照和阴影处理
-    // 深度测试，计算Z-Buffer
-    for (auto& frag : FragMap | std::views::values) {
-
+    // Early-Z,这里不清空ZBuffer，ZBuffer在每一帧的开始清空,由Engine控制
+    size_t count = 0;
+    for (auto &Frag : FragMap | std::views::values) {
+        Ztest(Frag);
+        count += Frag.size();
     }
-    // 深度测试
+    std::vector<F2P> f2pVec;
+    f2pVec.reserve(count);
+    // 基础颜色/纹理贴图采样(texture自动完成各向异性过滤和MipMap)
+    // 光照计算(phong或者PBR)
+    FragmentShading(FragMap, f2pVec, u, pass);
+    // Lately-Z
+    Ztest(f2pVec);
+    // 后效处理，如空间环境光遮蔽（但是好像是由引擎在帧控制器控制的）
+
     // 写入帧缓冲
+    WriteBuffer(f2pVec);
 }
 
-// 顶点着色后处理
-void Graphic::Clip(std::unordered_map<Material*, std::vector<Triangle>> &map) {
-    for (auto& triangles: map | std::views::values) {
-        // 三点组成一个三角形
-        std::vector<Triangle> result;
-        for (auto& triangle : triangles) {
-            V2F &p1 = triangle[0];
-            V2F &p2 = triangle[1];
-            V2F &p3 = triangle[2];
-
-            // 快速剔除全部在外的
-            if (AllVertexOutside(p1, p2, p3)) {
-                triangle.alive = false;
-                continue;
-            }
-            std::vector<Triangle> tri = {triangle};
-            // 裁剪
-            const bool clip = ! AllVertexInside(p1, p2, p3);
-            if (clip) {
-                triangle.alive = false;  // 先剔除原来的旧三角
-                tri = PolyClip(p1, p2, p3);  // S-H算法.直接返回切分后的三角数组
-            }
-            for (auto &t : tri) {
-                PersDiv(t);  // 透视除法
-                FaceClip(t);  // 面剔除
-                if (clip) result.emplace_back(t);
-            }
-        }
-        triangles.insert(triangles.end(),
-                result.begin(), result.end());
-    }
-}
-
-// 视口变换把坐标从NDC转换到Screen
-void Graphic::ScreenMapping(std::unordered_map<Material *, std::vector<Triangle>> &map) const {
-    for (auto& triangles : map | std::views::values) {
-        for (auto& tri : triangles) {
-            tri[0].position = engine->globalU.getViewPort() * tri[0].position;
-            tri[1].position = engine->globalU.getViewPort() * tri[1].position;
-            tri[2].position = engine->globalU.getViewPort() * tri[2].position;
-        }
-    }
-}
-
-void Graphic::Rasterization(
-    std::unordered_map<Material*, std::vector<Triangle>> &TriMap,
-    std::unordered_map<Material*, std::vector<Fragment>> &FragMap) {
-    // std::unordered_map<Material*, std::vector<Fragment>> fragMap;
-    for (auto& [material, triangles] : TriMap) {
-        std::vector<Fragment> fragVec;
-        for (auto& tri : triangles) {
-            // 背面剔除
-            if (!tri.alive) continue;
-            // 光栅化并返回该三角形的片元序列
-            std::vector<Fragment> triFrags = Rasterizing(tri);
-            // 加入序列到fragVec中
-            fragVec.insert(fragVec.end(), triFrags.begin(), triFrags.end());
-        }
-        // 设置片元序列
-        FragMap.at(material) = fragVec;
-    }
-}
-
-V2F Graphic::VertexShading(const Vertex &vex, const Uniform &u) {
-    return Shader::VertexShader(vex, u);
-}
-
-std::vector<Fragment> Graphic::Rasterizing(Triangle &tri) {
-    std::vector<Fragment> result{};
-    if (!TriangleIsAlive(tri)) return result;  // 退化检测
-    sortTriangle(tri);  // 三角形顶点排序
-    ScanLine(tri, result);  // 扫描线算法光栅化
-    return result;
+void Graphic::WriteBuffer(const std::vector<F2P>& f2pVec) const {
+    for (const auto& f2p : f2pVec)
+        engine->backBuffer->WritePixle(f2p);
 }

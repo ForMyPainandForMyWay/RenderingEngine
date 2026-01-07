@@ -12,9 +12,15 @@ Material::Material() : shaders(2, nullptr) {
     shaders[1] = Shader::GetInstance();
 }
 
+void Material::setKdTexture(TextureMap *kd) {
+    KdMap = kd;
+}
+
 // 从图像初始化纹理贴图数据
 TextureMap::TextureMap(const std::string &path) {
     this->uvImg = loadPNG(path);
+    this->width = this->uvImg->width;
+    this->height = this->uvImg->height;
 }
 
 TextureMap::~TextureMap() {
@@ -28,8 +34,8 @@ SubMesh::SubMesh(const Mesh* mesh) {
 }
 
 void SubMesh::updateCount(const Mesh* mesh) {
-    if (mesh->getVBONums() == this->indexOffset) this->indexCount = 0;
-    else this->indexCount = mesh->getVBONums() - this->indexOffset + 1;
+    if (mesh->getEBONums() == this->indexOffset) this->indexCount = 0;
+    else this->indexCount = mesh->getEBONums() - this->indexOffset;
 }
 
 uint32_t SubMesh::getOffset() const {
@@ -113,8 +119,12 @@ size_t Mesh::getVBONums() const {
     return this->VBO.size();
 }
 
+size_t Mesh::getEBONums() const {
+    return this->EBO.size();
+}
+
 size_t Mesh::getTriNums() const {
-    return this->EBO.size() / 3;
+    return this->EBO.size();
 }
 
 bool Mesh::vexIsEmpty() const {

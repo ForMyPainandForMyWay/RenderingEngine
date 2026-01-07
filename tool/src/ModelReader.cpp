@@ -48,7 +48,9 @@ void ModelReader::readMTLFile(const std::string &mtlFilename,
                 ss >> currentMat->map_Kd;  // 记录纹理贴图名字（路径）
                 // 查找哈希表,如果没有该元素,则存入哈希表
                 if (!textureMap.contains(currentMat->map_Kd)) {
-                    textureMap[currentMat->map_Kd] = new TextureMap(currentMat->map_Kd);
+                    auto texture = new TextureMap(currentMat->map_Kd);
+                    textureMap[currentMat->map_Kd] = texture;
+                    currentMat->setKdTexture(texture);  // 设置材质的纹理贴图
                 }
             }
         }
@@ -61,16 +63,17 @@ void ModelReader::readMTLFile(const std::string &mtlFilename,
   读取模型obj文件,处理顶点、平面,再整合为若干模型输出,连带读取MTL文件与纹理
   注意传入的Mesh表、材质表、uv表
 */
-void ModelReader::readObjFile(
+std::vector<std::string> ModelReader::readObjFile(
     const std::string& filename,
     std::unordered_map<std::string, Mesh*>& meshes,
     std::unordered_map<std::string, Material*>& materialMap,
     std::unordered_map<std::string, TextureMap*>& textureMap)
 {
+    std::vector<std::string> meshId;
     std::ifstream file(filename);
     if (!file.is_open()) {
         std::cerr << "Cannot open Obj file: " << filename << "\n";
-        return;
+        return meshId;
     }
 
     std::filesystem::path p(filename);
@@ -123,13 +126,12 @@ void ModelReader::readObjFile(
         else if (prefix == "vt") {
             VecN<2> uv{};
             ss >> uv[0] >> uv[1];
-            uv[1] = 1.0f - uv[1];
+            uv[1] = 1.0f - uv[1];  // 贴图数据顶部为0，反转一下
             uvs.emplace_back(uv);
         }
         else if (prefix == "f") {
             std::string vertexStr;
             ObjFace face;
-
             while (ss >> vertexStr) {
                 int vIdx = 0, vtIdx = 0, vnIdx = 0;
                 size_t first = vertexStr.find('/');
@@ -177,14 +179,16 @@ void ModelReader::readObjFile(
             ss >> modelName;
             currentMesh->setName(modelName);
             pushMesh();
+            meshId.emplace_back(modelName);
         }
     }
     pushMesh(); // 文件结束
+    return meshId;
 }
 
 // 将多边形切分为若干三角形，并写入各自顶点索引到Mesh的indices中
 void ModelReader::splitPoly2Tri(const ObjFace& face, Mesh* mesh) {
-    for (size_t i=1; i < face.vertexIndices.size(); i++) {
-        mesh->addTri(face[0], face[i], face[i+1]);
+    for (size_t i=2; i < face.vertexIndices.size(); i++) {
+        mesh->addTri(face[0], face[i-1], face[i]);
     }
 }

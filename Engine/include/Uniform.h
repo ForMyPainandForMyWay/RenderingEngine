@@ -25,7 +25,7 @@ public:
     GlobalUniform(size_t width, size_t height);
     // GlobalUniform(MatMN<4, 4> &&pv, size_t width, size_t height);
     [[nodiscard]] const MatMN<4, 4>& getViewPort() const;
-    void setProjectView(MatMN<4, 4> pv);
+    void setProjectView(const MatMN<4, 4> &pv);
 
 protected:
     MatMN<4, 4> ProjectView;  // PV矩阵

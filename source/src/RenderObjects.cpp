@@ -39,6 +39,7 @@ void RenderObjects::updateS(const VecN<3> &scale) {
     this->tf.multS(scale);
 }
 
+// 更新计算MV并返回，需要传入PV矩阵
 MatMN<4, 4> RenderObjects::updateMVP(const MatMN<4, 4> &PV) {
     if (this->isDirty) {
         this->isDirty = false;
