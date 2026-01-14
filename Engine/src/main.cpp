@@ -90,10 +90,27 @@ int main() {
     const auto meshName = R"(/Users/dongyu/CLionProjects/RenderEngine/bin/test.obj)";
     const auto meshId = engine.addMesh(meshName);
     uint16_t objID = engine.addObjects(meshId[0]);
-    engine.addTfCommand({0, TfCmd::TRANSLATE, {0.0f, 0.0f, 6.0f}});
-    engine.addTfCommand({0, TfCmd::ROTATE, {0.0f, 20.0f, 45.0f}});
-    engine.RenderFrame({objID});
+    engine.SetEnvLight(100, 100, 100, 1.0f);
+    engine.SetMainLight(800, 800);
 
+    // 物体转动
+    // engine.addTfCommand({objID, TfCmd::ROTATE, {45.0f, 40.0f, 40.0f}});
+    // engine.addTfCommand({objID, TfCmd::ROTATE, {0.0f, 0.0f, 0.0f}});
+    // engine.addTfCommand({objID, TfCmd::ROTATE, {-35.0f, 35.0f, 0.0f}});
+
+    // 相机灯光转动
+    // engine.addTfCommand({0, TfCmd::TRANSLATE, {3.0f, 4.0f, 4.5f}});
+    // engine.addTfCommand({0, TfCmd::ROTATE, {-35.0f, 35.0f, 0.0f}});
+    // engine.addTfCommand({1, TfCmd::TRANSLATE, {3.0f, 4.0f, 4.5f}});
+    // engine.addTfCommand({1, TfCmd::ROTATE, {-35.0f, 35.0f, 0.0f}});
+
+    // 平移
+    engine.addTfCommand({0, TfCmd::TRANSLATE, {0.0f, 0.0f, 5.0f}});
+    engine.addTfCommand({1, TfCmd::TRANSLATE, {0.0f, 0.0f, 3.0f}});
+
+
+    engine.OpenShadow();
+    engine.RenderFrame({objID});
     return 0;
 }
 

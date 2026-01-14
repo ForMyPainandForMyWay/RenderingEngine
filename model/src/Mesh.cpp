@@ -4,12 +4,12 @@
 
 #include "Mesh.h"
 #include "UVLoader.h"
-#include "Shader.h"
+#include "BlinnShader.h"
 
 
 Material::Material() : shaders(2, nullptr) {
-    shaders[0] = Shader::GetInstance();
-    shaders[1] = Shader::GetInstance();
+    shaders[0] = BlinnShader::GetInstance();
+    shaders[1] = BlinnShader::GetInstance();
 }
 
 void Material::setKdTexture(TextureMap *kd) {

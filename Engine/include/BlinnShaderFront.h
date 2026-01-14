@@ -1,0 +1,13 @@
+//
+// Created by 冬榆 on 2026/1/9.
+//
+
+#ifndef RENDERINGENGINE_BLINNSHADERFRONT_H
+#define RENDERINGENGINE_BLINNSHADERFRONT_H
+
+
+class BlinnShaderFront {
+};
+
+
+#endif //RENDERINGENGINE_BLINNSHADERFRONT_H

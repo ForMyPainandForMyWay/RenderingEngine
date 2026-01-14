@@ -34,4 +34,7 @@ MatMN<M, M> diagMatInverse(const MatMN<M, M> &mat) {
     }
     return result;
 }
+
+// 深度映射，将z从[-w,w]映射到[0,w]
+void DepthMap(Triangle &tri);
 #endif //UNTITLED_MATHTOOL_HPP

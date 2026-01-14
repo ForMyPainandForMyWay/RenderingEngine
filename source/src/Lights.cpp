@@ -28,3 +28,53 @@ void Lights::updateQ(const VecN<4> &quaternion) {
 void Lights::updateS(const VecN<3> &scale) {
     this->tf.multS(scale);
 }
+
+const MatMN<4, 4>& MainLight::ViewMat() {
+    return this->tf.getViewMat();
+}
+
+const MatMN<4, 4>& MainLight::ProjectionMat() {
+    if (ProjIsDirty) {
+        this->updateProject();
+        this->ProjIsDirty = false;
+    }
+    return this->Projection;
+}
+
+// 更新投影矩阵，不进行标记位更新
+void MainLight::updateProject() {
+    if (LightType == Spot) {
+        // 透视投影（Spot 光）
+        MatMN<4,4> P(0.0f);
+        const float rad = FOV * 0.5f * 3.1415926535f / 180.0f;
+        const float f = 1.0f / std::tan(rad);
+        const float n = NearPlane;
+        const float fa = FarPlane;
+        P[0][0] = f / AspectRatio;
+        P[1][1] = f;
+        P[2][2] = -(fa + n) / (fa - n);
+        P[2][3] = -(2.0f * fa * n) / (fa - n);
+        P[3][2] = -1.0f;
+        P[3][3] = 0.0f;
+        Projection = P;
+    }
+    else if (LightType == Direct) {
+        // 正交投影（Directional 光）
+        MatMN<4,4> P(0.0f);
+        const float l = Left;
+        const float r = Right;
+        const float b = Bottom;
+        const float t = Top;
+        const float n = NearPlane;
+        const float f = FarPlane;
+        // 正交矩阵公式
+        P[0][0] = 2.0f / (r - l);
+        P[1][1] = 2.0f / (t - b);
+        P[2][2] = -2.0f / (f - n);
+        P[3][3] = 1.0f;
+        P[0][3] = -(r + l) / (r - l);
+        P[1][3] = -(t + b) / (t - b);
+        P[2][3] = -(f + n) / (f - n);
+        Projection = P;
+    }
+}

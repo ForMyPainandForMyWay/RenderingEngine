@@ -2,16 +2,15 @@
 // Created by 冬榆 on 2026/1/7.
 //
 
-#include "RasterTool.h"
-#include "LerpTool.h"
+#include "RasterTool.hpp"
 #include "Shape.h"
 
 
 // 屏幕坐标三角形退化检测：三点面积是否为0，注意第一个的误差项是0.5,第二个误差项是1.0
 void DegenerateClip(Triangle &tri) {
-    float y0 = tri[0].position[1];
-    float y1 = tri[1].position[1];
-    float y2 = tri[2].position[1];
+    float y0 = tri[0].clipPosi[1];
+    float y1 = tri[1].clipPosi[1];
+    float y2 = tri[2].clipPosi[1];
 
     // 简单退化
     if (std::max({y0, y1, y2}) - std::min({y0, y1, y2}) < 0.5f){
@@ -19,7 +18,7 @@ void DegenerateClip(Triangle &tri) {
         return;
     }
     // 叉乘求面积,cross2D函数自动利用低二维计算叉乘
-    if (fabs( crossInLow2D(tri[1].position-tri[0].position, tri[2].position-tri[0].position)) < 1.0f) {
+    if (fabs( crossInLow2D(tri[1].clipPosi-tri[0].clipPosi, tri[2].clipPosi-tri[0].clipPosi)) < 1.0f) {
         tri.alive = false;
     }
 }
@@ -30,106 +29,121 @@ void sortTriangle(Triangle &tri) {
     auto& v1 = tri[1];
     auto& v2 = tri[2];
     auto cmp = [](const V2F& a, const V2F& b) {
-        if (fabs(a.position[1] - b.position[1]) > 1e-6) {
-            return a.position[1] < b.position[1];}  // y 小在上
-        return a.position[0] < b.position[0];       // y 相同，x 小在左
+        if (fabs(a.clipPosi[1] - b.clipPosi[1]) > 1e-6) {
+            return a.clipPosi[1] < b.clipPosi[1];}  // y 小在上
+        return a.clipPosi[0] < b.clipPosi[0];       // y 相同，x 小在左
     };
     if (!cmp(v0, v1)) std::swap(v0, v1);
     if (!cmp(v1, v2)) std::swap(v1, v2);
     if (!cmp(v0, v1)) std::swap(v0, v1);
 }
 
-// 扫描线算法，传入拍好序的三角形
-void ScanLine(const Triangle &sortedTri, std::vector<Fragment> &result) {
-    V2F v0 = sortedTri[0];
-    V2F v1 = sortedTri[1];
-    V2F v2 = sortedTri[2];
-    if (fabs(v1.position[1] - v0.position[1]) < 1e-4) {
-        fillFlatTop(v0, v1, v2, result);
-    } else if (fabs(v1.position[1] - v2.position[1]) < 1e-4) {
-        fillFlatBottom(v0, v1, v2, result);
-    } else {
-        const float t = (v1.position[1] - v0.position[1]) / (v2.position[1] - v0.position[1]);
-        const V2F vi = lerp(v0, v2, t);
-        fillFlatBottom(v0, v1, vi, result);  // 上半部分，平底
-        fillFlatTop(v1, vi, v2, result);     // 下半部分，平顶
+inline float EdgeFunc(const VecN<2>& a,
+                      const VecN<2>& b,
+                      const VecN<2>& p){
+    return crossInLow2D(p-a, b-a);
+}
+
+inline bool IsTopLeft(const VecN<2>& a,
+                      const VecN<2>& b){
+    // 上边：y 相等，x 从左到右
+    // 左边：y 从上到下
+    return (std::abs((a[1]-b[1])) < 1e-5 && a[0] < b[0]) ||
+           (a[1] > b[1]);
+}
+
+void Barycentric(Triangle& tri,
+                         std::vector<Fragment>& result)
+{
+    if (!tri.alive) return;
+
+    // 屏幕空间坐标
+    const VecN<2> p0 = { tri[0].clipPosi[0], tri[0].clipPosi[1] };
+    VecN<2> p1 = { tri[1].clipPosi[0], tri[1].clipPosi[1] };
+    VecN<2> p2 = { tri[2].clipPosi[0], tri[2].clipPosi[1] };
+
+    // AABB
+    const int minX = static_cast<int>(std::floor(std::min({p0[0], p1[0], p2[0]})));
+    const int maxX = static_cast<int>(std::ceil(std::max({p0[0], p1[0], p2[0]})));
+    const int minY = static_cast<int>(std::floor(std::min({p0[1], p1[1], p2[1]})));
+    const int maxY = static_cast<int>(std::ceil(std::max({p0[1], p1[1], p2[1]})));
+
+    // 三角形面积
+    float area = EdgeFunc(p0, p1, p2);
+    if (std::abs(area) < 1e-6f)
+        return;
+    if (area < 1e-6f) {
+        std::swap(p1, p2);
+        std::swap(tri[1], tri[2]);
+        area = -area;
     }
-}
 
-// 水平填充
-void rasterizeSpan(const V2F &left, const V2F &right, const int y,
-                   std::vector<Fragment> &out) {
-    const int xStart = static_cast<int>(ceil(left.position[0]));
-    const int xEnd = static_cast<int>(floor(right.position[0]));
-    if (xStart > xEnd) return;
-    const float dx = right.position[0] - left.position[0];
-    for (int x = xStart; x <= xEnd; ++x) {
-        float t = dx==0 ? 0.0f : (static_cast<float>(x)-left.position[0])/dx;
-        Fragment frag;
-        frag.x = x;
-        frag.y = y;
-        // 透视修正插值；
-        const float rw = lerp(left.invW, right.invW, t);
-        frag.uv = lerp(left.uv * left.invW, right.uv * right.invW, t) / rw;
-        frag.normal = normalize(lerp(left.normal*left.invW, right.normal*right.invW, t) / rw);
-        frag.depth = lerp(left.position[2] * left.invW, right.position[2] * right.invW, t) / rw;
-        out.emplace_back(frag);
+    const float invArea = 1.0f / area;
+
+    // Top-Left 标记
+    const bool tl01 = IsTopLeft(p0, p1);
+    const bool tl12 = IsTopLeft(p1, p2);
+    const bool tl20 = IsTopLeft(p2, p0);
+
+    // 光栅化
+    for (int y = minY; y < maxY; ++y) {
+        for (int x = minX; x < maxX; ++x) {
+
+            const VecN<2> p = {
+                static_cast<float>(x) + 0.5f,
+                static_cast<float>(y) + 0.5f
+            };
+
+            const float w0 = EdgeFunc(p1, p2, p);
+            const float w1 = EdgeFunc(p2, p0, p);
+            const float w2 = EdgeFunc(p0, p1, p);
+
+            // Top-Left inside test
+            if (!(
+                (w0 > 1e-5 || (std::abs(w0) < 1e-5f && tl12)) &&
+                (w1 > 1e-5 || (std::abs(w1) < 1e-5f && tl20)) &&
+                (w2 > 1e-5 || (std::abs(w2) < 1e-5f && tl01))
+            )) continue;
+
+            // 重心坐标
+            const float λ0 = w0 * invArea;
+            const float λ1 = w1 * invArea;
+            const float λ2 = w2 * invArea;
+
+            // 透视校正
+            const float invW =
+                λ0 * tri[0].invW +
+                λ1 * tri[1].invW +
+                λ2 * tri[2].invW;
+
+            const float w = 1.0f / invW;
+
+            Fragment frag;
+            frag.alive = true;
+            frag.x = x;
+            frag.y = y;
+
+            frag.worldPosi =
+                (tri[0].worldPosi * (λ0 * tri[0].invW) +
+                 tri[1].worldPosi * (λ1 * tri[1].invW) +
+                 tri[2].worldPosi * (λ2 * tri[2].invW)) * w;
+
+            frag.normal =
+                (tri[0].normal * (λ0 * tri[0].invW) +
+                 tri[1].normal * (λ1 * tri[1].invW) +
+                 tri[2].normal * (λ2 * tri[2].invW)) * w;
+
+            frag.uv =
+                (tri[0].uv * (λ0 * tri[0].invW) +
+                 tri[1].uv * (λ1 * tri[1].invW) +
+                 tri[2].uv * (λ2 * tri[2].invW)) * w;
+
+            frag.depth =
+                (λ0 * tri[0].clipPosi[2] * tri[0].invW +
+                 λ1 * tri[1].clipPosi[2] * tri[1].invW +
+                 λ2 * tri[2].clipPosi[2] * tri[2].invW) * w;
+
+            result.push_back(frag);
+        }
     }
-}
-
-// 平顶三角形填充
-void fillFlatTop(V2F v0, V2F v1, V2F v2, std::vector<Fragment> &result) {
-    if (v0.position[0] > v1.position[0])
-        std::swap(v0, v1);
-    EdgeStepper leftEdge(v0, v2);
-    EdgeStepper rightEdge(v1, v2);
-    int yStart = static_cast<int>(leftEdge.yStart);
-    int yEnd = static_cast<int>(leftEdge.yEnd);
-    if (yStart > yEnd) return;
-    for (int y = yStart; y <= yEnd; ++y) {
-        rasterizeSpan(leftEdge.cur, rightEdge.cur, y, result);
-        leftEdge.stepOnce();
-        rightEdge.stepOnce();
-    }
-}
-
-// 平底三角形填充
-void fillFlatBottom(V2F v0, V2F v1, V2F v2, std::vector<Fragment> &result) {
-    if (v1.position[0] > v2.position[0])
-        std::swap(v1, v2);
-    EdgeStepper leftEdge(v0, v1);
-    EdgeStepper rightEdge(v0, v2);
-    int yStart = static_cast<int>(leftEdge.yStart);
-    int yEnd = static_cast<int>(leftEdge.yEnd);
-    if (yStart > yEnd) return;;
-    for (int y = yStart; y <= yEnd; ++y) {
-        rasterizeSpan(leftEdge.cur, rightEdge.cur, y, result);
-        leftEdge.stepOnce();
-        rightEdge.stepOnce();
-    }
-}
-
-EdgeStepper::EdgeStepper(const V2F &vTop, const V2F &vBottom) {
-    yStart = ceil(vTop.position[1]);
-    yEnd   = floor(vBottom.position[1]);
-    const float dy = vBottom.position[1] - vTop.position[1];
-    dxdy = (vBottom.position[0] - vTop.position[0]) / dy;
-    cur = vTop;
-    step.position = (vBottom.position - vTop.position) / dy;
-    step.uv = (vBottom.uv - vTop.uv) / dy;
-    step.normal = (vBottom.normal - vTop.normal) / dy;
-    step.invW = (vBottom.invW - vTop.invW) / dy;
-    x = vTop.position[0];
-}
-
-void EdgeStepper::stepOnce() {
-    x += dxdy;
-    // cur.position += step.position;
-    cur.position[0] = x;
-    cur.position[1] += 1.0f;
-    cur.position[2] += step.position[2];
-    cur.position[3] += step.position[3];
-    cur.uv += step.uv;
-    cur.normal += step.normal;
-    cur.invW += step.invW;
 }

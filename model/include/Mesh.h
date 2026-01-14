@@ -11,7 +11,7 @@
 #include "Shape.h"
 
 struct Film;
-class Shader;
+class BlinnShader;
 class Mesh;
 struct Material;
 struct TextureMap;
@@ -20,17 +20,17 @@ struct TextureMap;
 // 表面材质
 struct Material {
     std::string name;
-    VecN<3> Ka;   // 环境光
-    VecN<3> Kd;   // 漫反射
-    VecN<3> Ks;   // 高光
-    float Ns{};   // 光泽指数
+    VecN<3> Ka{1.0f, 1.0f, 1.0f};   // 环境光
+    VecN<3> Kd{1.0f,1.0f,1.0f};   // 漫反射
+    VecN<3> Ks{1.0f,1.0f,1.0f};   // 高光
+    float Ns=32;   // 光泽指数
     std::string map_Kd="None"; // 纹理贴图名字(注：材质实际不止会有一个mak_Kd,需要拓展)
     TextureMap *KdMap{};  // 纹理贴图指针
 
     Material();
 
-    std::vector<Shader*> shaders;  // 延迟渲染,0阴影渲染,1光照渲染
-    [[nodiscard]] Shader* getShader(const int pass) const
+    std::vector<BlinnShader*> shaders;  // 延迟渲染,0阴影渲染,1光照渲染
+    [[nodiscard]] BlinnShader* getShader(const int pass) const
         { return shaders[pass]; }
     void setKdTexture(TextureMap* kd);
 };

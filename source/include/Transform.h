@@ -61,8 +61,12 @@ public:
     MatMN<4, 4> getNegativeTMat();  // 返回负位移向量构造的矩阵
     void update() override;
     const MatMN<4, 4>& getViewMat();  // 返回视角变换矩阵
+    [[nodiscard]] const VecN<3>& getPosition() const;  // 返回相机位置
 protected:
     MatMN<4, 4> ViewMatrix;
-    MatMN<4, 4> ProjectMatrix;
+    // MatMN<4, 4> ProjectMatrix;
 };
+
+using LightTransform = CameraTransform;
+
 #endif //UNTITLED_TRANSFORM_H

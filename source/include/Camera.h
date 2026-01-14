@@ -16,7 +16,8 @@ public:
     void setParameters(float F, float Near, float Far, float A);
 
     const MatMN<4, 4>& ViewMat();        // 视角变换矩阵
-    const MatMN<4, 4>& ProjectionMat();  // 投影矩阵
+    const MatMN<4, 4>& ProjectionMat();  // 返回投影矩阵P，自动更新
+    const VecN<3> getPosi() const { return tf.getPosition() ;}  // 返回相机位置
 
     void updateProject();  // 更新投影变换矩阵
     void updateP(const VecN<3> &translate);   // 更新位姿

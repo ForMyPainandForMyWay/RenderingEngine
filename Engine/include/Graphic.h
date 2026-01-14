@@ -8,19 +8,17 @@
 #include <unordered_map>
 #include <vector>
 
+#include "Mat.hpp"
+#include "Shape.h"
 
+class GlobalUniform;
 class Engine;
-// class FrameBuffer;
-class Shader;
+class BlinnShader;
 class Uniform;
 class RenderObjects;
 class Material;
-struct Triangle;
-struct V2F;
-struct F2P;
-struct Vertex;
-struct Fragment;
 struct Mesh;
+
 
 // 用于绘制的类
 class Graphic {
@@ -28,25 +26,28 @@ public:
     Engine *engine{};
 
     explicit Graphic(Engine *eg);
-    void DrawModel(const RenderObjects &obj, const Uniform &u, int pass=0);
+    void ShadowPass(const RenderObjects &obj, const Uniform &u, const GlobalUniform &gu, int pass=1);
+    void BasePass(const RenderObjects &obj, const Uniform &u, const GlobalUniform &gu, int pass=0);
     static void Clip(std::unordered_map<Material*, std::vector<Triangle>> &map);
-    void ScreenMapping(std::unordered_map<Material*, std::vector<Triangle>> &map) const;
+    static void ScreenMapping(std::unordered_map<Material*, std::vector<Triangle>> &map, const MatMN<4, 4>&ViewPort) ;
+
     static void Rasterization(
         std::unordered_map<Material*, std::vector<Triangle>> &TriMap,
         std::unordered_map<Material*, std::vector<Fragment>> &FragMap);
-    static std::vector<Fragment> Rasterizing(Triangle &tri);
+
     void VertexShading(
         std::unordered_map<Material*, std::vector<Triangle>>& TriMap,
         const Uniform &u, const Mesh *mesh, int pass);  // 顶点处理
     void FragmentShading(
         const std::unordered_map<Material*, std::vector<Fragment>>& fragMap,
         std::vector<F2P> &result, const Uniform &u, int pass);  // 片元着色
-    void Ztest(std::vector<Fragment> &TestFrag) const;  // EarlyZ
-    void Ztest(std::vector<F2P> &TestPix) const;  // Lately-Z
+    static bool ZTestPix(size_t locate, float depth, std::vector<float> &ZBuffer) ;
+    void Ztest(std::vector<Fragment> &TestFrag, std::vector<float> &ZBuffer) const;  // EarlyZ
+    void Ztest(std::vector<F2P> &TestPix, std::vector<float> &ZBuffer) const;  // Lately-Z
     void WriteBuffer(const std::vector<F2P>& f2pVec) const;
 
 protected:
-    Shader *shader;
+    BlinnShader *shader;
 };
 
 

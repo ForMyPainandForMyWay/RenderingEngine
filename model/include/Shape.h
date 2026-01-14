@@ -36,12 +36,7 @@ struct Vertex {
 // 空间三角形，组装图元时使用
 struct Triangle {
     std::array<V2F, 3> vex;
-    // V2F vex[3];  // 顶点
-    bool alive=true;
-
-    // 渲染阶段常用缓存
-    // VecN<3> screenPos[3];   // 屏幕坐标
-    // float depth[3]{};      // 深度
+    bool alive=true;  // 用于标记背面剔除、退化剔除
 
     Triangle(const V2F &v1, const V2F &v2, const V2F &v3);
 
@@ -51,11 +46,13 @@ struct Triangle {
 
 // 片元
 struct Fragment {
-    int x{}, y{};
+    size_t x{}, y{};
     float depth{};
+    Pixel Albedo{};
+    VecN<4> worldPosi;
     VecN<3> normal;
     VecN<2> uv;
-    Pixel color[4]{};
+    // Pixel Albedo[4]{};
     bool alive{};  // 用于标记深度测试
     // 可能需要存储Material指针，暂时不设置
     void drop() { alive = false; }

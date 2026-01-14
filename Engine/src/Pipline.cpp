@@ -4,13 +4,14 @@
 
 #include <ranges>
 
+#include "RenderObjects.h"
 #include "ClipTool.h"
 #include "Engine.h"
 #include "F2P.h"
 #include "MathTool.hpp"
 #include "Mesh.h"
-#include "RasterTool.h"
-#include "Shader.h"
+#include "RasterTool.hpp"
+#include "BlinnShader.h"
 
 
 // 应用阶段，对实例应用变换
@@ -28,6 +29,7 @@ void Engine::Application() {
             }
         };
         if (objId == 0) applyCmd(camera);         // camera 提供 updateP/Q/S
+        else if (objId == 1 && mainLight!= nullptr) applyCmd(*mainLight);  // light 提供相同接口
         else applyCmd(renderObjs.at(objId));  // renderObj 也提供相同接口
     }
 }
@@ -43,7 +45,7 @@ void Graphic::VertexShading(
         std::vector<V2F> vexList;
         vexList.reserve(mesh->VBO.size());
         for (const auto &vex : mesh->VBO) {
-            vexList.emplace_back(Shader::VertexShader(vex, u));
+            vexList.emplace_back(BlinnShader::VertexShader(vex, u));
         }
         const auto oft = sub.getOffset();
         const auto oftEnd = sub.getIdxCount() + oft;
@@ -57,7 +59,7 @@ void Graphic::VertexShading(
     }
 }
 
-// 顶点着色后处理: 视锥剔除、SH裁剪、
+// 顶点着色后处理: 视锥剔除、SH裁剪、透视除法、背面剔除、深度映射
 void Graphic::Clip(std::unordered_map<Material*, std::vector<Triangle>> &map) {
     for (auto& triangles: map | std::views::values) {
         // 三点组成一个三角形
@@ -80,13 +82,15 @@ void Graphic::Clip(std::unordered_map<Material*, std::vector<Triangle>> &map) {
             }
             if (clip) {
                 for (auto &t : tris) {
-                    PersDiv(t);  // 透视除法->NDC空间
+                    PersDiv(t);   // 透视除法->NDC空间
                     FaceClip(t);  // 背面剔除
+                    // DepthMap(t);  // 深度映射
                     result.emplace_back(t);
                 }
             } else {
                 PersDiv(triangle);
                 FaceClip(triangle);
+                // DepthMap(triangle);
             }
         }
         triangles.insert(triangles.end(),
@@ -95,60 +99,36 @@ void Graphic::Clip(std::unordered_map<Material*, std::vector<Triangle>> &map) {
 }
 
 // 视口变换把坐标从NDC转换到Screen、面积退化检测
-void Graphic::ScreenMapping(std::unordered_map<Material *, std::vector<Triangle>> &map) const {
+void Graphic::ScreenMapping(std::unordered_map<Material *, std::vector<Triangle>> &map, const MatMN<4, 4>&ViewPort) {
     for (auto& triangles : map | std::views::values) {
         for (auto& tri : triangles) {
             if (!tri.alive) continue;
-            tri[0].position = engine->globalU.getViewPort() * tri[0].position;
-            tri[1].position = engine->globalU.getViewPort() * tri[1].position;
-            tri[2].position = engine->globalU.getViewPort() * tri[2].position;
+            tri[0].clipPosi = ViewPort * tri[0].clipPosi;
+            tri[1].clipPosi = ViewPort * tri[1].clipPosi;
+            tri[2].clipPosi = ViewPort * tri[2].clipPosi;
             DegenerateClip(tri);  // 退化检测(面积过小的三角)
         }
     }
 }
 
-// 光栅化接口
-void Graphic::Rasterization(
-    std::unordered_map<Material*, std::vector<Triangle>> &TriMap,
-    std::unordered_map<Material*, std::vector<Fragment>> &FragMap) {
-    std::unordered_map<Material*, std::vector<Fragment>> fragMap;
-    for (auto& [material, triangles] : TriMap) {
-        std::vector<Fragment> fragVec;
-        for (auto& tri : triangles) {
-            if (!tri.alive) continue;  // 背面剔除、退化剔除
-            // 光栅化并返回该三角形的片元序列
-            std::vector<Fragment> triFrags = Rasterizing(tri);
-            // 加入序列到fragVec中
-            fragVec.insert(fragVec.end(), triFrags.begin(), triFrags.end());
-        }
-        // 设置片元序列
-        FragMap.emplace(material, fragVec);
+// ZTest组件
+bool Graphic::ZTestPix(const size_t locate, const float depth, std::vector<float> &ZBuffer) {
+    if (ZBuffer[locate] > depth) {
+        ZBuffer[locate] = depth;
+        return true;
     }
-}
-
-// 光栅化
-std::vector<Fragment> Graphic::Rasterizing(Triangle &tri) {
-    std::vector<Fragment> result{};
-    // if (!DegenerateClip(tri)) {
-    //     tri.alive = false;
-    //     return result;  // 退化检测(面积过小的三角)
-    // }
-    // 光栅化转移到视口变换时进行
-    sortTriangle(tri);  // 三角形顶点排序
-    ScanLine(tri, result);  // 扫描线算法光栅化
-    return result;
+    return false;
 }
 
 // Early-Z,传入Fragment
-void Graphic::Ztest(std::vector<Fragment> &TestFrag) const {
+void Graphic::Ztest(std::vector<Fragment> &TestFrag, std::vector<float> &ZBuffer) const {
     int keptCount = 0;
     for (auto &pix : TestFrag) {
         if (const auto locate = pix.x + pix.y * engine->width;
-            engine->ZBuffer[locate] > pix.depth ) {
-            engine->ZBuffer[locate] = pix.depth;
+            ZTestPix(locate, pix.depth, ZBuffer)) {
             pix.keep();
             keptCount++;
-            }
+        }
         else pix.drop();  // 后续frag不再着色
     }
 }
@@ -162,17 +142,25 @@ void Graphic::FragmentShading(
         shader->setMaterial(material);
         for (auto& frag : fragVec) {
             if (!frag.alive) continue;
-            result.emplace_back(shader->FragmentShader(frag, u));
+            result.emplace_back(
+                shader->FragmentShader(
+                    frag,material,
+                engine->lights,
+                engine->mainLight,
+                engine->ShadowMap,
+                engine->envLight,
+                engine->globalU,
+                engine->NeedShadowPass));
         }
     }
 }
 
 // Lately-Z,传入F2P,不能清除ZBuffer
-void Graphic::Ztest(std::vector<F2P> &TestPix) const {
+void Graphic::Ztest(std::vector<F2P> &TestPix, std::vector<float> &ZBuffer) const {
     for (auto &pix : TestPix) {
         if (const auto locate = pix.x + pix.y * engine->width;
-            engine->ZBuffer[locate] > pix.depth ) {
-            engine->ZBuffer[locate] = pix.depth;
+            ZBuffer[locate] > pix.depth ) {
+            ZBuffer[locate] = pix.depth;
             pix.keep();
             }
         else pix.drop();  // 后续frag不再着色

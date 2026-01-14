@@ -19,11 +19,16 @@ Film* loadPNG(const std::string &path) {
         std::cerr << "can not open texture png: " << path << std::endl;
     }
 
-    const auto uvImg = new Film(width, height);
     unsigned char* data = stbi_load(path.c_str(), &width, &height, &channel, 4);
     if (data == nullptr) std::cerr << "can not load png: "<< path << std::endl;
 
     // 拷贝数据到uv图
+    if (data == nullptr) {
+        width = height = 1024;
+        const auto uvImg = new Film(width, height);
+        return uvImg;
+    };
+    const auto uvImg = new Film(width, height);
     uvImg->copyFromPtr(data);
     stbi_image_free(data);
     return uvImg;

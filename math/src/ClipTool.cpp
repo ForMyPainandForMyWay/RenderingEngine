@@ -9,10 +9,10 @@
 
 // 用于判断裁剪空间(非DNC空间)的点是否完全在视锥体外部
 bool IsOutSideClip(const V2F& p, const uint8_t plane) {
-    const float w = 1.0f * p.position[3];
-    const float x = p.position[0];
-    const float y = p.position[1];
-    const float z = p.position[2];
+    const float w = 1.0f * p.clipPosi[3];
+    const float x = p.clipPosi[0];
+    const float y = p.clipPosi[1];
+    const float z = p.clipPosi[2];
 
     switch (plane) {
         case 0: return x < -w;
@@ -56,10 +56,10 @@ bool Inside(const float* plane, const VecN<4> &posi) {
 
 // 用于SH裁剪算法，计算截断点
 V2F Intersect(const V2F &last, const V2F &current, const float* line) {
-    const float da = last.position[0] * line[0] + last.position[1] * line[1] +
-               last.position[2] * line[2] + last.position[3] * line[3];
-    const float db = current.position[0] * line[0] + current.position[1] * line[1] +
-               current.position[2] * line[2] + current.position[3] * line[3];
+    const float da = last.clipPosi[0] * line[0] + last.clipPosi[1] * line[1] +
+               last.clipPosi[2] * line[2] + last.clipPosi[3] * line[3];
+    const float db = current.clipPosi[0] * line[0] + current.clipPosi[1] * line[1] +
+               current.clipPosi[2] * line[2] + current.clipPosi[3] * line[3];
     const float weight = da / (da - db);
     return lerpSH(last, current, weight);
 }
@@ -73,8 +73,8 @@ std::vector<Triangle> PolyClip(const V2F &p1, const V2F &p2, const V2F &p3) {
         for (size_t j = 0; j < input.size(); ++j) {
             const V2F &current = input[j];
             const V2F &last = input[(j + input.size() - 1) % input.size()];
-            const bool currInside = Inside(ViewPlane, current.position);
-            const bool lastInside = Inside(ViewPlane, last.position);
+            const bool currInside = Inside(ViewPlane, current.clipPosi);
+            const bool lastInside = Inside(ViewPlane, last.clipPosi);
             if (currInside) {
                 if (!lastInside) {
                     output.push_back(Intersect(last, current, ViewPlane));}
@@ -90,7 +90,7 @@ std::vector<Triangle> PolyClip(const V2F &p1, const V2F &p2, const V2F &p3) {
 
 // NDC空间面剔除，逆时针的三角是正向三角(true)，顺时针三角需要剔除(false)
 void FaceClip(Triangle &tri) {
-    const auto e0 = tri[1].position - tri[0].position;
-    const auto e1 = tri[2].position - tri[0].position;
+    const auto e0 = tri[1].clipPosi - tri[0].clipPosi;
+    const auto e1 = tri[2].clipPosi - tri[0].clipPosi;
     tri.alive = crossInLow2D(e0, e1) > -1e-5f;
 }

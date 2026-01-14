@@ -266,4 +266,13 @@ VecN<N> normalize(const VecN<N> &a) {
     return a / getLength(a);
 }
 
+template<size_t N>
+VecN<N>Hadamard(const VecN<N> &a, const VecN<N> &b) {
+    VecN<N> result{};
+    for (size_t i = 0; i < N; i++) {
+        result[i] = a[i] * b[i];
+    }
+    return result;
+}
+
 #endif //UNTITLED_VEXCOMPUTE_H

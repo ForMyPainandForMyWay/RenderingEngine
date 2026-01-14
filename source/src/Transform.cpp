@@ -97,17 +97,17 @@ MatMN<4, 4> Transform::getRMat() {
      const float xy = x*y, xz = x*z, yz = y*z;
      const float wx = w*x, wy = w*y, wz = w*z;
 
-     R[0][0] = 1.0f - 2.0f*(yy + zz);
-     R[0][1] = 2.0f*(xy + wz);
-     R[0][2] = 2.0f*(xz - wy);
+     R[0][0] = 1 - 2*(yy + zz);
+     R[0][1] = 2*(xy - wz);
+     R[0][2] = 2*(xz + wy);
 
-     R[1][0] = 2.0f*(xy - wz);
-     R[1][1] = 1.0f - 2.0f*(xx + zz);
-     R[1][2] = 2.0f*(yz + wx);
+     R[1][0] = 2*(xy + wz);
+     R[1][1] = 1 - 2*(xx + zz);
+     R[1][2] = 2*(yz - wx);
 
-     R[2][0] = 2.0f*(xz + wy);
-     R[2][1] = 2.0f*(yz - wx);
-     R[2][2] = 1.0f - 2.0f*(xx + yy);
+     R[2][0] = 2*(xz - wy);
+     R[2][1] = 2*(yz + wx);
+     R[2][2] = 1 - 2*(xx + yy);
      return R;
 }
 
@@ -143,19 +143,25 @@ void ObjTransform::update() {
           const auto R = getRMat();
           const auto S = getSMat();
           this->ModelMatrix = T*R*S;
-          this->NormalWorldMat = diagMatInverse(S) * R.Transpose();
+          this->NormalWorldMat = R * diagMatInverse(S);
      }
-     this->isDirty = false;
 }
 
+// 世界坐标变换矩阵，自动更新
 const MatMN<4, 4>& ObjTransform::getWorldMat() {
-     if (isDirty) this->update();
+     if (isDirty) {
+          this->update();
+          this->isDirty = false;;
+     }
      return this->ModelMatrix;
 }
 
 // 法向量使用的世界坐标，自动更新
 const MatMN<4, 4> &ObjTransform::getNormalWorldMat() {
-     if (isDirty) this->update();
+     if (isDirty) {
+          this->update();
+          this->isDirty = false;
+     }
      return this->NormalWorldMat;
 }
 
@@ -174,10 +180,16 @@ MatMN<4, 4> CameraTransform::getNegativeTMat() {
 void CameraTransform::update() {
      // 视角变换
      this->ViewMatrix = getRMat().Transpose() * getNegativeTMat();
-     isDirty = false;
 }
 
 const MatMN<4, 4>& CameraTransform::getViewMat() {
-     if (isDirty) this->update();
+     if (isDirty) {
+          this->update();
+          this->isDirty = false;
+     }
      return this->ViewMatrix;
+}
+
+const VecN<3>& CameraTransform::getPosition() const {
+     return position;
 }

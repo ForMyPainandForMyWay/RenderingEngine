@@ -1,27 +1,20 @@
 //
-// Created by 冬榆 on 2025/12/31.
+// Created by 冬榆 on 2026/1/14.
 //
 
+#ifndef RENDERINGENGINE_RASTRTOOL_H
+#define RENDERINGENGINE_RASTRTOOL_H
+
 #include "LerpTool.h"
-#include "V2F.h"
 
 // 用于SH算法的两点线性插值
 V2F lerpSH(const V2F &v1, const V2F &v2, const float t) {
     V2F r;
-    r.position = v1.position * (1 - t) + v2.position * t;
+    r.clipPosi = v1.clipPosi * (1 - t) + v2.clipPosi * t;
+    r.worldPosi = v1.worldPosi * (1 - t) + v2.worldPosi * t;
     r.normal = v1.normal * (1 - t) + v2.normal * t;
     r.uv = v1.uv * (1 - t) + v2.uv * t;
-    r.invW = 1 / r.position[3];  // 1/w不能线性插值
-    return r;
-}
-
-// 两点线性插值(用于光栅化，这时候理论上已经用不到invW了)
-V2F lerp(const V2F &v1, const V2F &v2, float t) {
-    V2F r;
-    r.position = v1.position * (1 - t) + v2.position * t;
-    r.normal = v1.normal * (1 - t) + v2.normal * t;
-    r.uv = v1.uv * (1 - t) + v2.uv * t;
-    r.invW = v1.invW * (1 - t) + v2.invW * t;
+    r.invW = 1 / r.clipPosi[3];  // 1/w不能线性插值
     return r;
 }
 
@@ -30,7 +23,7 @@ float lerp(const float &n1, const float &n2, const float &t) {
     return n1 * (1 - t) + n2 * t;
 }
 
-// Pixel线性插值
+// Pixel线性插值,用于片元着色
 Pixel lerp(const Pixel& p1, const Pixel& p2, const float t) {
     // 将 uint8_t 转换为 float，以便计算
     const float r = static_cast<float>(p1.r) + (static_cast<float>(p2.r) - static_cast<float>(p1.r)) * t;
@@ -44,3 +37,21 @@ Pixel lerp(const Pixel& p1, const Pixel& p2, const float t) {
             static_cast<uint8_t>(std::clamp(b, 0.0f, 255.0f)),
             static_cast<uint8_t>(std::clamp(a, 0.0f, 255.0f))};
 }
+
+V2F lerpNoLinear(const V2F &v1, const V2F &v2, const float t) {
+    V2F r;
+    // 透视矫正
+    const float invW = lerp(v1.invW, v2.invW, t);
+
+    // v1系数为(1-t), v2系数为t
+    r.worldPosi = lerp(v1.worldPosi*v1.invW, v2.worldPosi*v2.invW, t) / invW;
+    r.clipPosi = lerp(v1.clipPosi, v2.clipPosi, t);  // Z分量无需矫正，单用于深度测试的时候需要还原
+    // NDC空间的深度值
+    // r.NDCdepthNormal = lerp(v1.NDCdepthNormal*v1.invW, v2.NDCdepthNormal*v2.invW, t) / invW;
+    r.normal = lerp(v1.normal*v1.invW, v2.normal*v2.invW, t) / invW;
+    // r.normal = normalize(lerp(v1.normal*v1.invW, v2.normal*v2.invW, t) / invW);
+    r.uv = lerp(v1.uv*v1.invW, v2.uv*v2.invW, t) / invW;
+    r.invW = invW;
+    return r;
+}
+#endif //RENDERINGENGINE_RASTRTOOL_H

@@ -6,6 +6,8 @@
 #define UNTITLED_FILM_H
 #include <filesystem>
 
+#include "Vec.hpp"
+
 
 struct F2P;
 
@@ -21,6 +23,11 @@ struct Pixel {
     uint8_t g;
     uint8_t b;
     uint8_t a;  // alpha or padding
+
+    void operator+=(const Pixel& other);
+    Pixel operator*(VecN<3> K) const;
+    void operator*=(VecN<3> K);
+    [[nodiscard]] VecN<3> toFloat() const;
 };
 static_assert(sizeof(Pixel) == 4);
 static_assert(std::is_standard_layout_v<Pixel>);
@@ -41,6 +48,7 @@ struct Film {
     Pixel& operator[](size_t i);
     const Pixel& operator[](size_t i) const;
     void clear();
+    void fill(uint8_t r, uint8_t g, uint8_t b, uint8_t a=255);
     void WritePixle(const F2P& f2p);
 
     uint32_t width, height;

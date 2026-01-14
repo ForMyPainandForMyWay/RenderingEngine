@@ -5,19 +5,13 @@
 #ifndef UNTITLED_ENGINE_H
 #define UNTITLED_ENGINE_H
 
-#include <string>
-#include <vector>
-#include <unordered_map>
-#include <queue>
-
 #include "Camera.h"
-#include "Film.h"
 #include "Graphic.h"
 #include "Uniform.h"
-#include "Vec.hpp"
-#include "RenderObjects.h"
 #include "Lights.h"
+#include "ShadowMap.h"
 
+struct ShadowMap;
 struct TextureMap;
 class Material;
 struct Mesh;
@@ -37,6 +31,11 @@ typedef struct TransformCommand {
 class Engine {
 public:
     Engine(size_t w, size_t h);
+    ~Engine();
+    void SetMainLight(size_t w, size_t h);
+    void SetEnvLight(uint8_t r, uint8_t g, uint8_t b, float I);
+    void CloseShadow() { NeedShadowPass = false; }
+    void OpenShadow() { NeedShadowPass = true; }
     void addTfCommand(const TransformCommand &cmd);
     std::vector<std::string> addMesh(const std::string &filename);
     uint16_t addObjects(const std::string &meshName);
@@ -61,17 +60,22 @@ private:
     std::unordered_map<uint16_t, RenderObjects> renderObjs;
     std::unordered_map<uint16_t, Lights> lights;
     Camera camera;
+    MainLight *mainLight{};
+    EnvironmentLight *envLight{};
 
     // 变换指令队列
     std::queue<TransformCommand> tfCommand;
+    bool NeedShadowPass = false;  // 是否需要阴影Pass
 
     size_t width, height;  // 分辨率
     Film img;
-    uint16_t counter=1;  // 计数器用来返回Id，限制场景最多254个渲染对象,0号为Camera
+    uint16_t counter=2;  // 计数器用来返回Id，限制场景最多254个渲染对象,0号为Camera,1为主光源
 
     Graphic graphic;
     GlobalUniform globalU;  // 全局Uniform
     std::vector<float> ZBuffer;  // Z-Buffer
+    ShadowMap ShadowMap;  // 阴影Z-Buffer
+    // GBuffer GBuffer;  // GBuffer
     Film *frontBuffer{};  // 正在显示的Buffer
     Film *backBuffer{};  // 正在绘制的Buffer
 };
