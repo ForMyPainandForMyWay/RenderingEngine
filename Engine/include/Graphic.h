@@ -8,7 +8,6 @@
 #include <unordered_map>
 #include <vector>
 
-#include "Mat.hpp"
 #include "Shape.h"
 
 class GlobalUniform;
@@ -16,7 +15,6 @@ class Engine;
 class BlinnShader;
 class Uniform;
 class RenderObjects;
-class Material;
 struct Mesh;
 
 
@@ -26,8 +24,8 @@ public:
     Engine *engine{};
 
     explicit Graphic(Engine *eg);
-    void ShadowPass(const RenderObjects &obj, const Uniform &u, const GlobalUniform &gu, int pass=1);
-    void BasePass(const RenderObjects &obj, const Uniform &u, const GlobalUniform &gu, int pass=0);
+    void ShadowPass(const RenderObjects &obj, const Uniform &u, const GlobalUniform &gu, int pass=0);
+    void BasePass(const RenderObjects &obj, const Uniform &u, const GlobalUniform &gu, int pass=2);
     static void Clip(std::unordered_map<Material*, std::vector<Triangle>> &map);
     static void ScreenMapping(std::unordered_map<Material*, std::vector<Triangle>> &map, const MatMN<4, 4>&ViewPort) ;
 
@@ -38,6 +36,9 @@ public:
     void VertexShading(
         std::unordered_map<Material*, std::vector<Triangle>>& TriMap,
         const Uniform &u, const Mesh *mesh, int pass);  // 顶点处理
+    void GeometryShading(
+        std::unordered_map<Material*, std::vector<Triangle>>& TriMap,
+        const Uniform &u, const Mesh *mesh, int pass);  // 几何着色
     void FragmentShading(
         const std::unordered_map<Material*, std::vector<Fragment>>& fragMap,
         std::vector<F2P> &result, const Uniform &u, int pass);  // 片元着色

@@ -106,15 +106,15 @@ void Barycentric(Triangle& tri,
             )) continue;
 
             // 重心坐标
-            const float λ0 = w0 * invArea;
-            const float λ1 = w1 * invArea;
-            const float λ2 = w2 * invArea;
+            const float lambda0 = w0 * invArea;
+            const float lambda1 = w1 * invArea;
+            const float lambda2 = w2 * invArea;
 
             // 透视校正
             const float invW =
-                λ0 * tri[0].invW +
-                λ1 * tri[1].invW +
-                λ2 * tri[2].invW;
+                lambda0 * tri[0].invW +
+                lambda1 * tri[1].invW +
+                lambda2 * tri[2].invW;
 
             const float w = 1.0f / invW;
 
@@ -124,25 +124,49 @@ void Barycentric(Triangle& tri,
             frag.y = y;
 
             frag.worldPosi =
-                (tri[0].worldPosi * (λ0 * tri[0].invW) +
-                 tri[1].worldPosi * (λ1 * tri[1].invW) +
-                 tri[2].worldPosi * (λ2 * tri[2].invW)) * w;
+                (tri[0].worldPosi * (lambda0 * tri[0].invW) +
+                 tri[1].worldPosi * (lambda1 * tri[1].invW) +
+                 tri[2].worldPosi * (lambda2 * tri[2].invW)) * w;
 
             frag.normal =
-                (tri[0].normal * (λ0 * tri[0].invW) +
-                 tri[1].normal * (λ1 * tri[1].invW) +
-                 tri[2].normal * (λ2 * tri[2].invW)) * w;
+                (tri[0].normal * (lambda0 * tri[0].invW) +
+                 tri[1].normal * (lambda1 * tri[1].invW) +
+                 tri[2].normal * (lambda2 * tri[2].invW)) * w;
 
             frag.uv =
-                (tri[0].uv * (λ0 * tri[0].invW) +
-                 tri[1].uv * (λ1 * tri[1].invW) +
-                 tri[2].uv * (λ2 * tri[2].invW)) * w;
+                (tri[0].uv * (lambda0 * tri[0].invW) +
+                 tri[1].uv * (lambda1 * tri[1].invW) +
+                 tri[2].uv * (lambda2 * tri[2].invW)) * w;
 
             frag.depth =
-                (λ0 * tri[0].clipPosi[2] * tri[0].invW +
-                 λ1 * tri[1].clipPosi[2] * tri[1].invW +
-                 λ2 * tri[2].clipPosi[2] * tri[2].invW) * w;
+                (lambda0 * tri[0].clipPosi[2] * tri[0].invW +
+                 lambda1 * tri[1].clipPosi[2] * tri[1].invW +
+                 lambda2 * tri[2].clipPosi[2] * tri[2].invW) * w;
 
+            // 切线空间插值
+            frag.MainLightOri =
+                (tri[0].MainLightOri * (lambda0 * tri[0].invW) +
+                 tri[1].MainLightOri * (lambda1 * tri[1].invW) +
+                 tri[2].MainLightOri * (lambda2 * tri[2].invW)) * w;
+            frag.CameraOri =
+                (tri[0].CameraOri * (lambda0 * tri[0].invW) +
+                 tri[1].CameraOri * (lambda1 * tri[1].invW) +
+                 tri[2].CameraOri * (lambda2 * tri[2].invW)) * w;
+            // 归一化插值后的向量
+            frag.MainLightOri = normalize(frag.MainLightOri);
+            frag.CameraOri = normalize(frag.CameraOri);
+            // PixLightOri[i] 如果用于方向，也需 normalize（但你只用于顶点光照颜色，可能不需要）
+            for (size_t i = 0; i < 3; ++i) {
+                frag.PixLightOri[i] =
+                    (tri[0].PixLightOri[i] * (lambda0 * tri[0].invW) +
+                     tri[1].PixLightOri[i] *  (lambda1 * tri[1].invW) +
+                     tri[2].PixLightOri[i] * (lambda2 * tri[2].invW)) * w;
+                frag.PixLightOri[i] = normalize(frag.PixLightOri[i]);
+            }
+            frag.VexLightF =
+                (tri[0].VexLightF * (lambda0 * tri[0].invW) +
+                 tri[1].VexLightF * (lambda1 * tri[1].invW) +
+                 tri[2].VexLightF * (lambda2 * tri[2].invW)) * w;
             result.push_back(frag);
         }
     }

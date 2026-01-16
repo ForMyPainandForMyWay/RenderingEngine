@@ -1,9 +1,11 @@
+#include <cassert>
 #include <iostream>
 #include <unordered_map>
 #include <string>
 
 #include "Engine.h"
 #include "Mesh.h"
+#include "RenderObjects.h"
 
 // 假设 VecN, Vertex, Mesh, SubMesh, Material, TextureMap, Film 已定义
 
@@ -87,14 +89,14 @@ int main() {
     //
     //
     Engine engine(800, 800);
-    const auto meshName = R"(/Users/dongyu/CLionProjects/RenderEngine/bin/test.obj)";
+    const auto meshName = R"(/Users/dongyu/CLionProjects/RenderEngine/bin/test4.obj)";
     const auto meshId = engine.addMesh(meshName);
     uint16_t objID = engine.addObjects(meshId[0]);
-    engine.SetEnvLight(100, 100, 100, 1.0f);
+    engine.SetEnvLight(150, 150, 150, 1.0f);
     engine.SetMainLight(800, 800);
 
     // 物体转动
-    // engine.addTfCommand({objID, TfCmd::ROTATE, {45.0f, 40.0f, 40.0f}});
+    // engine.addTfCommand({objID, RenderObject, TfCmd::ROTATE, {35.0f, 30.0f, 30.0f}});
     // engine.addTfCommand({objID, TfCmd::ROTATE, {0.0f, 0.0f, 0.0f}});
     // engine.addTfCommand({objID, TfCmd::ROTATE, {-35.0f, 35.0f, 0.0f}});
 
@@ -105,12 +107,13 @@ int main() {
     // engine.addTfCommand({1, TfCmd::ROTATE, {-35.0f, 35.0f, 0.0f}});
 
     // 平移
-    engine.addTfCommand({0, TfCmd::TRANSLATE, {0.0f, 0.0f, 5.0f}});
-    engine.addTfCommand({1, TfCmd::TRANSLATE, {0.0f, 0.0f, 3.0f}});
+    engine.addTfCommand({0, CameraID, TfCmd::TRANSLATE, {0.0f, 0.0f, 5.0f}});
+    engine.addTfCommand({1, MainLightID, TfCmd::TRANSLATE, {0.0f, 0.0f, 4.0f}});
 
 
-    engine.OpenShadow();
+    engine.CloseShadow();
     engine.RenderFrame({objID});
+
     return 0;
 }
 

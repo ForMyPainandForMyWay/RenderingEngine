@@ -5,9 +5,6 @@
 #ifndef UNTITLED_MESH_H
 #define UNTITLED_MESH_H
 
-#include <string>
-#include <vector>
-#include "Vec.hpp"
 #include "Shape.h"
 
 struct Film;
@@ -25,7 +22,9 @@ struct Material {
     VecN<3> Ks{1.0f,1.0f,1.0f};   // 高光
     float Ns=32;   // 光泽指数
     std::string map_Kd="None"; // 纹理贴图名字(注：材质实际不止会有一个mak_Kd,需要拓展)
+    std::string map_Bump="None";  // 法线贴图名字
     TextureMap *KdMap{};  // 纹理贴图指针
+    TextureMap *BumpMap{};  // 法线贴图指针
 
     Material();
 
@@ -105,6 +104,7 @@ public:
     [[nodiscard]] auto VexBegin() const { return VBO.cbegin(); }
     [[nodiscard]] auto VexMEnd()   const { return VBO.cend(); }
     [[nodiscard]] const SubMesh& getSubMesh(const size_t index) const { return subMeshes[index]; }
+    [[nodiscard]] Vertex& getVertex(const size_t index) { return VBO[index]; }
 
     friend class Graphic;
 

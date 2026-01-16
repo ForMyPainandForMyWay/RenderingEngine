@@ -48,11 +48,13 @@ struct Triangle {
 struct Fragment {
     size_t x{}, y{};
     float depth{};
-    Pixel Albedo{};
     VecN<4> worldPosi;
     VecN<3> normal;
     VecN<2> uv;
-    // Pixel Albedo[4]{};
+    VecN<3> VexLightF;      // 顶点颜色(float, 用于PixLight)
+    std::array<VecN<3>,3> PixLightOri;  // 逐像素光源朝向
+    VecN<3> MainLightOri;  // 主光源朝向
+    VecN<3> CameraOri;  // 相机朝向
     bool alive{};  // 用于标记深度测试
     // 可能需要存储Material指针，暂时不设置
     void drop() { alive = false; }
