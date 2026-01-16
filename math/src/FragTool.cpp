@@ -9,6 +9,7 @@
 // 贴图采样
 // 未插值
 Pixel Sample(const VecN<2>& uv, const TextureMap* texture) {
+    if (texture == nullptr) return {255,255,255,255}; // 纹理不存在时返回白色
     const auto width = static_cast<float>(texture->width);
     const auto height = static_cast<float>(texture->height);
     // 确保 uv 在 [0, 1] 范围内
@@ -25,6 +26,7 @@ Pixel Sample(const VecN<2>& uv, const TextureMap* texture) {
 
 // 双线性插值
 Pixel BilinearSample(const VecN<2>& uv, const TextureMap* texture) {
+    if (texture == nullptr) return {255,255,255,255};
     const auto width = static_cast<float>(texture->width);
     const auto height = static_cast<float>(texture->height);
 

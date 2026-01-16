@@ -15,7 +15,8 @@
 // 解析材质文件,存入哈希表
 void ModelReader::readMTLFile(const std::string &mtlFilename,
                               std::unordered_map<std::string, Material*> &materialMap,
-                              std::unordered_map<std::string, TextureMap*> &textureMap) {
+                              std::unordered_map<std::string, TextureMap*> &textureMap,
+                              std::unordered_map<std::string, TextureMap*> &bumpMap) {
     std::ifstream mtlFile(mtlFilename);
     if (!mtlFile.is_open()) {
         std::cerr << "Cannot open MTL file: " << mtlFilename << "\n";
@@ -53,6 +54,14 @@ void ModelReader::readMTLFile(const std::string &mtlFilename,
                     currentMat->setKdTexture(texture);  // 设置材质的纹理贴图
                 }
             }
+            else if (prefix == "map_Bump") {
+                ss >> currentMat->map_Bump;
+                if (!bumpMap.contains(currentMat->map_Bump)) {
+                    auto texture = new TextureMap(currentMat->map_Bump);
+                    bumpMap[currentMat->map_Bump] = texture;
+                    currentMat->BumpMap = texture;  // 设置材质的法线贴图
+                }
+            }
         }
     }
 }
@@ -67,8 +76,9 @@ std::vector<std::string> ModelReader::readObjFile(
     const std::string& filename,
     std::unordered_map<std::string, Mesh*>& meshes,
     std::unordered_map<std::string, Material*>& materialMap,
-    std::unordered_map<std::string, TextureMap*>& textureMap)
-{
+    std::unordered_map<std::string, TextureMap*>& textureMap,
+    std::unordered_map<std::string, TextureMap*> &bumpMap){
+
     std::vector<std::string> meshId;
     std::ifstream file(filename);
     if (!file.is_open()) {
@@ -165,7 +175,7 @@ std::vector<std::string> ModelReader::readObjFile(
             std::string mtl;
             ss >> mtl;
             readMTLFile((std::filesystem::path(parent_path) / mtl).string(),
-                        materialMap, textureMap);
+                        materialMap, textureMap, bumpMap);
         }
         else if (prefix == "usemtl") {
             pushSubMesh();

@@ -18,11 +18,13 @@ public:
         const std::string &filename,
         std::unordered_map<std::string, Mesh*>& meshes,
         std::unordered_map<std::string, Material*> &materialMap,
-        std::unordered_map<std::string, TextureMap*> &textureMap);
+        std::unordered_map<std::string, TextureMap*> &textureMap,
+        std::unordered_map<std::string, TextureMap*> &bumpMap);
     static void readMTLFile(
         const std::string &mtlFilename,
-        std::unordered_map<std::string, Material*> &materialMap,
-        std::unordered_map<std::string, TextureMap*> &textureMap);
+        std::unordered_map<std::string, Material *> &materialMap,
+        std::unordered_map<std::string, TextureMap *> &textureMap,
+        std::unordered_map<std::string, TextureMap *> &bumpMap);
     static void splitPoly2Tri(const ObjFace& face, Mesh* mesh);
 };
 

@@ -10,7 +10,7 @@
 
 
 struct TextureMap;
-enum LightType{Direct, Point, Spot, Ambient};
+enum LType{Direct, Point, Spot, Ambient};
 
 
 // 不同类型的光源
@@ -19,6 +19,8 @@ class Lights {
     // 注意平行光与环境光无需变换,聚光灯需要额外指定朝向
     // 由于点光源做阴影开销过大，因此只支持平行光和聚光灯阴影
 public:
+    Lights();
+    Lights(LType type, float x, float y, float z);
     [[nodiscard]] int getLType() const;
     void setColor(uint8_t r = 255, uint8_t g = 255,
                   uint8_t b = 255, uint8_t a = 255);
@@ -32,11 +34,12 @@ public:
     [[nodiscard]] VecN<3> getPosi() const { return tf.getPosition(); }
     [[nodiscard]] Pixel getColor() const { return color; }
 
+    bool alive = false;
+
 protected:
-    // enum LightType{Direct, Point, Spot, Ambient};
-    LightType LightType = Ambient;
+    LType LightType = Ambient;
     LightTransform tf;
-    Pixel color = {255, 0, 0, 255};
+    Pixel color = {255, 255, 255, 255};
     float intensity = 3;   // 光照强度
     float range = 0;       // 点光/聚光衰减
     // 聚光灯
@@ -60,8 +63,8 @@ public:
     friend class Engine;
 
 protected:
-    enum LightType {Direct, Spot};
-    LightType LightType = Spot;
+    enum LType {Direct, Spot};
+    LType LightType = Spot;
     MatMN<4, 4>Projection;  // 投影变换矩阵
     bool ProjIsDirty = true;  // 修改光源参数脏位
 };

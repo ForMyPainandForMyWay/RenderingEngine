@@ -4,6 +4,16 @@
 
 #include "Lights.h"
 
+Lights::Lights() {
+    this->LightType = Ambient;
+    this->tf.setPosition(0.0f, 0.0f, 0.0f);
+}
+
+Lights::Lights(const LType type, const float x, const float y, const float z) {
+    this->LightType = type;
+    this->tf.setPosition(x, y, z);
+}
+
 int Lights::getLType() const {
     return LightType;
 }

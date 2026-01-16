@@ -16,7 +16,11 @@ struct MatMN {
     MatMN(const MatMN&) = default;
     MatMN& operator=(const MatMN&) = default;
     MatMN(MatMN&&) noexcept = default;
-
+    template<typename... Args>
+    explicit MatMN(Args&&... args)
+        : data{std::forward<Args>(args)...}{
+        static_assert(sizeof...(Args) == M, "Number of arguments must be exactly M.");
+    }
 
     float get(size_t row, size_t col);
     VecN<N>& operator[](size_t row) { return data[row]; }

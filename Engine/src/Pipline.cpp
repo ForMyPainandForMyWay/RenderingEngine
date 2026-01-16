@@ -17,7 +17,7 @@
 // 应用阶段，对实例应用变换
 void Engine::Application() {
     while (!tfCommand.empty()) {
-        auto [objId, type, value] = tfCommand.front();
+        auto [objId, typeId, type, value] = tfCommand.front();
         tfCommand.pop();
         // 泛型 lambda：接受任意具有 updateP/Q/S 接口的对象
         auto applyCmd = [&](auto& obj) {
@@ -28,9 +28,12 @@ void Engine::Application() {
                 default: break;
             }
         };
-        if (objId == 0) applyCmd(camera);         // camera 提供 updateP/Q/S
-        else if (objId == 1 && mainLight!= nullptr) applyCmd(*mainLight);  // light 提供相同接口
-        else applyCmd(renderObjs.at(objId));  // renderObj 也提供相同接口
+        if (typeId == CameraID) applyCmd(camera);         // camera 提供 updateP/Q/S
+        else if (typeId == MainLightID && mainLight!= nullptr) applyCmd(*mainLight);  // light 提供相同接口
+        else if (typeId >= PixL1 && typeId <= PixL3 && PixLights[typeId-PixL1].alive) applyCmd(PixLights[objId]);
+        else if (typeId == RenderObject) applyCmd(renderObjs.at(objId));
+        else if (typeId == VexLight) applyCmd(VexLights.at(objId));
+        // else applyCmd(renderObjs.at(objId));  // renderObj 也提供相同接口
     }
 }
 
@@ -111,6 +114,49 @@ void Graphic::ScreenMapping(std::unordered_map<Material *, std::vector<Triangle>
     }
 }
 
+void Graphic::GeometryShading(
+    std::unordered_map<Material*, std::vector<Triangle>>& TriMap,
+    const Uniform &u, const Mesh *mesh, int pass) {
+    for (auto& [material, triangles] : TriMap) {
+        shader = material->getShader(pass);
+        shader->setMaterial(material);
+        if (material->BumpMap != nullptr) {
+            for (auto& tri : triangles) {
+                if (!tri.alive) continue;
+                shader->GeometryShader(
+                tri,material,
+                engine->PixLights,
+                engine->VexLights,
+                engine->mainLight,
+                engine->ShadowMap,
+                engine->envLight,
+                engine->globalU);
+            }
+        }
+    }
+}
+
+// 光栅化接口
+void Graphic::Rasterization(
+    std::unordered_map<Material*, std::vector<Triangle>> &TriMap,
+    std::unordered_map<Material*, std::vector<Fragment>> &FragMap) {
+    std::unordered_map<Material*, std::vector<Fragment>> fragMap;
+    for (auto& [material, triangles] : TriMap) {
+        std::vector<Fragment> fragVec;
+        for (auto& tri : triangles) {
+            if (!tri.alive) continue;  // 背面剔除、退化剔除
+            // 光栅化并返回该三角形的片元序列
+            // sortTriangle(tri);
+            std::vector<Fragment> triFrags;
+            Barycentric(tri, triFrags);
+            // 加入序列到fragVec中
+            fragVec.insert(fragVec.end(), triFrags.begin(), triFrags.end());
+        }
+        // 设置片元序列
+        FragMap.emplace(material, fragVec);
+    }
+}
+
 // ZTest组件
 bool Graphic::ZTestPix(const size_t locate, const float depth, std::vector<float> &ZBuffer) {
     if (ZBuffer[locate] > depth) {
@@ -144,8 +190,8 @@ void Graphic::FragmentShading(
             if (!frag.alive) continue;
             result.emplace_back(
                 shader->FragmentShader(
-                    frag,material,
-                engine->lights,
+                frag,material,
+                engine->PixLights,
                 engine->mainLight,
                 engine->ShadowMap,
                 engine->envLight,

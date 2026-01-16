@@ -7,9 +7,10 @@
 #include "BlinnShader.h"
 
 
-Material::Material() : shaders(2, nullptr) {
+Material::Material() : shaders(3, nullptr) {
     shaders[0] = BlinnShader::GetInstance();
     shaders[1] = BlinnShader::GetInstance();
+    shaders[2] = BlinnShader::GetInstance();
 }
 
 void Material::setKdTexture(TextureMap *kd) {
