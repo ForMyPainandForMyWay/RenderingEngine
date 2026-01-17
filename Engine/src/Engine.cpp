@@ -8,7 +8,6 @@
 
 #include "ModelReader.h"
 #include "RenderObjects.h"
-#include "Mesh.h"
 
 Engine::Engine(const size_t w, const size_t h)
     : width(w)
@@ -30,24 +29,13 @@ Engine::~Engine() {
     delete frontBuffer;
     delete mainLight;
     delete envLight;
-    for (const auto &mat: materialMap | std::views::values) {
-        delete mat;
-    }
-    for (const auto &tex: textureMap | std::views::values) {
-        delete tex;
-    }
-    for (const auto &bump: bumpMap | std::views::values) {
-        delete bump;
-    }
-    for (const auto &mesh: meshes | std::views::values) {
-        delete mesh;
-    }
 }
 
 // 设置主光源，并更新shadow map分辨率，需要光源与阴影贴图分辨率,不会更改阴影开关
 void Engine::SetMainLight(const size_t w, const size_t h) {
     delete mainLight;
     mainLight = new MainLight();  // 先不进行详细参数设置
+    mainLight->setI(5.0f);
     ShadowMap.resize(w, h);
     globalU.setShadowViewPort(w, h);
 }
@@ -115,8 +103,16 @@ void Engine::setResolution(const size_t w, const size_t h) {
 
 // 绘制场景-前向渲染
 void Engine::DrawScene(const std::vector<uint16_t>& models) {
-    // ShadowPass
+    // SkyPass
     MatMN<4, 4> PV;
+    if (NeedSkyBoxPass) {
+        PV = camera.RMat().Transpose() * camera.invProjectionMat();
+        auto uniform = Uniform(sky.ModelMat(), sky.updateMVP(PV),
+               sky.InverseTransposedMat());
+        graphic.SkyPass(sky, uniform, globalU, 0);
+    }
+
+    // ShadowPass
     if (NeedShadowPass && mainLight != nullptr) {
         PV = mainLight->ProjectionMat() * mainLight->ViewMat();
         globalU.setProjectViewShadow(PV);  // 更新全局Uniform光源相关内容
@@ -130,14 +126,14 @@ void Engine::DrawScene(const std::vector<uint16_t>& models) {
 
     // BasePass
     PV = camera.ProjectionMat() * camera.ViewMat();
-    globalU.setProjectView(PV);  // 更新全局Uniform相机相关内容
+    // globalU.setProjectView(PV);  // 更新全局Uniform相机相关内容
     globalU.setCameraPos(camera.getPosi());
     for (const auto& model : models) {
         auto obj = renderObjs.at(model);
         auto uniform = Uniform(obj.ModelMat(),
                                 obj.updateMVP(PV),
                         obj.InverseTransposedMat());
-        graphic.BasePass(obj, uniform, globalU, 1);
+        graphic.BasePass(obj, uniform, globalU, 2);
     }
 }
 
@@ -155,7 +151,7 @@ void Engine::BeginFrame() {
     std::ranges::fill(ZBuffer, 1.0f);
     ShadowMap.clear();    // 清空backBuffer
     backBuffer->clear();
-    // GBuffer.clear();  // 前向渲染时无需GBuffer
+    GBuffer.clear();
 }
 
 void Engine::EndFrame() {

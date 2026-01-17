@@ -3,13 +3,13 @@
 //
 
 #include "RenderObjects.h"
+#include "Mesh.h"
 
 
-RenderObjects::RenderObjects(Mesh *m) {
+RenderObjects::RenderObjects(const std::shared_ptr<Mesh>& m) {
     this->setMesh(m);
 }
-
-void RenderObjects::setMesh(Mesh *m) {
+void RenderObjects::setMesh(const std::shared_ptr<Mesh> &m) {
     this->mesh = m;
 }
 
@@ -23,7 +23,7 @@ const MatMN<4, 4>& RenderObjects::InverseTransposedMat() {
     return this->tf.getNormalWorldMat();
 }
 
-const Mesh* RenderObjects::getMesh() const {
+std::shared_ptr<Mesh> RenderObjects::getMesh() const {
     return this->mesh;
 }
 

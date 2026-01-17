@@ -11,7 +11,7 @@
 #include "MathTool.hpp"
 #include "Mesh.h"
 #include "RasterTool.hpp"
-#include "BlinnShader.h"
+#include "../../shader/include/BlinnShader.h"
 
 
 // 应用阶段，对实例应用变换
@@ -39,16 +39,16 @@ void Engine::Application() {
 
 // 顶点着色
 void Graphic::VertexShading(
-    std::unordered_map<Material*, std::vector<Triangle>>& TriMap,
-    const Uniform &u, const Mesh *mesh, const int pass) {
+    std::unordered_map<std::shared_ptr<Material>, std::vector<Triangle>>& TriMap,
+    const Uniform &u, const GlobalUniform &gu, const std::shared_ptr<Mesh>& mesh, const int pass) {
     for (const auto &sub : *mesh) {
         shader = sub.getMaterial()->getShader(pass);
-        Material* material = sub.getMaterial();
+        auto material = sub.getMaterial();
         // 计算所有顶点并缓存一份
         std::vector<V2F> vexList;
         vexList.reserve(mesh->VBO.size());
         for (const auto &vex : mesh->VBO) {
-            vexList.emplace_back(BlinnShader::VertexShader(vex, u));
+            vexList.emplace_back(shader->VertexShader(vex, u, gu));
         }
         const auto oft = sub.getOffset();
         const auto oftEnd = sub.getIdxCount() + oft;
@@ -63,7 +63,7 @@ void Graphic::VertexShading(
 }
 
 // 顶点着色后处理: 视锥剔除、SH裁剪、透视除法、背面剔除、深度映射
-void Graphic::Clip(std::unordered_map<Material*, std::vector<Triangle>> &map) {
+void Graphic::Clip(std::unordered_map<std::shared_ptr<Material>, std::vector<Triangle>> &map) {
     for (auto& triangles: map | std::views::values) {
         // 三点组成一个三角形
         std::vector<Triangle> result;
@@ -102,7 +102,7 @@ void Graphic::Clip(std::unordered_map<Material*, std::vector<Triangle>> &map) {
 }
 
 // 视口变换把坐标从NDC转换到Screen、面积退化检测
-void Graphic::ScreenMapping(std::unordered_map<Material *, std::vector<Triangle>> &map, const MatMN<4, 4>&ViewPort) {
+void Graphic::ScreenMapping(std::unordered_map<std::shared_ptr<Material>, std::vector<Triangle>> &map, const MatMN<4, 4>&ViewPort) {
     for (auto& triangles : map | std::views::values) {
         for (auto& tri : triangles) {
             if (!tri.alive) continue;
@@ -115,11 +115,12 @@ void Graphic::ScreenMapping(std::unordered_map<Material *, std::vector<Triangle>
 }
 
 void Graphic::GeometryShading(
-    std::unordered_map<Material*, std::vector<Triangle>>& TriMap,
-    const Uniform &u, const Mesh *mesh, int pass) {
+    std::unordered_map<std::shared_ptr<Material>, std::vector<Triangle>>& TriMap,
+    // const Uniform &u, const Mesh *mesh, const int pass) {
+    const Uniform &u, const std::shared_ptr<Mesh>& mesh, const int pass) {
     for (auto& [material, triangles] : TriMap) {
         shader = material->getShader(pass);
-        shader->setMaterial(material);
+        // shader->setMaterial(material);
         if (material->BumpMap != nullptr) {
             for (auto& tri : triangles) {
                 if (!tri.alive) continue;
@@ -138,9 +139,9 @@ void Graphic::GeometryShading(
 
 // 光栅化接口
 void Graphic::Rasterization(
-    std::unordered_map<Material*, std::vector<Triangle>> &TriMap,
-    std::unordered_map<Material*, std::vector<Fragment>> &FragMap) {
-    std::unordered_map<Material*, std::vector<Fragment>> fragMap;
+    std::unordered_map<std::shared_ptr<Material>, std::vector<Triangle>> &TriMap,
+    std::unordered_map<std::shared_ptr<Material>, std::vector<Fragment>> &FragMap) {
+    std::unordered_map<std::shared_ptr<Material>, std::vector<Fragment>> fragMap;
     for (auto& [material, triangles] : TriMap) {
         std::vector<Fragment> fragVec;
         for (auto& tri : triangles) {
@@ -181,11 +182,11 @@ void Graphic::Ztest(std::vector<Fragment> &TestFrag, std::vector<float> &ZBuffer
 
 // 片元着色器
 void Graphic::FragmentShading(
-    const std::unordered_map<Material *, std::vector<Fragment> >& fragMap,
+    const std::unordered_map<std::shared_ptr<Material>, std::vector<Fragment> >& fragMap,
     std::vector<F2P> &result, const Uniform &u, const int pass) {
     for (auto& [material, fragVec] : fragMap) {
         shader = material->getShader(pass);
-        shader->setMaterial(material);
+        // shader->setMaterial(material);
         for (auto& frag : fragVec) {
             if (!frag.alive) continue;
             result.emplace_back(

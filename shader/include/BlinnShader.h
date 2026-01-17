@@ -6,7 +6,8 @@
 #define UNTITLED_SHADER_H
 
 #include <vector>
-#include "Vec.hpp"
+
+#include "Shader.h"
 
 struct Triangle;
 class EnvironmentLight;
@@ -23,41 +24,34 @@ struct Fragment;
 struct Material;
 
 
-class BlinnShader {
+class BlinnShader : public Shader {
 public:
+    BlinnShader() = default;
     static BlinnShader* GetInstance();
-    static V2F VertexShader(
+    V2F VertexShader(
         const Vertex &vex,
-        const Uniform &u);
+        const Uniform &u,
+        const GlobalUniform &gu) override;
 
-    static void GeometryShader(
+    void GeometryShader(
         Triangle &tri,
-        const Material *material,
+        const std::shared_ptr<Material> &material,
         const std::array<Lights, 3> &PixLight,
         const std::vector<Lights> &VexLight,
         const MainLight *mainLight,
         const ShadowMap &shadowMap,
         const EnvironmentLight *envlight,
-        const GlobalUniform &gu);
+        const GlobalUniform &gu) override;
 
-    static  F2P FragmentShader(
+    F2P FragmentShader(
         const Fragment &frag,
-        const Material *material,
+        const std::shared_ptr<Material> &material,
         const std::array<Lights, 3> &light,
         const MainLight *mainLight,
         const ShadowMap &shadowMap,
         const EnvironmentLight *envlight,
         const GlobalUniform &gu,
-        bool NeedShadow);
-
-    static Pixel CalcLight(
-        const F2P &f2p,
-        float shadow,
-        const std::array<Lights, 3> &lights,
-        const MainLight *mainLight,
-        const EnvironmentLight *envlight,
-        const GlobalUniform &gu,
-        const Material *material);
+        bool NeedShadow) override;
 
     static float CalcHardShadow(
         const MainLight* mainLight,
@@ -65,11 +59,9 @@ public:
         const VecN<3> &normal,
         const GlobalUniform &gu,
         const ShadowMap &ShadowMap);
-    void setMaterial(Material* mat);
 
 protected:
     static BlinnShader *shader;
-    Material*material = nullptr;
 };
 
 #endif //UNTITLED_SHADER_H

@@ -13,7 +13,8 @@ struct Fragment;
 
 
 struct GBuffer {
-    std::unordered_map<Material*, std::vector<Fragment>> FragMap;
+    std::unordered_map<std::shared_ptr<Material>, std::vector<Fragment>> FragMap;
+    void clear();
 };
 
 

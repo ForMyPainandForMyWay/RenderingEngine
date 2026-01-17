@@ -11,6 +11,7 @@
 #include "Uniform.h"
 #include "Lights.h"
 #include "ShadowMap.h"
+#include "SkyBox.h"
 
 
 // ID体系:0号为Camera,1号为主光源,2-4号为逐片元光源
@@ -33,6 +34,8 @@ public:
     void SetEnvLight(uint8_t r, uint8_t g, uint8_t b, float I);
     void CloseShadow() { NeedShadowPass = false; }
     void OpenShadow() { NeedShadowPass = true; }
+    void CloseSky() { NeedSkyBoxPass = false; }
+    void OpenSky() { NeedSkyBoxPass = true; }
     void addTfCommand(const TransformCommand &cmd);
     std::vector<std::string> addMesh(const std::string &filename);
     size_t addObjects(const std::string &meshName);
@@ -50,11 +53,11 @@ public:
 
 private:
     // 场景资源
-    std::unordered_map<std::string, Material*> materialMap;
-    std::unordered_map<std::string, TextureMap*> textureMap;
-    std::unordered_map<std::string, TextureMap*> bumpMap;
-    std::unordered_map<std::string, Mesh*> meshes;
-
+    std::unordered_map<std::string, std::shared_ptr<Material>> materialMap;
+    std::unordered_map<std::string, std::shared_ptr<TextureMap>> textureMap;
+    std::unordered_map<std::string, std::shared_ptr<TextureMap>> bumpMap;
+    std::unordered_map<std::string, std::shared_ptr<Mesh>> meshes;
+    SkyBox sky;
     std::vector<RenderObjects> renderObjs;
     std::array<Lights, 3> PixLights;  // 主要光源(逐像素光源)
     std::vector<Lights> VexLights;  // 次要光源(顶点光源)
@@ -65,6 +68,7 @@ private:
     // 变换指令队列
     std::queue<TransformCommand> tfCommand;
     bool NeedShadowPass = false;  // 是否需要阴影Pass
+    bool NeedSkyBoxPass = false;  // 是否需要天空盒Pass
 
     size_t width, height;  // 分辨率
     Film img;

@@ -16,6 +16,7 @@ V2F lerpSH(const V2F &v1, const V2F &v2, const float t);
 // 数值线形填充
 float lerp(const float &n1, const float &n2, const float &t);
 
+// 普通线性插值函数
 template<size_t N>
 VecN<N> lerp(const VecN<N> &v0, const VecN<N> &v1, float t) {
     VecN<N> result;

@@ -20,7 +20,8 @@ BlinnShader* BlinnShader::GetInstance() {
 
 V2F BlinnShader::VertexShader(
     const Vertex &vex,
-    const Uniform &u) {
+    const Uniform &u,
+    const GlobalUniform &gu) {
     auto world = u.M * vex.getHomoIndex();
     auto clip = u.MVP * vex.getHomoIndex();
     const auto normal = normalize(u.normalTfMat * vex.getHomoNormal());
@@ -29,7 +30,7 @@ V2F BlinnShader::VertexShader(
 
 void BlinnShader::GeometryShader(
     Triangle &tri,
-    const Material *material,
+    const std::shared_ptr<Material> &material,
     const std::array<Lights, 3> &PixLight,
     const std::vector<Lights> &VexLight,
     const MainLight *mainLight,
@@ -86,7 +87,7 @@ void BlinnShader::GeometryShader(
 // 通用光照计算：只关心 N, L, V, 距离等，不关心它们来自哪个空间
 VecN<3> ApplyLighting(
     const VecN<3>& Albedo,
-    const Material* material,
+    const std::shared_ptr<Material> &material,
     const VecN<3>& N,          // 单位法线
     const VecN<3>& L,          // 单位光照方向（指向光源）
     const VecN<3>& V,          // 单位视线方向（指向相机）
@@ -115,8 +116,8 @@ VecN<3> ApplyLighting(
 }
 
 F2P BlinnShader::FragmentShader(
-                const Fragment &frag,
-    const Material *material,
+    const Fragment &frag,
+    const std::shared_ptr<Material> &material,
     const std::array<Lights, 3> &light,
     const MainLight *mainLight,
     const ShadowMap &shadowMap,
@@ -215,7 +216,7 @@ float BlinnShader::CalcHardShadow(
     auto lightClip = gu.getShadowPV() * worldPos;
     auto projPos = lightClip / lightClip[3];  // 透视除法->NDC空间
     const auto U = projPos[0] * 0.5f + 0.5f;  // 透视除法->shadow uv
-    const auto V = 1 - projPos[1] * 0.5f + 0.5f;
+    const auto V = 1 - (projPos[1] * 0.5f + 0.5f);
     if (U < 0.0f || U > 1.0f || V < 0.0f || V > 1.0f)
         return 1.0f;
 
@@ -226,12 +227,10 @@ float BlinnShader::CalcHardShadow(
     const auto L = normalize(mainLight->getPosi() - fragPos);  // 光照方向
     const float bias = biasConst + biasSlope * (1.0f - dot(N, L));
 
-    const auto Z = projPos[2];  // 片元在光源空间的深度(归一化)
-    const float depth = ShadowMap.Sample(U, V);
-    const float shadow = (Z - bias > depth) ? 0.0f : 1.0f;
+    const auto Z = projPos[2];  // 片元在光源空间的深度(NDC空间)
+    // const float depth = ShadowMap.Sample(U, V);
+    // const float shadow = (Z - bias > depth) ? 0.0f : 1.0f;
+    // const float shadow = ShadowMap.SamplePCSS(Z, bias, U, V,0.005f, 3, 1, 15);
+    const float shadow = ShadowMap.SamplePCF(Z, bias, U, V, 1);
     return shadow;
-}
-
-void BlinnShader::setMaterial(Material *mat) {
-    material = mat;
 }

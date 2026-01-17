@@ -42,6 +42,105 @@ float ShadowMap::Sample(const float u, const float v) const {
     return ZBufferShadow[y * width + x];
 }
 
+float ShadowMap::SamplePCF(
+    const float currentDepth,
+    const float bias,
+    const float u,
+    const float v,
+    const size_t R) const {
+    const float fx = u * (width - 1);
+    const float fy = v * (height - 1);
+    const int cx = lroundf(fx);
+    const int cy = lroundf(fy);
+    float shadow = 0.0f;
+    int count = 0;
+    for (int dy = -lroundf(R); dy <= lroundf(R); ++dy)
+        for (int dx = -lroundf(R); dx <= lroundf(R); ++dx) {
+            const int x = cx + dx;
+            const int y = cy + dy;
+            if (x < 0 || x >= width || y < 0 || y >= height)
+                continue;
+            if (const float depth=ZBufferShadow[y*width+x]; currentDepth-bias>depth)
+                shadow += 1.0f;
+            count++;
+        }
+    if (count == 0) return 1.0f; // 当作完全照亮
+    return 1 - shadow / count; // 0 = 亮，1 = 阴影
+}
+
+float ShadowMap::SamplePCSS(
+    const float currentDepth,
+    const float bias,
+    const float u,
+    const float v,
+    const float lightSizeUV,
+    const int blockerSearchR,
+    const int minPCFR,
+    const int maxPCFR) const {
+    const float fx = u * (width  - 1);
+    const float fy = v * (height - 1);
+    const int cx = lroundf(fx);
+    const int cy = lroundf(fy);
+    float avgBlockerDepth = 0.0f;
+    if (int blockerCount = 0; !FindBlocker(
+            currentDepth, bias,
+            cx, cy,
+            blockerSearchR,
+            avgBlockerDepth,
+            blockerCount)) {
+        return 1.0f;}
+    // 标准 PCSS 公式
+    const float penumbra = (currentDepth - avgBlockerDepth) / avgBlockerDepth;
+    // 转成 PCF 半径（像素）
+    float filterR = penumbra * lightSizeUV * width;
+    filterR = std::clamp(
+        filterR,
+        static_cast<float>(minPCFR),
+        static_cast<float>(maxPCFR));
+    const int R = static_cast<int>(std::ceil(filterR));
+    // PCF
+    float shadow = 0.0f;
+    int count = 0;
+    for (int dy = -R; dy <= R; ++dy)
+        for (int dx = -R; dx <= R; ++dx) {
+            const int x = cx + dx;
+            const int y = cy + dy;
+            if (x < 0 || x >= width || y < 0 || y >= height) continue;
+            if (const float depth=ZBufferShadow[y*width+x]; currentDepth-bias > depth)
+                shadow += 1.0f;
+            count++;
+        }
+    if (count == 0) return 1.0f;
+    return 1.0f - shadow / count;
+}
+
+
+bool ShadowMap::FindBlocker(
+    const float currentDepth,
+    const float bias,
+    const int cx,
+    const int cy,
+    const int searchR,
+    float& avgBlockerDepth,
+    int& blockerCount) const {
+    float sumDepth = 0.0f;
+    blockerCount = 0;
+    for (int dy = -searchR; dy <= searchR; ++dy)
+        for (int dx = -searchR; dx <= searchR; ++dx) {
+            const int x = cx + dx;
+            const int y = cy + dy;
+            if (x < 0 || x >= width || y < 0 || y >= height) continue;
+            if (const float depth = ZBufferShadow[y*width+x]; currentDepth-bias > depth) {
+                sumDepth += depth;
+                blockerCount++;
+            }
+        }
+    if (blockerCount == 0) return false;
+    avgBlockerDepth = sumDepth / blockerCount;
+    return true;
+}
+
+
 void ShadowMap::save() const{
     std::ofstream file("shadowmap.pgm", std::ios::binary);
     if (!file) return;

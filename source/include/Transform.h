@@ -28,9 +28,9 @@ public:
     void multP(const VecN<3> &deltaT);  // 累积位移,更新位移
     void multS(const VecN<3> &deltaS);  // 累积放缩,更新位移,注意非均匀放缩+旋转会对法线矩阵产生影响
 
-    MatMN<4, 4> getRMat();
-    MatMN<4, 4> getTMat();
-    MatMN<4, 4> getSMat();
+    [[nodiscard]] MatMN<4, 4> getRMat() const;
+    [[nodiscard]] MatMN<4, 4> getTMat() const;
+    [[nodiscard]] MatMN<4, 4> getSMat() const;
 
     virtual void update()=0;  // 更新变换矩阵
 
@@ -64,7 +64,6 @@ public:
     [[nodiscard]] const VecN<3>& getPosition() const;  // 返回相机位置
 protected:
     MatMN<4, 4> ViewMatrix;
-    // MatMN<4, 4> ProjectMatrix;
 };
 
 using LightTransform = CameraTransform;

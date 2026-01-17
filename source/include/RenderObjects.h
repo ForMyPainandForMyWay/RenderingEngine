@@ -13,11 +13,12 @@ class Mesh;
 // 用于渲染的物体对象
 class RenderObjects{
 public:
-    explicit RenderObjects(Mesh *m);
-    void setMesh(Mesh *m);
+    RenderObjects() = default;
+    explicit RenderObjects(const std::shared_ptr<Mesh>& m);
+    void setMesh(const std::shared_ptr<Mesh> &m);
     const MatMN<4,4>& ModelMat();
     const MatMN<4, 4>& InverseTransposedMat();
-    [[nodiscard]] const Mesh* getMesh() const;
+    [[nodiscard]] std::shared_ptr<Mesh> getMesh() const;
 
     // 位置变换接口
     void updateP(const VecN<3> &translate);
@@ -30,7 +31,7 @@ public:
 
 protected:
     ObjTransform tf;  // 模型变换M
-    Mesh *mesh = nullptr;  // 所属网格模型
+    std::shared_ptr<Mesh> mesh;   // 网格模型指针
     bool visible = true;   // 可见性
     bool isDirty = true;   // MVP标记位
 };
