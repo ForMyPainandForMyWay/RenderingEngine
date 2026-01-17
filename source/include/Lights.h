@@ -40,12 +40,12 @@ protected:
     LType LightType = Ambient;
     LightTransform tf;
     Pixel color = {255, 255, 255, 255};
-    float intensity = 3;   // 光照强度
+    float intensity = 2;   // 光照强度
     float range = 0;       // 点光/聚光衰减
     // 聚光灯
     float FOV = 45;  // 聚光灯光锥角度
     float NearPlane = 0.1f;
-    float FarPlane = 100.0f;
+    float FarPlane = 20.0f;
     float AspectRatio = 1.0f;  // 聚光灯纵横比
     // 方向光
     float Left = -10.0f;

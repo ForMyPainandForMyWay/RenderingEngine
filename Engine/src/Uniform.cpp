@@ -22,6 +22,8 @@ GlobalUniform::GlobalUniform(const size_t width, const size_t height, const size
     ViewPort[2][2] = 1;
     ViewPort[3][3] = 1;
     setShadowViewPort(wShadow, hShadow);
+    screenHeight = height;
+    screenWidth = width;
 }
 
 const MatMN<4, 4> &GlobalUniform::getScreenViewPort() const{
@@ -34,10 +36,6 @@ const MatMN<4, 4>& GlobalUniform::getShadowViewPort() const {
 
 const MatMN<4, 4> &GlobalUniform::getShadowPV() const{
     return projectViewShadow;
-}
-
-void GlobalUniform::setProjectView(const MatMN<4, 4> &pv) {
-    this->ProjectView = pv;
 }
 
 void GlobalUniform::setCameraPos(const VecN<3> &cameraPos) {

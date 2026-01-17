@@ -155,7 +155,6 @@ void Barycentric(Triangle& tri,
             // 归一化插值后的向量
             frag.MainLightOri = normalize(frag.MainLightOri);
             frag.CameraOri = normalize(frag.CameraOri);
-            // PixLightOri[i] 如果用于方向，也需 normalize（但你只用于顶点光照颜色，可能不需要）
             for (size_t i = 0; i < 3; ++i) {
                 frag.PixLightOri[i] =
                     (tri[0].PixLightOri[i] * (lambda0 * tri[0].invW) +

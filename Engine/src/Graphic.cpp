@@ -16,15 +16,36 @@ Graphic::Graphic(Engine *eg) {
     this->shader = nullptr;
 }
 
+// 天空盒Pass
+void Graphic::SkyPass(const SkyBox &obj,const Uniform &u, const GlobalUniform &gu, const int pass) {
+    const auto mesh = obj.getMesh();
+    std::unordered_map<std::shared_ptr<Material>, std::vector<Fragment> > FragMap;
+    {
+        std::unordered_map<std::shared_ptr<Material>, std::vector<Triangle> > TriMap;
+        VertexShading(TriMap, u, gu, mesh, pass);
+        Clip(TriMap);
+        ScreenMapping(TriMap, gu.getShadowViewPort()); // 注意是ShadowViewport,用的是Light的视窗参数
+        Rasterization(TriMap, FragMap);
+    }
+    size_t count = 0;
+    for (auto &Frag: FragMap | std::views::values) {
+        count += Frag.size();
+    }
+    std::vector<F2P> result;
+    result.reserve(count);
+    FragmentShading(FragMap, result, u, pass);
+    WriteBuffer(result);
+}
+
 // 阴影Pass
 void Graphic::ShadowPass(const RenderObjects &obj,const Uniform &u, const GlobalUniform &gu, const int pass) {
     const auto mesh = obj.getMesh();
     if (mesh == nullptr) return;
     if (mesh->getVBONums() == 0) return;
-    std::unordered_map<Material *, std::vector<Fragment> > FragMap;
+    std::unordered_map<std::shared_ptr<Material>, std::vector<Fragment> > FragMap;
     {
-        std::unordered_map<Material *, std::vector<Triangle> > TriMap;
-        VertexShading(TriMap, u, mesh, pass);
+        std::unordered_map<std::shared_ptr<Material>, std::vector<Triangle> > TriMap;
+        VertexShading(TriMap, u, gu, mesh, pass);
         Clip(TriMap);
         ScreenMapping(TriMap, gu.getShadowViewPort()); // 注意是ShadowViewport,用的是Light的视窗参数
         // 在光栅化阶段直接进行ZTest
@@ -35,7 +56,7 @@ void Graphic::ShadowPass(const RenderObjects &obj,const Uniform &u, const Global
         Ztest(FragVec, engine->ShadowMap.ZBufferShadow);
         count += FragVec.size();
     }
-    // engine->ShadowMap.save();
+    engine->ShadowMap.save();
 }
 
 // 基础纹理绘制,pass表示绘制层级
@@ -47,10 +68,10 @@ void Graphic::BasePass(const RenderObjects &obj,const Uniform &u, const GlobalUn
     // 更新：使用脏标记+Vector更好，不过需要注意
     // 在剔除比例较高时，考虑剔除时直接新建一个vector然后逐个将有效面移动过去
     // 这涉及到CPU的分支预测，后期可以进行优化
-    std::unordered_map<Material*, std::vector<Fragment>> FragMap;
+    std::unordered_map<std::shared_ptr<Material>, std::vector<Fragment>> FragMap;
     {
-        std::unordered_map<Material*, std::vector<Triangle>> TriMap;
-        VertexShading(TriMap, u, mesh, pass);
+        std::unordered_map<std::shared_ptr<Material>, std::vector<Triangle>> TriMap;
+        VertexShading(TriMap, u, gu, mesh, pass);
         // 完成顶点处理阶段后进行剔除、裁剪,最后齐次除法、面剔除
         Clip(TriMap);
         // 退化检测、视口变换
@@ -81,8 +102,6 @@ void Graphic::BasePass(const RenderObjects &obj,const Uniform &u, const GlobalUn
 void Graphic::WriteBuffer(const std::vector<F2P>& f2pVec) const {
     for (const auto& f2p : f2pVec) {
         if (!f2p.alive) continue;
-        if (f2p.Albedo.r == 255 && f2p.Albedo.g == 255 && f2p.Albedo.b == 255)
-            std::cout << "x: " << f2p.x << ",y: "<< f2p.y << std::endl;  // 全透明像素不写入
         engine->backBuffer->WritePixle(f2p);
     }
 }

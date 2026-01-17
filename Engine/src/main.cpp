@@ -64,35 +64,16 @@ void dumpMeshInfo(const std::unordered_map<std::string, Mesh*>& meshes) {
 }
 
 int main() {
-    // std::unordered_map<std::string, Material*> materialMap;
-    // std::unordered_map<std::string, TextureMap*> textureMap;
-    // std::unordered_map<std::string, Mesh*> meshes;
-    //
-    // const std::string filename = R"(/Users/dongyu/CLionProjects/RenderEngine/bin/test.obj)";
-    // ModelReader::readObjFile(filename, meshes, materialMap, textureMap);
-    //
-    // std::cout << "加载完成！\n";
-    // std::cout << "材质数量: " << materialMap.size() << "\n";
-    // std::cout << "网格数量: " << meshes.size() << "\n";
-    // std::cout << "纹理数量: " << textureMap.size() << "\n";
-    //
-    // dumpMaterialInfo(materialMap);
-    // dumpTextureInfo(textureMap);
-    // dumpMeshInfo(meshes);
-    //
-    // // 清理内存
-    // for (auto& [_, mat] : materialMap) delete mat;
-    // for (auto& [_, tex] : textureMap) delete tex;
-    // for (auto& [_, mesh] : meshes) delete mesh;
-    //
-    // std::cout << "内存清理完成。\n";
-    //
-    //
     Engine engine(800, 800);
     const auto meshName = R"(/Users/dongyu/CLionProjects/RenderEngine/bin/test4.obj)";
     const auto meshId = engine.addMesh(meshName);
     uint16_t objID = engine.addObjects(meshId[0]);
-    engine.SetEnvLight(150, 150, 150, 1.0f);
+
+    const auto meshName2 = R"(/Users/dongyu/CLionProjects/RenderEngine/bin/test.obj)";
+    const auto meshId2 = engine.addMesh(meshName2);
+    const uint16_t objID2 = engine.addObjects(meshId2[0]);
+
+    // engine.SetEnvLight(150, 150, 150, 1.0f);
     engine.SetMainLight(800, 800);
 
     // 物体转动
@@ -100,19 +81,24 @@ int main() {
     // engine.addTfCommand({objID, TfCmd::ROTATE, {0.0f, 0.0f, 0.0f}});
     // engine.addTfCommand({objID, TfCmd::ROTATE, {-35.0f, 35.0f, 0.0f}});
 
+    engine.addTfCommand({objID2, RenderObject, TfCmd::TRANSLATE, {0,0,-1.5f}});
+    engine.addTfCommand({objID, RenderObject, TfCmd::SCALE, {0.5,0.5,0.5f}});
+    engine.addTfCommand({objID, RenderObject, TfCmd::TRANSLATE, {0,0,0.5f}});
+
     // 相机灯光转动
-    // engine.addTfCommand({0, TfCmd::TRANSLATE, {3.0f, 4.0f, 4.5f}});
-    // engine.addTfCommand({0, TfCmd::ROTATE, {-35.0f, 35.0f, 0.0f}});
+    engine.addTfCommand({0, CameraID, TfCmd::TRANSLATE, {2.0f, 0.0f, 0.0f}});
+    engine.addTfCommand({0, CameraID, TfCmd::ROTATE, {0.0f, 20.0f, 0.0f}});
     // engine.addTfCommand({1, TfCmd::TRANSLATE, {3.0f, 4.0f, 4.5f}});
     // engine.addTfCommand({1, TfCmd::ROTATE, {-35.0f, 35.0f, 0.0f}});
 
     // 平移
-    engine.addTfCommand({0, CameraID, TfCmd::TRANSLATE, {0.0f, 0.0f, 5.0f}});
-    engine.addTfCommand({1, MainLightID, TfCmd::TRANSLATE, {0.0f, 0.0f, 4.0f}});
+    engine.addTfCommand({0, CameraID, TfCmd::TRANSLATE, {0.0f, 0.0f, 3.0f}});
+    engine.addTfCommand({1, MainLightID, TfCmd::TRANSLATE, {0.0f, 0.0f, 3.0f}});
 
 
-    engine.CloseShadow();
-    engine.RenderFrame({objID});
+    engine.OpenShadow();
+    // engine.OpenSky();
+    engine.RenderFrame({objID, objID2});
 
     return 0;
 }

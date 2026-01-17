@@ -7,6 +7,7 @@
 
 #include "Shape.h"
 
+class Shader;
 struct Film;
 class BlinnShader;
 class Mesh;
@@ -23,15 +24,14 @@ struct Material {
     float Ns=32;   // 光泽指数
     std::string map_Kd="None"; // 纹理贴图名字(注：材质实际不止会有一个mak_Kd,需要拓展)
     std::string map_Bump="None";  // 法线贴图名字
-    TextureMap *KdMap{};  // 纹理贴图指针
-    TextureMap *BumpMap{};  // 法线贴图指针
-
+    std::shared_ptr<TextureMap> KdMap;  // 纹理贴图指针
+    std::shared_ptr<TextureMap> BumpMap;  // 法线贴图指针
     Material();
 
-    std::vector<BlinnShader*> shaders;  // 延迟渲染,0阴影渲染,1光照渲染
-    [[nodiscard]] BlinnShader* getShader(const int pass) const
+    std::vector<Shader*> shaders;  // 延迟渲染,0阴影渲染,1光照渲染
+    [[nodiscard]] Shader* getShader(const int pass) const
         { return shaders[pass]; }
-    void setKdTexture(TextureMap* kd);
+    void setKdTexture(const std::shared_ptr<TextureMap>& kd);
 };
 
 // 纹理贴图
@@ -47,24 +47,23 @@ struct TextureMap {
 // 子网络模型,指定Mesh中应用某材质的三角面区间(以顶点为单位)
 class SubMesh {
 public:
-    explicit SubMesh(const Mesh* mesh);
-    void setMaterial(Material *mat);
-    void updateCount(const Mesh* mesh);
+    explicit SubMesh(const std::shared_ptr<Mesh>& mesh);
+    void setMaterial(const std::shared_ptr<Material> &mat);
+    void updateCount(const std::shared_ptr<Mesh> &mesh);
     [[nodiscard]] uint32_t getOffset() const;
     [[nodiscard]] uint32_t getIdxCount() const;
     [[nodiscard]] bool vexIsEmpty() const;
     [[nodiscard]] bool triIsEmpty() const;
     [[nodiscard]] bool materialIsEmpty() const;
     [[nodiscard]] std::string getMaterialName() const;
-    [[nodiscard]] Material* getMaterial() const;
+    [[nodiscard]] std::shared_ptr<Material> getMaterial() const;
 
     friend class Mesh;
 
 protected:
     // 需要渲染的三角面的顶点区间索引,offset所指即为首个顶点
     uint32_t indexOffset{}, indexCount{};
-    Material* material;  // 材质,默认为nullptr
-
+    std::shared_ptr<Material> material;  // 材质,默认为nullptr
 };
 
 // 将子网络模型组装为一个Mesh，存储顶点以及三角面顶点索引

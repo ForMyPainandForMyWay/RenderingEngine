@@ -83,7 +83,7 @@ void Transform::multS(const VecN<3> &deltaS) {
 }
 
 // 四元数计算旋转矩阵，虚部xyz在前，实部w在后
-MatMN<4, 4> Transform::getRMat() {
+MatMN<4, 4> Transform::getRMat() const{
      MatMN<4, 4> R;
      for(size_t i = 0; i < 4; ++i) {
           R[i][i] = 1.0f;
@@ -111,7 +111,7 @@ MatMN<4, 4> Transform::getRMat() {
      return R;
 }
 
-MatMN<4, 4> Transform::getTMat() {
+MatMN<4, 4> Transform::getTMat() const{
      MatMN<4,4> T;  // 平移矩阵
      // 初始化单位矩阵
      for(size_t i = 0; i < 4; ++i) T[i][i] = 1.0f;
@@ -122,7 +122,7 @@ MatMN<4, 4> Transform::getTMat() {
      return T;
 }
 
-MatMN<4, 4> Transform::getSMat() {
+MatMN<4, 4> Transform::getSMat() const{
      MatMN<4, 4>S;
      for (size_t i = 0; i < 3; i++) S[i][i] = scale[i];
      S[3][3] = 1;
@@ -179,7 +179,8 @@ MatMN<4, 4> CameraTransform::getNegativeTMat() {
 
 void CameraTransform::update() {
      // 视角变换
-     this->ViewMatrix = getRMat().Transpose() * getNegativeTMat();
+     if (isDirty)
+          this->ViewMatrix = getRMat().Transpose() * getNegativeTMat();
 }
 
 const MatMN<4, 4>& CameraTransform::getViewMat() {

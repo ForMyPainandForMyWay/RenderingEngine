@@ -2,11 +2,9 @@
 // Created by yyd on 2025/12/24.
 //
 
-#include <filesystem>
 #include <fstream>
 #include <iostream>
 #include <sstream>
-#include <unordered_map>
 
 #include "ModelReader.h"
 #include "Mesh.h"
@@ -14,16 +12,16 @@
 
 // 解析材质文件,存入哈希表
 void ModelReader::readMTLFile(const std::string &mtlFilename,
-                              std::unordered_map<std::string, Material*> &materialMap,
-                              std::unordered_map<std::string, TextureMap*> &textureMap,
-                              std::unordered_map<std::string, TextureMap*> &bumpMap) {
+                              std::unordered_map<std::string, std::shared_ptr<Material>> &materialMap,
+                              std::unordered_map<std::string, std::shared_ptr<TextureMap>> &textureMap,
+                              std::unordered_map<std::string, std::shared_ptr<TextureMap>> &bumpMap) {
     std::ifstream mtlFile(mtlFilename);
     if (!mtlFile.is_open()) {
         std::cerr << "Cannot open MTL file: " << mtlFilename << "\n";
         return;
     }
 
-    Material* currentMat = nullptr;
+    auto currentMat = std::make_shared<Material>();
     std::string line;
     while (std::getline(mtlFile, line)) {
         if (line.empty() || line[0] == '#') continue;
@@ -36,7 +34,7 @@ void ModelReader::readMTLFile(const std::string &mtlFilename,
             ss >> matName;
             // 查找哈希表,如果没有该元素,则存入哈希表
             if (!materialMap.contains(matName)) {
-                currentMat = new Material();
+                currentMat = std::make_shared<Material>();
                 currentMat->name = matName;
                 materialMap[matName] = currentMat;
             }
@@ -49,7 +47,8 @@ void ModelReader::readMTLFile(const std::string &mtlFilename,
                 ss >> currentMat->map_Kd;  // 记录纹理贴图名字（路径）
                 // 查找哈希表,如果没有该元素,则存入哈希表
                 if (!textureMap.contains(currentMat->map_Kd)) {
-                    auto texture = new TextureMap(currentMat->map_Kd);
+                    // auto texture = new TextureMap(currentMat->map_Kd);
+                    auto texture = std::make_shared<TextureMap>(currentMat->map_Kd);
                     textureMap[currentMat->map_Kd] = texture;
                     currentMat->setKdTexture(texture);  // 设置材质的纹理贴图
                 }
@@ -57,7 +56,8 @@ void ModelReader::readMTLFile(const std::string &mtlFilename,
             else if (prefix == "map_Bump") {
                 ss >> currentMat->map_Bump;
                 if (!bumpMap.contains(currentMat->map_Bump)) {
-                    auto texture = new TextureMap(currentMat->map_Bump);
+                    // auto texture = new TextureMap(currentMat->map_Bump);
+                    auto texture = std::make_shared<TextureMap>(currentMat->map_Bump);
                     bumpMap[currentMat->map_Bump] = texture;
                     currentMat->BumpMap = texture;  // 设置材质的法线贴图
                 }
@@ -73,11 +73,11 @@ void ModelReader::readMTLFile(const std::string &mtlFilename,
   注意传入的Mesh表、材质表、uv表
 */
 std::vector<std::string> ModelReader::readObjFile(
-    const std::string& filename,
-    std::unordered_map<std::string, Mesh*>& meshes,
-    std::unordered_map<std::string, Material*>& materialMap,
-    std::unordered_map<std::string, TextureMap*>& textureMap,
-    std::unordered_map<std::string, TextureMap*> &bumpMap){
+    const std::string &filename,
+    std::unordered_map<std::string, std::shared_ptr<Mesh>> &meshes,
+    std::unordered_map<std::string, std::shared_ptr<Material>> &materialMap,
+    std::unordered_map<std::string, std::shared_ptr<TextureMap>> &textureMap,
+    std::unordered_map<std::string, std::shared_ptr<TextureMap>> &bumpMap){
 
     std::vector<std::string> meshId;
     std::ifstream file(filename);
@@ -93,7 +93,7 @@ std::vector<std::string> ModelReader::readObjFile(
     std::vector<VecN<3>> normals;
     std::vector<VecN<2>> uvs;
 
-    auto currentMesh = new Mesh();
+    auto currentMesh = std::make_shared<Mesh>();
     SubMesh currentSubMesh{currentMesh};
     // 用于标记顶点的哈希表，key为顶点在f行的“a/b/c”
     std::unordered_map<std::string, uint32_t> vertexMap;
@@ -110,7 +110,7 @@ std::vector<std::string> ModelReader::readObjFile(
         pushSubMesh();
         if (!currentMesh->vexIsEmpty() && !meshes.contains(currentMesh->getName())) {
             meshes[currentMesh->getName()] = currentMesh;
-            currentMesh = new Mesh();
+            currentMesh = std::make_shared<Mesh>();
             vertexMap.clear();
         }
     };
@@ -197,7 +197,7 @@ std::vector<std::string> ModelReader::readObjFile(
 }
 
 // 将多边形切分为若干三角形，并写入各自顶点索引到Mesh的indices中
-void ModelReader::splitPoly2Tri(const ObjFace& face, Mesh* mesh) {
+void ModelReader::splitPoly2Tri(const ObjFace& face, const std::shared_ptr<Mesh>& mesh) {
     for (size_t i=2; i < face.vertexIndices.size(); i++) {
         mesh->addTri(face[0], face[i-1], face[i]);
     }

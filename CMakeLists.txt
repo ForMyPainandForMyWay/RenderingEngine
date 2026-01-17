@@ -15,4 +15,5 @@ target_include_directories(untitled PUBLIC
         ${PROJECT_SOURCE_DIR}/model/include
         ${PROJECT_SOURCE_DIR}/Lib
         ${PROJECT_SOURCE_DIR}/Engine/include
+        ${PROJECT_SOURCE_DIR}/shader/include
 )

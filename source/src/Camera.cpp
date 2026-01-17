@@ -31,6 +31,28 @@ const MatMN<4, 4> &Camera::ProjectionMat() {
     return Projection;
 }
 
+MatMN<4, 4> Camera::invProjectionMat() const{
+    MatMN<4,4> InvP(0.0f);
+
+    const float rad = FOV * 0.5f * 3.1415926535f / 180.0f;
+    const float f_val = 1.0f / std::tan(rad); // cot(FOV/2)
+    const float n = NearPlane;
+    const float fa = FarPlane;
+    const float inv_f = 1.0f / f_val;
+    const float denom = 2.0f * fa * n; // 2 * far * near
+    InvP[0][0] = AspectRatio * inv_f;   // a / f
+    InvP[1][1] = inv_f;                 // 1 / f
+    InvP[2][3] = -1.0f;                 // 第3行第4列 = -1
+    // 修正：这里必须是负号！
+    InvP[3][2] = -(fa - n) / denom;     // -(far - near) / (2 * far * near)
+    InvP[3][3] = (fa + n) / denom;      // (far + near) / (2 * far * near)
+    return InvP;
+}
+
+MatMN<4, 4> Camera::RMat() const {
+    return tf.getRMat();
+}
+
 void Camera::updateProject() {
     MatMN<4,4> P(0.0f);
 

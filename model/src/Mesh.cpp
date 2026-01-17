@@ -5,15 +5,16 @@
 #include "Mesh.h"
 #include "UVLoader.h"
 #include "BlinnShader.h"
+#include "SkyShader.h"
 
 
 Material::Material() : shaders(3, nullptr) {
-    shaders[0] = BlinnShader::GetInstance();
+    shaders[0] = SkyShader::GetInstance();
     shaders[1] = BlinnShader::GetInstance();
     shaders[2] = BlinnShader::GetInstance();
 }
 
-void Material::setKdTexture(TextureMap *kd) {
+void Material::setKdTexture(const std::shared_ptr<TextureMap> &kd) {
     KdMap = kd;
 }
 
@@ -28,13 +29,15 @@ TextureMap::~TextureMap() {
     delete this->uvImg;
 }
 
-SubMesh::SubMesh(const Mesh* mesh) {
+// 注意需要在Mesh添加三角形之前调用
+SubMesh::SubMesh(const std::shared_ptr<Mesh>& mesh) {
     this->material = nullptr;
     this->indexCount = 0;
     this->indexOffset = mesh->getVBONums();  // 使用mesh的长度作为起始偏移量
 }
 
-void SubMesh::updateCount(const Mesh* mesh) {
+// 用于更新subMesh的游标范围，需要传入Mesh指针
+void SubMesh::updateCount(const std::shared_ptr<Mesh>& mesh) {
     if (mesh->getEBONums() == this->indexOffset) this->indexCount = 0;
     else this->indexCount = mesh->getEBONums() - this->indexOffset;
 }
@@ -64,17 +67,20 @@ std::string SubMesh::getMaterialName() const {
     return "No Material";
 }
 
-Material *SubMesh::getMaterial() const {
+std::shared_ptr<Material> SubMesh::getMaterial() const {
     return material;
 }
 
-void SubMesh::setMaterial(Material *mat) {
+void SubMesh::setMaterial(const std::shared_ptr<Material> &mat) {
     this->material = mat;
 }
 
 
 // 添加三角形，参数为三个顶点的索引
 void Mesh::addTri(uint32_t p1, uint32_t p2, uint32_t p3) {
+    if (p1 >= this->VBO.size() ||
+        p2 >= this->VBO.size() ||
+        p3 >= this->VBO.size()) return;
     this->EBO.emplace_back(p1);
     this->EBO.emplace_back(p2);
     this->EBO.emplace_back(p3);
