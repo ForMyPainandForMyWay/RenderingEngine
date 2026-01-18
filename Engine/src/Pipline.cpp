@@ -11,7 +11,7 @@
 #include "MathTool.hpp"
 #include "Mesh.h"
 #include "RasterTool.hpp"
-#include "../../shader/include/BlinnShader.h"
+#include "BlinnShader.h"
 
 
 // 应用阶段，对实例应用变换
@@ -109,6 +109,13 @@ void Graphic::ScreenMapping(std::unordered_map<std::shared_ptr<Material>, std::v
             tri[0].clipPosi = ViewPort * tri[0].clipPosi;
             tri[1].clipPosi = ViewPort * tri[1].clipPosi;
             tri[2].clipPosi = ViewPort * tri[2].clipPosi;
+            auto clampCoord = [&](VecN<4>& p) {
+                if (p[0] < 0 && p[0] > -1e-4) p[0] = 0.0f;
+                if (p[1] < 0 && p[1] > -1e-4) p[1] = 0.0f;
+            };  // 舍入处理
+            clampCoord(tri[0].clipPosi);
+            clampCoord(tri[1].clipPosi);
+            clampCoord(tri[2].clipPosi);
             DegenerateClip(tri);  // 退化检测(面积过小的三角)
         }
     }
@@ -141,7 +148,6 @@ void Graphic::GeometryShading(
 void Graphic::Rasterization(
     std::unordered_map<std::shared_ptr<Material>, std::vector<Triangle>> &TriMap,
     std::unordered_map<std::shared_ptr<Material>, std::vector<Fragment>> &FragMap) {
-    std::unordered_map<std::shared_ptr<Material>, std::vector<Fragment>> fragMap;
     for (auto& [material, triangles] : TriMap) {
         std::vector<Fragment> fragVec;
         for (auto& tri : triangles) {

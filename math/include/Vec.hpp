@@ -254,10 +254,12 @@ VecN<N> cross(const VecN<N> &a, const VecN<N> &b) {
     }
 }
 
-// 任意维度向量的低维坐标的叉积
+// 任意维度向量的低维坐标的叉积，注意这里为了光栅化的效果更好专门进行了截断
 template<size_t N>
 float crossInLow2D(const VecN<N> &a, const VecN<N> &b) {
-    return a[0] * b[1] - a[1] * b[0];
+    auto tmp = a[0]*b[1];
+    auto tmp2 = a[1]*b[0];
+    return tmp - tmp2;
 }
 
 // 标准化向量,返回新向量

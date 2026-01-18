@@ -73,7 +73,7 @@ int main() {
     const auto meshId2 = engine.addMesh(meshName2);
     const uint16_t objID2 = engine.addObjects(meshId2[0]);
 
-    // engine.SetEnvLight(150, 150, 150, 1.0f);
+    engine.SetEnvLight(100, 100, 100, 1.0f);
     engine.SetMainLight(800, 800);
 
     // 物体转动
@@ -81,24 +81,24 @@ int main() {
     // engine.addTfCommand({objID, TfCmd::ROTATE, {0.0f, 0.0f, 0.0f}});
     // engine.addTfCommand({objID, TfCmd::ROTATE, {-35.0f, 35.0f, 0.0f}});
 
-    engine.addTfCommand({objID2, RenderObject, TfCmd::TRANSLATE, {0,0,-1.5f}});
-    engine.addTfCommand({objID, RenderObject, TfCmd::SCALE, {0.5,0.5,0.5f}});
-    engine.addTfCommand({objID, RenderObject, TfCmd::TRANSLATE, {0,0,0.5f}});
+    // engine.addTfCommand({objID2, RenderObject, TfCmd::TRANSLATE, {0,0,-1.5f}});
+    // engine.addTfCommand({objID, RenderObject, TfCmd::SCALE, {0.5,0.5,0.5f}});
+    // engine.addTfCommand({objID, RenderObject, TfCmd::TRANSLATE, {0,0,0.5f}});
 
     // 相机灯光转动
-    engine.addTfCommand({0, CameraID, TfCmd::TRANSLATE, {2.0f, 0.0f, 0.0f}});
-    engine.addTfCommand({0, CameraID, TfCmd::ROTATE, {0.0f, 20.0f, 0.0f}});
+    // engine.addTfCommand({0, CameraID, TfCmd::TRANSLATE, {2.0f, 0.0f, 0.0f}});
+    // engine.addTfCommand({0, CameraID, TfCmd::ROTATE, {0.0f, 20.0f, 0.0f}});
     // engine.addTfCommand({1, TfCmd::TRANSLATE, {3.0f, 4.0f, 4.5f}});
     // engine.addTfCommand({1, TfCmd::ROTATE, {-35.0f, 35.0f, 0.0f}});
 
     // 平移
-    engine.addTfCommand({0, CameraID, TfCmd::TRANSLATE, {0.0f, 0.0f, 3.0f}});
+    engine.addTfCommand({0, CameraID, TfCmd::TRANSLATE, {0.0f, 0.0f, 5.0f}});
     engine.addTfCommand({1, MainLightID, TfCmd::TRANSLATE, {0.0f, 0.0f, 3.0f}});
 
 
-    engine.OpenShadow();
+    // engine.OpenShadow();
     // engine.OpenSky();
-    engine.RenderFrame({objID, objID2});
+    engine.RenderFrame({objID});
 
     return 0;
 }

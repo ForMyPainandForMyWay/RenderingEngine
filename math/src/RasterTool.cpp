@@ -18,7 +18,7 @@ void DegenerateClip(Triangle &tri) {
         return;
     }
     // 叉乘求面积,cross2D函数自动利用低二维计算叉乘
-    if (fabs( crossInLow2D(tri[1].clipPosi-tri[0].clipPosi, tri[2].clipPosi-tri[0].clipPosi)) < 1.0f) {
+    if (fabs( crossInLow2D(tri[1].clipPosi-tri[0].clipPosi, tri[2].clipPosi-tri[0].clipPosi)) < 0.1f) {
         tri.alive = false;
     }
 }
@@ -52,9 +52,7 @@ inline bool IsTopLeft(const VecN<2>& a,
            (a[1] > b[1]);
 }
 
-void Barycentric(Triangle& tri,
-                         std::vector<Fragment>& result)
-{
+void Barycentric(Triangle& tri, std::vector<Fragment>& result){
     if (!tri.alive) return;
 
     // 屏幕空间坐标
@@ -100,9 +98,9 @@ void Barycentric(Triangle& tri,
 
             // Top-Left inside test
             if (!(
-                (w0 > 1e-5 || (std::abs(w0) < 1e-5f && tl12)) &&
-                (w1 > 1e-5 || (std::abs(w1) < 1e-5f && tl20)) &&
-                (w2 > 1e-5 || (std::abs(w2) < 1e-5f && tl01))
+                (w0 > 1e-4 || (std::abs(w0) < 1e-4f && tl12)) &&
+                (w1 > 1e-4 || (std::abs(w1) < 1e-4f && tl20)) &&
+                (w2 > 1e-4 || (std::abs(w2) < 1e-4f && tl01))
             )) continue;
 
             // 重心坐标

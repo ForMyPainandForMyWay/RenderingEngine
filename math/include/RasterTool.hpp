@@ -12,7 +12,7 @@ struct Fragment;
 
 // 光栅化工具
 void DegenerateClip(Triangle &tri);
-void sortTriangle(Triangle &tri);
+void ensureCCW(Triangle& tri);
 
 // 重心坐标
 void Barycentric(Triangle &tri, std::vector<Fragment> &result);
