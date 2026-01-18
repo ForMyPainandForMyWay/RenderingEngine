@@ -2,7 +2,6 @@
 // Created by 冬榆 on 2025/12/31.
 //
 
-#include <iostream>
 #include <ranges>
 
 #include "Engine.h"
@@ -99,9 +98,23 @@ void Graphic::BasePass(const RenderObjects &obj,const Uniform &u, const GlobalUn
     WriteBuffer(result);
 }
 
-void Graphic::WriteBuffer(const std::vector<F2P>& f2pVec) const {
-    for (const auto& f2p : f2pVec) {
+inline float linearToSrgb(float c) {
+    c = std::clamp(c, 0.0f, 1.0f);
+    if (c <= 0.0031308f)
+        return 12.92f * c;
+    return 1.055f * std::pow(c, 1.0f / 2.4f) - 0.055f;
+}
+
+void Graphic::WriteBuffer(std::vector<F2P>& f2pVec) const {
+    for (auto& f2p : f2pVec) {
         if (!f2p.alive) continue;
+        // GammaEncode
+        // f2p.Albedo 为FloatPixel
+        if (engine->NeedGammaCorrection) {
+            f2p.Albedo.r = linearToSrgb(f2p.Albedo.r);
+            f2p.Albedo.g = linearToSrgb(f2p.Albedo.g);
+            f2p.Albedo.b = linearToSrgb(f2p.Albedo.b);
+        }
         engine->backBuffer->WritePixle(f2p);
     }
 }

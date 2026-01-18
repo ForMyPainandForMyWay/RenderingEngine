@@ -25,10 +25,6 @@ TextureMap::TextureMap(const std::string &path) {
     this->height = this->uvImg->height;
 }
 
-TextureMap::~TextureMap() {
-    delete this->uvImg;
-}
-
 // 注意需要在Mesh添加三角形之前调用
 SubMesh::SubMesh(const std::shared_ptr<Mesh>& mesh) {
     this->material = nullptr;

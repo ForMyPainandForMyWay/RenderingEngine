@@ -9,7 +9,7 @@
 #include "ModelReader.h"
 #include "RenderObjects.h"
 
-Engine::Engine(const size_t w, const size_t h)
+Engine::Engine(const size_t w, const size_t h, bool Gamma)
     : width(w)
     , height(h)
     , img(w, h)
@@ -22,6 +22,7 @@ Engine::Engine(const size_t w, const size_t h)
     ZBuffer.resize(w * h, 1.0f);
     CloseShadow();  // 默认关闭阴影
     VexLights.clear();
+    NeedGammaCorrection = Gamma;
 }
 
 Engine::~Engine() {
@@ -55,7 +56,8 @@ void Engine::addTfCommand(const TransformCommand &cmd) {
 
 // 添加网格模型，返回网格名字
 std::vector<std::string> Engine::addMesh(const std::string &filename) {
-    auto MiD = ModelReader::readObjFile(filename, meshes, materialMap, textureMap, bumpMap);
+    auto MiD = ModelReader::readObjFile(
+        NeedGammaCorrection, filename, meshes, materialMap, textureMap, bumpMap);
     return MiD;
 }
 

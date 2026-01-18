@@ -131,7 +131,7 @@ F2P BlinnShader::FragmentShader(
     pix.y = frag.y;
     // 若无有效材质或漫反射贴图，返回默认灰色
     if (material == nullptr || material->KdMap == nullptr) {
-        pix.Albedo = {100, 100, 100, 255};
+        pix.Albedo = {0.5, 0.5, 0.5};
         return pix;
     }
     // 采样漫反射贴图
@@ -196,14 +196,11 @@ F2P BlinnShader::FragmentShader(
             Albedo, material, N, L, V, dist2, lightColor, 1.0f
         );
     }
-
+    finalColorF[0] = std::min(1.0f, finalColorF[0]);
+    finalColorF[1] = std::min(1.0f, finalColorF[1]);
+    finalColorF[2] = std::min(1.0f, finalColorF[2]);
     // 转换为 Pixel 输出
-    pix.Albedo = {
-        static_cast<uint8_t>(std::clamp(finalColorF[0], 0.0f, 1.0f) * 255.0f),
-        static_cast<uint8_t>(std::clamp(finalColorF[1], 0.0f, 1.0f) * 255.0f),
-        static_cast<uint8_t>(std::clamp(finalColorF[2], 0.0f, 1.0f) * 255.0f),
-        255
-    };
+    pix.Albedo = {finalColorF[0], finalColorF[1], finalColorF[2]};
     return pix;
 }
 

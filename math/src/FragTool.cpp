@@ -8,8 +8,8 @@
 
 // 贴图采样
 // 未插值
-Pixel Sample(const VecN<2>& uv, const std::shared_ptr<TextureMap>& texture) {
-    if (texture == nullptr) return {255,255,255,255}; // 纹理不存在时返回白色
+FloatPixel Sample(const VecN<2>& uv, const std::shared_ptr<TextureMap>& texture) {
+    if (texture == nullptr) return {1.0f, 1.0f, 1.0f}; // 纹理不存在时返回白色
     const auto width = static_cast<float>(texture->width);
     const auto height = static_cast<float>(texture->height);
     // 确保 uv 在 [0, 1] 范围内
@@ -21,12 +21,12 @@ Pixel Sample(const VecN<2>& uv, const std::shared_ptr<TextureMap>& texture) {
     const float y = v * (height - 1);
     const auto x0 = static_cast<size_t>(std::floor(x));
     const auto y0 = static_cast<size_t>(std::floor(y));
-    return texture->uvImg->getPixel(y0 * texture->width + x0);
+    return texture->uvImg->getFPixel(y0 * texture->width + x0);
 }
 
 // 双线性插值
-Pixel BilinearSample(const VecN<2>& uv, const std::shared_ptr<TextureMap>& texture) {
-    if (texture == nullptr) return {255,255,255,255};
+FloatPixel BilinearSample(const VecN<2>& uv, const std::shared_ptr<TextureMap>& texture) {
+    if (texture == nullptr) return {1.0, 1.0, 1.0};
     const auto width = static_cast<float>(texture->width);
     const auto height = static_cast<float>(texture->height);
 
@@ -49,14 +49,14 @@ Pixel BilinearSample(const VecN<2>& uv, const std::shared_ptr<TextureMap>& textu
     const float sy = y - static_cast<float>(y0);
 
     // 获取四个邻近像素
-    const Pixel c00 = texture->uvImg->getPixel(y0 * texture->width + x0);
-    const Pixel c10 = texture->uvImg->getPixel(y0 * texture->width + x1);
-    const Pixel c01 = texture->uvImg->getPixel(y1 * texture->width + x0);
-    const Pixel c11 = texture->uvImg->getPixel(y1 * texture->width + x1);
+    const FloatPixel c00 = texture->uvImg->getFPixel(y0 * texture->width + x0);
+    const FloatPixel c10 = texture->uvImg->getFPixel(y0 * texture->width + x1);
+    const FloatPixel c01 = texture->uvImg->getFPixel(y1 * texture->width + x0);
+    const FloatPixel c11 = texture->uvImg->getFPixel(y1 * texture->width + x1);
 
     // 在 x 方向上插值
-    const Pixel c0 = lerp(c00, c10, sx);
-    const Pixel c1 = lerp(c01, c11, sx);
+    const FloatPixel c0 = lerp(c00, c10, sx);
+    const FloatPixel c1 = lerp(c01, c11, sx);
 
     // 在 y 方向上插值
     return lerp(c0, c1, sy);

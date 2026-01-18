@@ -28,7 +28,7 @@ typedef struct TransformCommand {
 
 class Engine {
 public:
-    Engine(size_t w, size_t h);
+    Engine(size_t w, size_t h, bool Gamma=false);
     ~Engine();
     void SetMainLight(size_t w, size_t h);
     void SetEnvLight(uint8_t r, uint8_t g, uint8_t b, float I);
@@ -69,6 +69,7 @@ private:
     std::queue<TransformCommand> tfCommand;
     bool NeedShadowPass = false;  // 是否需要阴影Pass
     bool NeedSkyBoxPass = false;  // 是否需要天空盒Pass
+    bool NeedGammaCorrection = false;  // 是否需要伽马矫正
 
     size_t width, height;  // 分辨率
     Film img;

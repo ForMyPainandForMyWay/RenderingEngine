@@ -11,7 +11,7 @@
 
 
 // 加在PNG图像到uv中
-Film* loadPNG(const std::string &path) {
+std::unique_ptr<Film> loadPNG(const std::string &path) {
     int width=0, height=0, channel=4;
 
     // 注意：这里在命令行下会有执行环境路径不匹配的问题
@@ -25,10 +25,9 @@ Film* loadPNG(const std::string &path) {
     // 拷贝数据到uv图
     if (data == nullptr) {
         width = height = 1024;
-        const auto uvImg = new Film(width, height);
-        return uvImg;
+        return std::make_unique<Film>(width, height);;
     };
-    const auto uvImg = new Film(width, height);
+    auto uvImg = std::make_unique<Film>(width, height);
     uvImg->copyFromPtr(data);
     stbi_image_free(data);
     return uvImg;

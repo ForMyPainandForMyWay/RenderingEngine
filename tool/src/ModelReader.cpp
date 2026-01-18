@@ -11,10 +11,13 @@
 
 
 // 解析材质文件,存入哈希表
-void ModelReader::readMTLFile(const std::string &mtlFilename,
-                              std::unordered_map<std::string, std::shared_ptr<Material>> &materialMap,
-                              std::unordered_map<std::string, std::shared_ptr<TextureMap>> &textureMap,
-                              std::unordered_map<std::string, std::shared_ptr<TextureMap>> &bumpMap) {
+void ModelReader::readMTLFile(
+    const bool NeedGamma,
+    const std::string &mtlFilename,
+    std::unordered_map<std::string, std::shared_ptr<Material>> &materialMap,
+    std::unordered_map<std::string, std::shared_ptr<TextureMap>> &textureMap,
+    std::unordered_map<std::string, std::shared_ptr<TextureMap>> &bumpMap) {
+
     std::ifstream mtlFile(mtlFilename);
     if (!mtlFile.is_open()) {
         std::cerr << "Cannot open MTL file: " << mtlFilename << "\n";
@@ -49,8 +52,13 @@ void ModelReader::readMTLFile(const std::string &mtlFilename,
                 if (!textureMap.contains(currentMat->map_Kd)) {
                     // auto texture = new TextureMap(currentMat->map_Kd);
                     auto texture = std::make_shared<TextureMap>(currentMat->map_Kd);
+                    // 初始化之后转换为float(自动清空8位数据)
+                    texture->uvImg->Trans2FloatPixel();
                     textureMap[currentMat->map_Kd] = texture;
                     currentMat->setKdTexture(texture);  // 设置材质的纹理贴图
+                    // gamma矫正
+                    if (NeedGamma)
+                        GammaCorrect(texture->uvImg);
                 }
             }
             else if (prefix == "map_Bump") {
@@ -58,6 +66,7 @@ void ModelReader::readMTLFile(const std::string &mtlFilename,
                 if (!bumpMap.contains(currentMat->map_Bump)) {
                     // auto texture = new TextureMap(currentMat->map_Bump);
                     auto texture = std::make_shared<TextureMap>(currentMat->map_Bump);
+                    texture->uvImg->Trans2FloatPixel();
                     bumpMap[currentMat->map_Bump] = texture;
                     currentMat->BumpMap = texture;  // 设置材质的法线贴图
                 }
@@ -73,6 +82,7 @@ void ModelReader::readMTLFile(const std::string &mtlFilename,
   注意传入的Mesh表、材质表、uv表
 */
 std::vector<std::string> ModelReader::readObjFile(
+    const bool Gamma,
     const std::string &filename,
     std::unordered_map<std::string, std::shared_ptr<Mesh>> &meshes,
     std::unordered_map<std::string, std::shared_ptr<Material>> &materialMap,
@@ -174,7 +184,7 @@ std::vector<std::string> ModelReader::readObjFile(
         else if (prefix == "mtllib") {
             std::string mtl;
             ss >> mtl;
-            readMTLFile((std::filesystem::path(parent_path) / mtl).string(),
+            readMTLFile(Gamma, (std::filesystem::path(parent_path) / mtl).string(),
                         materialMap, textureMap, bumpMap);
         }
         else if (prefix == "usemtl") {
@@ -200,5 +210,20 @@ std::vector<std::string> ModelReader::readObjFile(
 void ModelReader::splitPoly2Tri(const ObjFace& face, const std::shared_ptr<Mesh>& mesh) {
     for (size_t i=2; i < face.vertexIndices.size(); i++) {
         mesh->addTri(face[0], face[i-1], face[i]);
+    }
+}
+
+inline float srgbToLinear(const float c) {
+    if (c <= 0.04045f)
+        return c / 12.92f;
+    return std::pow((c + 0.055f) / 1.055f, 2.4f);
+}
+
+// Gamma矫正解码
+void ModelReader::GammaCorrect(const std::unique_ptr<Film> &img) {
+    for (auto& [r,g,b] : img->floatImg) {
+        r = srgbToLinear(r);
+        g = srgbToLinear(g);
+        b = srgbToLinear(b);
     }
 }

@@ -38,6 +38,13 @@ Pixel lerp(const Pixel& p1, const Pixel& p2, const float t) {
             static_cast<uint8_t>(std::clamp(a, 0.0f, 255.0f))};
 }
 
+FloatPixel lerp(const FloatPixel& p1, const FloatPixel& p2, float t) {
+    const float r = p1.r + (p2.r - p1.r)*t;
+    const float g = p1.g + (p2.g - p1.g)*t;
+    const float b = p1.b + (p2.b - p1.b)*t;
+    return {r, g, b};
+}
+
 V2F lerpNoLinear(const V2F &v1, const V2F &v2, const float t) {
     V2F r;
     // 透视矫正
