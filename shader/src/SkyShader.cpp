@@ -68,10 +68,7 @@ F2P SkyShader::FragmentShader(
     const float t = smoothstep(-0.5f, 0.0f, frag.worldPosi[1]);
     color *= t;
     // Pixel 需要uint8_t类型的颜色值
-    const auto r = static_cast<uint8_t>(color[0] * 255.0f);
-    const auto g = static_cast<uint8_t>(color[1] * 255.0f);
-    const auto b = static_cast<uint8_t>(color[2] * 255.0f);
-    pix.Albedo = Pixel(r,g,b, 255);
+    pix.Albedo = FloatPixel(color[0], color[1], color[2]);
     pix.depth = 1.0f;   // 天空永远最远
     return pix;
 }

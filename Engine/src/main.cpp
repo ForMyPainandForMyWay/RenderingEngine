@@ -81,24 +81,24 @@ int main() {
     // engine.addTfCommand({objID, TfCmd::ROTATE, {0.0f, 0.0f, 0.0f}});
     // engine.addTfCommand({objID, TfCmd::ROTATE, {-35.0f, 35.0f, 0.0f}});
 
-    // engine.addTfCommand({objID2, RenderObject, TfCmd::TRANSLATE, {0,0,-1.5f}});
+    engine.addTfCommand({objID2, RenderObject, TfCmd::TRANSLATE, {0,0,-2.0f}});
     // engine.addTfCommand({objID, RenderObject, TfCmd::SCALE, {0.5,0.5,0.5f}});
     // engine.addTfCommand({objID, RenderObject, TfCmd::TRANSLATE, {0,0,0.5f}});
 
     // 相机灯光转动
-    // engine.addTfCommand({0, CameraID, TfCmd::TRANSLATE, {2.0f, 0.0f, 0.0f}});
-    // engine.addTfCommand({0, CameraID, TfCmd::ROTATE, {0.0f, 20.0f, 0.0f}});
+    engine.addTfCommand({0, CameraID, TfCmd::TRANSLATE, {2.0f, 0.0f, 0.0f}});
+    engine.addTfCommand({0, CameraID, TfCmd::ROTATE, {0.0f, 20.0f, 0.0f}});
     // engine.addTfCommand({1, TfCmd::TRANSLATE, {3.0f, 4.0f, 4.5f}});
     // engine.addTfCommand({1, TfCmd::ROTATE, {-35.0f, 35.0f, 0.0f}});
 
     // 平移
     engine.addTfCommand({0, CameraID, TfCmd::TRANSLATE, {0.0f, 0.0f, 5.0f}});
-    engine.addTfCommand({1, MainLightID, TfCmd::TRANSLATE, {0.0f, 0.0f, 3.0f}});
+    engine.addTfCommand({1, MainLightID, TfCmd::TRANSLATE, {0.0f, 0.0f, 4.0f}});
 
-
-    // engine.OpenShadow();
+    // engine.CloseGamma();
+    engine.OpenShadow();
     // engine.OpenSky();
-    engine.RenderFrame({objID});
+    engine.RenderFrame({objID2,objID});
 
     return 0;
 }

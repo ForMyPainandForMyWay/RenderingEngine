@@ -3,31 +3,38 @@
 //
 
 #include "Film.h"
-
-#include <complex>
-
 #include "F2P.h"
 
-void Pixel::operator+=(const Pixel& other) {
-    this->r = std::min(255, static_cast<int>(this->r) + static_cast<int>(other.r));
-    this->g = std::min(255, static_cast<int>(this->g) + static_cast<int>(other.g));
-    this->b = std::min(255, static_cast<int>(this->b) + static_cast<int>(other.b));
-    this->a = std::min(255, static_cast<int>(this->a) + static_cast<int>(other.a));
+
+void FloatPixel::operator+=(const FloatPixel& other) {
+    r += other.r;
+    g += other.g;
+    b += other.b;
 }
 
-Pixel Pixel::operator*(VecN<3> K) const {
-    Pixel result{};
-    result.a = 255;
-    result.r = static_cast<uint8_t>(std::clamp((static_cast<float>(r) * K[0]), 0.0f, 255.0f));
-    result.g = static_cast<uint8_t>(std::clamp((static_cast<float>(g) * K[1]), 0.0f, 255.0f));
-    result.b = static_cast<uint8_t>(std::clamp((static_cast<float>(b) * K[2]), 0.0f, 255.0f));
+FloatPixel FloatPixel::operator*(VecN<3> K) const {
+    FloatPixel result{};
+    result.r = r * K[0];
+    result.g = g * K[1];
+    result.b = b * K[2];
     return result;
 }
 
-void Pixel::operator*=(VecN<3> K) {
-    this->r = static_cast<uint8_t>(std::clamp((static_cast<float>(r) * K[0]), 0.0f, 255.0f));
-    this->g = static_cast<uint8_t>(std::clamp((static_cast<float>(g) * K[1]), 0.0f, 255.0f));
-    this->b = static_cast<uint8_t>(std::clamp((static_cast<float>(b) * K[2]), 0.0f, 255.0f));
+void FloatPixel::operator*=(VecN<3> K) {
+    r *= K[0];
+    g *= K[1];
+    b *= K[2];
+}
+
+VecN<3> FloatPixel::toFloat() const {
+    return {r, g, b};
+}
+
+Pixel FloatPixel::toPixel() const {
+    const auto r_ = static_cast<uint8_t>(std::clamp(r, 0.f, 1.f) * 255.0f);
+    const auto g_ = static_cast<uint8_t>(std::clamp(g, 0.f, 1.f) * 255.0f);
+    const auto b_ = static_cast<uint8_t>(std::clamp(b, 0.f, 1.f) * 255.0f);
+    return {r_, g_, b_ , 255};
 }
 
 VecN<3> Pixel::toFloat() const {
@@ -35,6 +42,14 @@ VecN<3> Pixel::toFloat() const {
     result[0] = static_cast<float>(r) / 255.0f;
     result[1] = static_cast<float>(g) / 255.0f;
     result[2] = static_cast<float>(b) / 255.0f;
+    return result;
+}
+
+FloatPixel Pixel::toFloatPixel() const {
+    FloatPixel result{};
+    result.r = static_cast<float>(r) / 255.0f;
+    result.g = static_cast<float>(g) / 255.0f;
+    result.b = static_cast<float>(b) / 255.0f;
     return result;
 }
 
@@ -49,6 +64,14 @@ Film::Film(const size_t width, const std::size_t height) {
 
 const Pixel& Film::getPixel(const size_t i) const {
      return this->image[i];
+}
+
+const FloatPixel& Film::getFPixel(size_t i) const {
+    return this->floatImg[i];
+}
+
+FloatPixel& Film::getFPixel(size_t i) {
+    return this->floatImg[i];
 }
 
 Pixel& Film::operator[](const size_t i) {
@@ -68,7 +91,7 @@ void Film::fill(const uint8_t r, const uint8_t g, const uint8_t b, const uint8_t
 }
 
 void Film::WritePixle(const F2P& f2p) {
-    image[f2p.y * width + f2p.x] = f2p.Albedo;
+    image[f2p.y * width + f2p.x] = f2p.Albedo.toPixel();
 }
 
 // RGBA模式的PAM格式存储
@@ -91,4 +114,13 @@ void Film::save(const std::string &filename) const {
 
 void Film::copyFromPtr(const unsigned char *data) {
     std::memcpy(image.data(), data, width * height * sizeof(Pixel));;
+}
+
+// 将8位像素转位浮点数，填充到floatImg，清空image数据
+void Film::Trans2FloatPixel() {
+    this->floatImg.reserve(this->image.size());
+    for (auto& pix : image) {
+        this->floatImg.emplace_back(pix.toFloatPixel());
+    }
+    this->image.clear();
 }

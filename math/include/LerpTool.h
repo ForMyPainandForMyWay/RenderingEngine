@@ -11,7 +11,7 @@ struct Pixel;
 
 
 // 用于SH算法的两点线性插值
-V2F lerpSH(const V2F &v1, const V2F &v2, const float t);
+V2F lerpSH(const V2F &v1, const V2F &v2, float t);
 
 // 数值线形填充
 float lerp(const float &n1, const float &n2, const float &t);
@@ -26,7 +26,8 @@ VecN<N> lerp(const VecN<N> &v0, const VecN<N> &v1, float t) {
 }
 
 // Pixel线性插值,用于片元着色
-Pixel lerp(const Pixel& p1, const Pixel& p2, float t);
+// Pixel lerp(const Pixel& p1, const Pixel& p2, float t);
+FloatPixel lerp(const FloatPixel& p1, const FloatPixel& p2, float t);
 
 // 非线性插值，考虑透视校正
 // 两点线性插值(用于光栅化生成vi，这时候理论上已经用不到了)

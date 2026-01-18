@@ -17,8 +17,8 @@ struct ShadowMap {
     void save() const;
 
     [[nodiscard]] float Sample(float u, float v) const;
-    float SamplePCF(float currentDepth, float bias, float u, float v, size_t R=1) const;
-    float SamplePCSS(
+    [[nodiscard]] float SamplePCF(float currentDepth, float bias, float u, float v, int R=1) const;
+    [[nodiscard]] float SamplePCSS(
         float currentDepth,
         float bias,
         float u,
@@ -35,7 +35,7 @@ struct ShadowMap {
         int cy,
         int searchR,
         float& avgBlockerDepth,
-        int& blockerCount
+        float& blockerCount
         ) const;
     size_t width, height;
 };

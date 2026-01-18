@@ -10,7 +10,7 @@
 
 struct F2P {
     size_t x{}, y{};
-    Pixel Albedo = {255, 255, 255, 255};
+    FloatPixel Albedo = {255, 255, 255};
     float depth = 0;
     bool alive = true;
     void drop() { alive = false; }

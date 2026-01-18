@@ -37,11 +37,10 @@ struct Material {
 // 纹理贴图
 struct TextureMap {
     uint32_t width{}, height{};
-    // std::string map_Kd;  // 贴图名字
-    Film *uvImg;             // 贴图数组
+    std::unique_ptr<Film> uvImg;  // 贴图数组
 
     explicit TextureMap(const std::string& path);  // 从文件初始化贴图胶片
-    ~TextureMap();
+    ~TextureMap() = default;
 };
 
 // 子网络模型,指定Mesh中应用某材质的三角面区间(以顶点为单位)

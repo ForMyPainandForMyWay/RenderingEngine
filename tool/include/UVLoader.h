@@ -8,7 +8,7 @@
 #include <string>
 #include "Film.h"
 
-Film* loadPNG(const std::string &path);
+std::unique_ptr<Film> loadPNG(const std::string &path);
 
 
 #endif //UNTITLED_PNGLOADER_H

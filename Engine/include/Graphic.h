@@ -46,7 +46,7 @@ public:
     static bool ZTestPix(size_t locate, float depth, std::vector<float> &ZBuffer) ;
     void Ztest(std::vector<Fragment> &TestFrag, std::vector<float> &ZBuffer) const;  // EarlyZ
     void Ztest(std::vector<F2P> &TestPix, std::vector<float> &ZBuffer) const;  // Lately-Z
-    void WriteBuffer(const std::vector<F2P>& f2pVec) const;
+    void WriteBuffer(std::vector<F2P>& f2pVec) const;
 
 protected:
     Shader *shader;

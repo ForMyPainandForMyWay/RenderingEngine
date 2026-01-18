@@ -7,6 +7,7 @@
 #include <unordered_map>
 #include <vector>
 
+struct Film;
 class Mesh;
 class Material;
 struct TextureMap;
@@ -15,17 +16,20 @@ struct ObjFace;
 class ModelReader {
 public:
     static std::vector<std::string> readObjFile(
+        bool Gamma,
         const std::string &filename,
         std::unordered_map<std::string, std::shared_ptr<Mesh>> &meshes,
         std::unordered_map<std::string, std::shared_ptr<Material>> &materialMap,
         std::unordered_map<std::string, std::shared_ptr<TextureMap>> &textureMap,
         std::unordered_map<std::string, std::shared_ptr<TextureMap>> &bumpMap);
     static void readMTLFile(
+        bool Gamma,
         const std::string &mtlFilename,
         std::unordered_map<std::string, std::shared_ptr<Material>> &materialMap,
         std::unordered_map<std::string, std::shared_ptr<TextureMap>> &textureMap,
         std::unordered_map<std::string, std::shared_ptr<TextureMap>> &bumpMap);
     static void splitPoly2Tri(const ObjFace& face, const std::shared_ptr<Mesh>& mesh);
+    static void GammaCorrect(const std::unique_ptr<Film> &img);
 };
 
 
