@@ -11,9 +11,16 @@
 struct Material;
 struct Fragment;
 
+struct GBufferData {
+    VecN<3> normal;
+    VecN<4> worldPosi;
+};
 
 struct GBuffer {
+    GBuffer(size_t w, size_t h);
+    size_t w{}, h{};
     std::unordered_map<std::shared_ptr<Material>, std::vector<Fragment>> FragMap;
+    std::vector<GBufferData> Gdata; // 存储每个像素的法线和世界坐标数据
     void clear();
 };
 

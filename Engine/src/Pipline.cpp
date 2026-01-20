@@ -166,7 +166,7 @@ void Graphic::Rasterization(
 
 // ZTest组件
 bool Graphic::ZTestPix(const size_t locate, const float depth, std::vector<float> &ZBuffer) {
-    if (ZBuffer[locate] > depth) {
+    if (ZBuffer[locate] >= depth) {
         ZBuffer[locate] = depth;
         return true;
     }
@@ -177,6 +177,7 @@ bool Graphic::ZTestPix(const size_t locate, const float depth, std::vector<float
 void Graphic::Ztest(std::vector<Fragment> &TestFrag, std::vector<float> &ZBuffer) const {
     int keptCount = 0;
     for (auto &pix : TestFrag) {
+        if (!pix.alive) continue;
         if (const auto locate = pix.x + pix.y * engine->width;
             ZTestPix(locate, pix.depth, ZBuffer)) {
             pix.keep();
@@ -192,7 +193,6 @@ void Graphic::FragmentShading(
     std::vector<F2P> &result, const Uniform &u, const int pass) {
     for (auto& [material, fragVec] : fragMap) {
         shader = material->getShader(pass);
-        // shader->setMaterial(material);
         for (auto& frag : fragVec) {
             if (!frag.alive) continue;
             result.emplace_back(
@@ -210,11 +210,12 @@ void Graphic::FragmentShading(
 
 // Lately-Z,传入F2P,不能清除ZBuffer
 void Graphic::Ztest(std::vector<F2P> &TestPix, std::vector<float> &ZBuffer) const {
+    int keptCount = 0;
     for (auto &pix : TestPix) {
         if (const auto locate = pix.x + pix.y * engine->width;
-            ZBuffer[locate] > pix.depth ) {
-            ZBuffer[locate] = pix.depth;
+            ZTestPix(locate, pix.depth, ZBuffer)) {
             pix.keep();
+            keptCount++;
             }
         else pix.drop();  // 后续frag不再着色
     }

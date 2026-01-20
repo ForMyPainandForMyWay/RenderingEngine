@@ -6,6 +6,7 @@
 
 #include "Engine.h"
 
+#include "GammaTool.h"
 #include "ModelReader.h"
 #include "RenderObjects.h"
 
@@ -20,9 +21,12 @@ Engine::Engine(const size_t w, const size_t h, bool Gamma)
     , backBuffer(new Film(w, h)) {
     // 预备分配缓冲
     ZBuffer.resize(w * h, 1.0f);
-    CloseShadow();  // 默认关闭阴影
+    tmpBufferF.resize(w * h, FloatPixel{0.0f, 0.0f, 0.0f, 0.0f});
+    tmpBufferB.resize(w * h, FloatPixel{0.0f, 0.0f, 0.0f, 0.0f});
+    CloseShadow(); // 默认关闭阴影
     VexLights.clear();
     NeedGammaCorrection = Gamma;
+    gBuffer = std::make_unique<GBuffer>(w, h);
 }
 
 Engine::~Engine() {
@@ -33,12 +37,12 @@ Engine::~Engine() {
 }
 
 // 设置主光源，并更新shadow map分辨率，需要光源与阴影贴图分辨率,不会更改阴影开关
-void Engine::SetMainLight(const size_t w, const size_t h) {
+void Engine::SetMainLight() {
     delete mainLight;
     mainLight = new MainLight();  // 先不进行详细参数设置
     mainLight->setI(5.0f);
-    ShadowMap.resize(w, h);
-    globalU.setShadowViewPort(w, h);
+    ShadowMap.resize(width, height);
+    globalU.setShadowViewPort(width, height);
 }
 
 // 设置全局环境光
@@ -98,9 +102,11 @@ void Engine::setResolution(const size_t w, const size_t h) {
     delete backBuffer;
     frontBuffer = new Film(w, h);
     backBuffer  = new Film(w, h);
-    ZBuffer.resize(w * h);
-    std::ranges::fill(ZBuffer, 1.0f);
+    ZBuffer.resize(w * h, 1.0f);
+    tmpBufferF.resize(w * h, FloatPixel{0.0f,0.0f,0.0f,0.0f});
+    tmpBufferB.resize(w * h, FloatPixel{0.0f,0.0f,0.0f,0.0f});
     globalU = GlobalUniform(w, h, w, h);
+
 }
 
 // 绘制场景-前向渲染
@@ -109,7 +115,7 @@ void Engine::DrawScene(const std::vector<uint16_t>& models) {
     MatMN<4, 4> PV;
     if (NeedSkyBoxPass) {
         PV = camera.RMat().Transpose() * camera.invProjectionMat();
-        auto uniform = Uniform(sky.ModelMat(), sky.updateMVP(PV),
+        const auto uniform = Uniform(sky.ModelMat(), sky.updateMVP(PV),
                sky.InverseTransposedMat());
         graphic.SkyPass(sky, uniform, globalU, 0);
     }
@@ -128,6 +134,8 @@ void Engine::DrawScene(const std::vector<uint16_t>& models) {
 
     // BasePass
     PV = camera.ProjectionMat() * camera.ViewMat();
+    globalU.setCameraViewM(camera.ViewMat());
+    globalU.setCameraProjM(camera.ProjectionMat());
     // globalU.setProjectView(PV);  // 更新全局Uniform相机相关内容
     globalU.setCameraPos(camera.getPosi());
     for (const auto& model : models) {
@@ -139,26 +147,66 @@ void Engine::DrawScene(const std::vector<uint16_t>& models) {
     }
 }
 
+// 后处理阶段,工作集中于tmpBuffer
+void Engine::PostProcess() {
+    // 环境光遮蔽
+    if (NeedAo) {
+        std::ranges::fill(tmpBufferB, FloatPixel{0.0f,0.0f,0.0f,0.0f});
+        graphic.SSAO(tmpBufferF, tmpBufferB, gBuffer->Gdata, ZBuffer, globalU.getCameraView(), globalU.getCameraProj());
+        std::swap(tmpBufferF, tmpBufferB);
+    }
+
+    if (aaType == NOAA) return;
+    std::ranges::fill(tmpBufferB, FloatPixel{0.0f,0.0f,0.0f,0.0f});
+    if (aaType == FXAA) {
+        graphic.FXAA(tmpBufferF, tmpBufferB);
+    } else if (aaType == FXAAC) {
+        graphic.FXAAC(tmpBufferF, tmpBufferB);
+    } else if (aaType == FXAAQ) {
+        graphic.FXAAQ(tmpBufferF, tmpBufferB);
+    }
+    std::swap(tmpBufferF, tmpBufferB);
+}
+
 // 帧绘制管理
 void Engine::RenderFrame(const std::vector<uint16_t>& models) {
     BeginFrame();   // 初始化帧
     Application();  // 应用变换
     DrawScene(models);  // 绘制指定models
-    // PostProcess();   // 画面后处理
+    PostProcess();   // 画面后处理
     EndFrame();      // 交付帧
 }
 
 void Engine::BeginFrame() {
     // 清空ZBuffer
     std::ranges::fill(ZBuffer, 1.0f);
+    std::ranges::fill(tmpBufferF, FloatPixel{0.0f,0.0f,0.0f,0.0f});
+    std::ranges::fill(tmpBufferB, FloatPixel{0.0f,0.0f,0.0f,0.0f});
     ShadowMap.clear();    // 清空backBuffer
     backBuffer->clear();
-    GBuffer.clear();
+    gBuffer = std::make_unique<GBuffer>(width, height);
 }
 
 void Engine::EndFrame() {
-    Film* tmp = frontBuffer;
-    frontBuffer = backBuffer;
-    backBuffer = tmp;
+    // 处理缓冲区的像素转到图像缓冲区
+    Write2Front();
+    std::swap(frontBuffer, backBuffer);
     frontBuffer->save("test.pam");
+}
+
+// 写入绘制缓冲区,自行转换伽马矫正
+void Engine::Write2Front() {
+    if (!NeedGammaCorrection) {
+        for (auto i = 0; i < tmpBufferF.size(); ++i) {
+            backBuffer->image[i] = tmpBufferF[i].toPixel();
+        }
+        return;
+    }
+    for (auto i = 0; i < tmpBufferF.size(); ++i) {
+        auto& pix = tmpBufferF[i];
+        pix.r = linearToSrgb(pix.r);
+        pix.g = linearToSrgb(pix.g);
+        pix.b = linearToSrgb(pix.b);
+        backBuffer->image[i] = pix.toPixel();
+    }
 }

@@ -47,7 +47,6 @@ void Graphic::ShadowPass(const RenderObjects &obj,const Uniform &u, const Global
         VertexShading(TriMap, u, gu, mesh, pass);
         Clip(TriMap);
         ScreenMapping(TriMap, gu.getShadowViewPort()); // 注意是ShadowViewport,用的是Light的视窗参数
-        // 在光栅化阶段直接进行ZTest
         Rasterization(TriMap, FragMap);
     }
     size_t count = 0;
@@ -87,34 +86,40 @@ void Graphic::BasePass(const RenderObjects &obj,const Uniform &u, const GlobalUn
         Ztest(Frag, engine->ZBuffer);
         count += Frag.size();
     }
+    // 双重Z测试
+    for (auto &Frag: FragMap | std::views::values) {
+        Ztest(Frag, engine->ZBuffer);
+        count += Frag.size();
+    }
     std::vector<F2P> result;
     result.reserve(count);
     // 基础颜色/纹理贴图采样(texture自动完成各向异性过滤和MipMap)
     FragmentShading(FragMap, result, u, pass);
+    // 双重ZTest之后没有必要后测试了
+    // Ztest(result, engine->ZBuffer);
+    // 写入GBuffer
     for (auto &Frag: FragMap | std::views::values) {
-        Ztest(Frag, engine->ZBuffer);
+        WriteGBuffer(Frag);
     }
-    // 写入Buffer
+    // 写入tmpBufferF
     WriteBuffer(result);
 }
 
-inline float linearToSrgb(float c) {
-    c = std::clamp(c, 0.0f, 1.0f);
-    if (c <= 0.0031308f)
-        return 12.92f * c;
-    return 1.055f * std::pow(c, 1.0f / 2.4f) - 0.055f;
+void Graphic::WriteBuffer(const std::vector<F2P>& f2pVec) const {
+    for (const auto& f2p : f2pVec) {
+        if (!f2p.alive) continue;
+        engine->tmpBufferF[f2p.x + f2p.y*engine->width] = f2p.Albedo;
+    }
 }
 
-void Graphic::WriteBuffer(std::vector<F2P>& f2pVec) const {
-    for (auto& f2p : f2pVec) {
-        if (!f2p.alive) continue;
-        // GammaEncode
-        // f2p.Albedo 为FloatPixel
-        if (engine->NeedGammaCorrection) {
-            f2p.Albedo.r = linearToSrgb(f2p.Albedo.r);
-            f2p.Albedo.g = linearToSrgb(f2p.Albedo.g);
-            f2p.Albedo.b = linearToSrgb(f2p.Albedo.b);
-        }
-        engine->backBuffer->WritePixle(f2p);
+// 写入GBuffer
+void Graphic::WriteGBuffer(const std::vector<Fragment>& f2pVec) const {
+    const size_t width = engine->width;
+    auto& gData = engine->gBuffer->Gdata; // 使用Gdata替代normalBuffer和worldPosiBuffer
+    for (const auto& frag : f2pVec) {
+        if (!frag.alive) continue;
+        const auto i = frag.x + frag.y * width;
+        gData[i].normal = frag.normal;      // 写入法线数据
+        gData[i].worldPosi = frag.worldPosi; // 写入世界坐标数据
     }
 }

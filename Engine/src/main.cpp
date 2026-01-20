@@ -64,7 +64,7 @@ void dumpMeshInfo(const std::unordered_map<std::string, Mesh*>& meshes) {
 }
 
 int main() {
-    Engine engine(800, 800);
+    Engine engine(500, 500);
     const auto meshName = R"(/Users/dongyu/CLionProjects/RenderEngine/bin/test4.obj)";
     const auto meshId = engine.addMesh(meshName);
     uint16_t objID = engine.addObjects(meshId[0]);
@@ -74,31 +74,31 @@ int main() {
     const uint16_t objID2 = engine.addObjects(meshId2[0]);
 
     engine.SetEnvLight(100, 100, 100, 1.0f);
-    engine.SetMainLight(800, 800);
+    engine.SetMainLight();
 
     // 物体转动
-    // engine.addTfCommand({objID, RenderObject, TfCmd::ROTATE, {35.0f, 30.0f, 30.0f}});
+    engine.addTfCommand({objID2, RenderObject, TfCmd::ROTATE, {35.0f, -35.0f, 0.0f}});
+    // engine.addTfCommand({objID2, RenderObject, TfCmd::ROTATE, {35.0f, -35.0f, 0.0f}});
     // engine.addTfCommand({objID, TfCmd::ROTATE, {0.0f, 0.0f, 0.0f}});
-    // engine.addTfCommand({objID, TfCmd::ROTATE, {-35.0f, 35.0f, 0.0f}});
+    // engine.addTfCommand({objID, RenderObject, TfCmd::ROTATE, {-35.0f, 35.0f, 0.0f}});
 
-    engine.addTfCommand({objID2, RenderObject, TfCmd::TRANSLATE, {0,0,-2.0f}});
+    engine.addTfCommand({objID2, RenderObject, TfCmd::TRANSLATE, {0,0,-0.8f}});
     // engine.addTfCommand({objID, RenderObject, TfCmd::SCALE, {0.5,0.5,0.5f}});
     // engine.addTfCommand({objID, RenderObject, TfCmd::TRANSLATE, {0,0,0.5f}});
 
     // 相机灯光转动
-    engine.addTfCommand({0, CameraID, TfCmd::TRANSLATE, {2.0f, 0.0f, 0.0f}});
-    engine.addTfCommand({0, CameraID, TfCmd::ROTATE, {0.0f, 20.0f, 0.0f}});
+    // engine.addTfCommand({0, CameraID, TfCmd::TRANSLATE, {4.0f, 0.0f, 0.0f}});
+    // engine.addTfCommand({0, CameraID, TfCmd::ROTATE, {0.0f, 40.0f, 0.0f}});
     // engine.addTfCommand({1, TfCmd::TRANSLATE, {3.0f, 4.0f, 4.5f}});
     // engine.addTfCommand({1, TfCmd::ROTATE, {-35.0f, 35.0f, 0.0f}});
 
     // 平移
-    engine.addTfCommand({0, CameraID, TfCmd::TRANSLATE, {0.0f, 0.0f, 5.0f}});
+    engine.addTfCommand({0, CameraID, TfCmd::TRANSLATE, {0.0f, 0.0f, 4.0f}});
     engine.addTfCommand({1, MainLightID, TfCmd::TRANSLATE, {0.0f, 0.0f, 4.0f}});
 
-    // engine.CloseGamma();
-    engine.OpenShadow();
+    // engine.OpenShadow();
     // engine.OpenSky();
-    engine.RenderFrame({objID2,objID});
+    engine.RenderFrame({ objID, objID2});
 
     return 0;
 }
