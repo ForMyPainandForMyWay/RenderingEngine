@@ -38,6 +38,14 @@ const MatMN<4, 4> &GlobalUniform::getShadowPV() const{
     return projectViewShadow;
 }
 
+const MatMN<4, 4>& GlobalUniform::getCameraView() const {
+    return CmaeraView;
+}
+
+const MatMN<4, 4>& GlobalUniform::getCameraProj() const{
+    return CmaeraProj;
+}
+
 void GlobalUniform::setCameraPos(const VecN<3> &cameraPos) {
     this->CameraPos = cameraPos;
 }
@@ -55,4 +63,12 @@ void GlobalUniform::setShadowViewPort(const size_t width, const size_t height) {
     ShadowViewPort[1][3] = static_cast<float>(height) / 2;
     ShadowViewPort[2][2] = 1;
     ShadowViewPort[3][3] = 1;
+}
+
+void GlobalUniform::setCameraViewM(const MatMN<4, 4> &CameraView) {
+    CmaeraView = CameraView;
+}
+
+void GlobalUniform::setCameraProjM(const MatMN<4, 4> &CameraProj) {
+    CmaeraProj = CameraProj;
 }

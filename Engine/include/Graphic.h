@@ -10,6 +10,7 @@
 
 #include "Shape.h"
 
+enum class SSAODebugMode;
 class SkyBox;
 class Shader;
 class GlobalUniform;
@@ -46,8 +47,24 @@ public:
     static bool ZTestPix(size_t locate, float depth, std::vector<float> &ZBuffer) ;
     void Ztest(std::vector<Fragment> &TestFrag, std::vector<float> &ZBuffer) const;  // EarlyZ
     void Ztest(std::vector<F2P> &TestPix, std::vector<float> &ZBuffer) const;  // Lately-Z
-    void WriteBuffer(std::vector<F2P>& f2pVec) const;
+    void WriteBuffer(const std::vector<F2P>& f2pVec) const;
+    void WriteGBuffer(const std::vector<Fragment>& f2pVec) const;
 
+    void SSAO(
+        const std::vector<FloatPixel> &inBuffer,
+        std::vector<FloatPixel> &outBuffer,
+        const std::vector<GBufferData> &Gdata,
+        const std::vector<float> &depthBuffer,
+        const MatMN<4, 4> &ViewMat,
+        const MatMN<4, 4> &Projection,
+        float radius = 0.1f,
+        int sampleCount = 32) const;
+    void FXAA(
+        std::vector<FloatPixel>& inBuffer, std::vector<FloatPixel>& outBuffer) const;
+    void FXAAQ(
+        std::vector<FloatPixel>& inBuffer, std::vector<FloatPixel>& outBuffer) const;
+    void FXAAC(
+        std::vector<FloatPixel>& inBuffer, std::vector<FloatPixel>& outBuffer) const;
 protected:
     Shader *shader;
 };

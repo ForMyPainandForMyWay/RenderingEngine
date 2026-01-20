@@ -21,7 +21,7 @@ FloatPixel Sample(const VecN<2>& uv, const std::shared_ptr<TextureMap>& texture)
     const float y = v * (height - 1);
     const auto x0 = static_cast<size_t>(std::floor(x));
     const auto y0 = static_cast<size_t>(std::floor(y));
-    return texture->uvImg->getFPixel(y0 * texture->width + x0);
+    return texture->uvImg->floatImg[y0 * texture->width + x0];
 }
 
 // 双线性插值
@@ -49,10 +49,11 @@ FloatPixel BilinearSample(const VecN<2>& uv, const std::shared_ptr<TextureMap>& 
     const float sy = y - static_cast<float>(y0);
 
     // 获取四个邻近像素
-    const FloatPixel c00 = texture->uvImg->getFPixel(y0 * texture->width + x0);
-    const FloatPixel c10 = texture->uvImg->getFPixel(y0 * texture->width + x1);
-    const FloatPixel c01 = texture->uvImg->getFPixel(y1 * texture->width + x0);
-    const FloatPixel c11 = texture->uvImg->getFPixel(y1 * texture->width + x1);
+    const auto& floatImg = texture->uvImg->floatImg;
+    const FloatPixel c00 = floatImg[y0 * texture->width + x0];
+    const FloatPixel c10 = floatImg[y0 * texture->width + x1];
+    const FloatPixel c01 = floatImg[y1 * texture->width + x0];
+    const FloatPixel c11 = floatImg[y1 * texture->width + x1];
 
     // 在 x 方向上插值
     const FloatPixel c0 = lerp(c00, c10, sx);
@@ -61,5 +62,3 @@ FloatPixel BilinearSample(const VecN<2>& uv, const std::shared_ptr<TextureMap>& 
     // 在 y 方向上插值
     return lerp(c0, c1, sy);
 }
-
-// 三线性插值

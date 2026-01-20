@@ -18,7 +18,7 @@ void DegenerateClip(Triangle &tri) {
         return;
     }
     // 叉乘求面积,cross2D函数自动利用低二维计算叉乘
-    if (fabs( crossInLow2D(tri[1].clipPosi-tri[0].clipPosi, tri[2].clipPosi-tri[0].clipPosi)) < 0.1f) {
+    if (fabs( crossInLow2D(tri[1].clipPosi-tri[0].clipPosi, tri[2].clipPosi-tri[0].clipPosi)) < 0.5f) {
         tri.alive = false;
     }
 }

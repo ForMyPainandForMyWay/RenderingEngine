@@ -23,6 +23,7 @@ struct FloatPixel {
     float r;
     float g;
     float b;
+    float i;
     void operator+=(const FloatPixel& other);
     FloatPixel operator*(VecN<3> K) const;
     void operator*=(VecN<3> K);
@@ -50,16 +51,8 @@ struct Film {
 
     void save(const std::string &filename) const;
     void copyFromPtr(const unsigned char *data);
-    [[nodiscard]] size_t get_width() const{return this->width;}
-    [[nodiscard]] size_t get_height() const{return this->height;}
-    [[nodiscard]] const Pixel& getPixel(size_t i) const;
-    [[nodiscard]] const FloatPixel& getFPixel(size_t i) const;
-    [[nodiscard]] FloatPixel& getFPixel(size_t i);
-    Pixel& operator[](size_t i);
-    const Pixel& operator[](size_t i) const;
     void clear();
     void fill(uint8_t r, uint8_t g, uint8_t b, uint8_t a=255);
-    void WritePixle(const F2P& f2p);
     void Trans2FloatPixel();
 
     uint32_t width, height;

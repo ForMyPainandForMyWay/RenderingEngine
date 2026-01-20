@@ -7,6 +7,8 @@
 #include <sstream>
 
 #include "ModelReader.h"
+
+#include "GammaTool.h"
 #include "Mesh.h"
 
 
@@ -213,15 +215,9 @@ void ModelReader::splitPoly2Tri(const ObjFace& face, const std::shared_ptr<Mesh>
     }
 }
 
-inline float srgbToLinear(const float c) {
-    if (c <= 0.04045f)
-        return c / 12.92f;
-    return std::pow((c + 0.055f) / 1.055f, 2.4f);
-}
-
 // Gamma矫正解码
 void ModelReader::GammaCorrect(const std::unique_ptr<Film> &img) {
-    for (auto& [r,g,b] : img->floatImg) {
+    for (auto& [r,g,b,i] : img->floatImg) {
         r = srgbToLinear(r);
         g = srgbToLinear(g);
         b = srgbToLinear(b);

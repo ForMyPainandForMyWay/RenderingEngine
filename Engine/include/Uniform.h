@@ -25,16 +25,22 @@ public:
     [[nodiscard]] const MatMN<4, 4>& getScreenViewPort() const;
     [[nodiscard]] const MatMN<4, 4>& getShadowViewPort() const;
     [[nodiscard]] const MatMN<4, 4>& getShadowPV() const;
+    [[nodiscard]] const MatMN<4, 4>& getCameraView() const;
+    [[nodiscard]] const MatMN<4, 4>& getCameraProj() const;
     [[nodiscard]] const VecN<3>& getCameraPos() const { return CameraPos; }
     void setCameraPos(const VecN<3> &cameraPos);
     void setProjectViewShadow(const MatMN<4, 4> &pv);
     void setShadowViewPort(size_t width, size_t height);
+    void setCameraViewM(const MatMN<4, 4> &CameraView);
+    void setCameraProjM(const MatMN<4, 4> &CameraView);
     size_t screenHeight{},screenWidth{};  // 屏幕大小
 
 protected:
     MatMN<4, 4> projectViewShadow;  // 光源的PV矩阵
     MatMN<4, 4> ShadowViewPort; // 光源视口变换矩阵
-    MatMN<4, 4> ViewPort;     // 相机视口变换矩阵
+    MatMN<4, 4> ViewPort;    // 相机视口变换矩阵
+    MatMN<4, 4> CmaeraView;  // 相机视图矩阵
+    MatMN<4, 4> CmaeraProj;  // 相机投影矩阵
     VecN<3> CameraPos;  // 相机的位置
 };
 

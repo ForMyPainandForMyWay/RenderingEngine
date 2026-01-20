@@ -3,7 +3,6 @@
 //
 
 #include "Film.h"
-#include "F2P.h"
 
 
 void FloatPixel::operator+=(const FloatPixel& other) {
@@ -62,36 +61,12 @@ Film::Film(const size_t width, const std::size_t height) {
     this->fill(255, 255, 255, 255);  // 默认白色背景
 }
 
-const Pixel& Film::getPixel(const size_t i) const {
-     return this->image[i];
-}
-
-const FloatPixel& Film::getFPixel(size_t i) const {
-    return this->floatImg[i];
-}
-
-FloatPixel& Film::getFPixel(size_t i) {
-    return this->floatImg[i];
-}
-
-Pixel& Film::operator[](const size_t i) {
-    return image[i];
-}
-
-const Pixel& Film::operator[](const size_t i) const {
-    return image[i];
-}
-
 void Film::clear() {
     std::ranges::fill(image, Pixel(0, 0, 0, 255));
 }
 
 void Film::fill(const uint8_t r, const uint8_t g, const uint8_t b, const uint8_t a) {
     std::ranges::fill(image, Pixel(r, g, b, a));
-}
-
-void Film::WritePixle(const F2P& f2p) {
-    image[f2p.y * width + f2p.x] = f2p.Albedo.toPixel();
 }
 
 // RGBA模式的PAM格式存储

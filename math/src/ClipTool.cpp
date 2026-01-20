@@ -92,5 +92,5 @@ std::vector<Triangle> PolyClip(const V2F &p1, const V2F &p2, const V2F &p3) {
 void FaceClip(Triangle &tri) {
     const auto e0 = tri[1].clipPosi - tri[0].clipPosi;
     const auto e1 = tri[2].clipPosi - tri[0].clipPosi;
-    tri.alive = crossInLow2D(e0, e1) > -1e-5f;
+    tri.alive = crossInLow2D(e0, e1) > -1e-3f;
 }
