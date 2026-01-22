@@ -432,7 +432,8 @@ void Graphic::Rasterization(
                     localFrags.reserve(exactLocalSize + 10*(end-start));
                     for (size_t k = start; k < end; ++k) {
                         if (auto& tri = triangles[k]; tri.alive) { // 利用 cached count 判断 alive
-                             BarycentricOptimizedFull(tri, localFrags, width, height);
+                            Scanline(tri, localFrags, width, height);
+                             // BarycentricOptimizedFull(tri, localFrags, width, height);
                         }
                     }
                     return localFrags;

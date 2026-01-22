@@ -193,3 +193,243 @@ void BarycentricOptimizedFull(Triangle& tri, std::vector<Fragment>& result, int 
         row_w2 += B2;
     }
 }
+
+// ==========================================
+// 定义插值载荷 (Payload)
+// 用于打包所有需要插值的属性，利用运算符重载简化代码
+// ==========================================
+struct Payload {
+    // 所有的属性都已经预先除以了 W (perspective divided)
+    float invW{};
+    float depth{};
+    VecN<2> uv;
+    Vec4 worldPos;
+    Vec3 normal;
+    Vec3 mainLight;
+    Vec3 camOri;
+    Vec3 vexLight;
+    Vec3 pixLight[3];
+
+    // 运算符重载：实现属性的加法和减法 (用于计算梯度)
+    Payload operator+(const Payload& other) const {
+        Payload res;
+        res.invW = invW + other.invW;
+        res.depth = depth + other.depth;
+        res.uv = uv + other.uv;
+        res.worldPos = worldPos + other.worldPos;
+        res.normal = normal + other.normal;
+        res.mainLight = mainLight + other.mainLight;
+        res.camOri = camOri + other.camOri;
+        res.vexLight = vexLight + other.vexLight;
+        for(int i=0; i<3; ++i) res.pixLight[i] = pixLight[i] + other.pixLight[i];
+        return res;
+    }
+
+    Payload operator-(const Payload& other) const {
+        Payload res;
+        res.invW = invW - other.invW;
+        res.depth = depth - other.depth;
+        res.uv = uv - other.uv;
+        res.worldPos = worldPos - other.worldPos;
+        res.normal = normal - other.normal;
+        res.mainLight = mainLight - other.mainLight;
+        res.camOri = camOri - other.camOri;
+        res.vexLight = vexLight - other.vexLight;
+        for(int i=0; i<3; ++i) res.pixLight[i] = pixLight[i] - other.pixLight[i];
+        return res;
+    }
+
+    // 数乘 (用于计算 step = delta / dist)
+    Payload operator*(const float s) const {
+        Payload res;
+        res.invW = invW * s;
+        res.depth = depth * s;
+        res.uv = uv * s;
+        res.worldPos = worldPos * s;
+        res.normal = normal * s;
+        res.mainLight = mainLight * s;
+        res.camOri = camOri * s;
+        res.vexLight = vexLight * s;
+        for(int i=0; i<3; ++i) res.pixLight[i] = pixLight[i] * s;
+        return res;
+    }
+};
+
+// ==========================================
+// 辅助类：边缘行进器
+// 负责沿 Y 轴插值 X 坐标和 Payload
+// ==========================================
+struct ScanEdge {
+    float x{};        // 当前行的 x 坐标
+    float dx_dy{};    // x 对 y 的增量 (斜率倒数)
+
+    Payload current; // 当前行的属性值
+    Payload step;    // 属性对 y 的增量 (dAttr/dy)
+
+    int yStart{}, yEnd{}; // 边的 Y 范围
+
+    // 初始化边
+    void Init(const VecN<2>& pTop, const Payload& vTop,
+              const VecN<2>& pBot, const Payload& vBot, int screenH) {
+        yStart = static_cast<int>(std::ceil(pTop[1] - 0.5f)); // 向上取整对齐像素中心
+        yEnd   = static_cast<int>(std::ceil(pBot[1] - 0.5f));
+        yEnd   = std::min(yEnd, screenH); // 裁剪
+
+        const float dy = pBot[1] - pTop[1];
+        if (std::abs(dy) < 1e-5f) {
+            dx_dy = 0.0f;
+            // 对于水平边，step 设为0，防止除0
+            step = vTop * 0.0f;
+            return;
+        }
+
+        const float invDy = 1.0f / dy;
+        dx_dy = (pBot[0] - pTop[0]) * invDy;
+        step  = (vBot - vTop) * invDy;
+        // 因为扫描线是从整数 Y 开始的，而顶点可能是浮点数 Y。
+        // 需要把属性向前推演 (yStart + 0.5 - pTop.y)
+        float preStepY = (static_cast<float>(yStart) + 0.5f) - pTop[1];
+        x = pTop[0] + dx_dy * preStepY;
+        current = vTop + (step * preStepY);
+    }
+
+    // 步进下一行
+    void Step() {
+        x += dx_dy;
+        current = current + step;
+    }
+};
+
+// 扫描线
+void Scanline(Triangle& tri, std::vector<Fragment>& result, int screenWidth, int screenHeight) {
+    if (!tri.alive) return;
+
+    const auto* v0 = &tri[0];
+    const auto* v1 = &tri[1];
+    const auto* v2 = &tri[2];
+
+    // 屏幕坐标
+    VecN<2> p0 = { v0->clipPosi[0], v0->clipPosi[1] };
+    VecN<2> p1 = { v1->clipPosi[0], v1->clipPosi[1] };
+    VecN<2> p2 = { v2->clipPosi[0], v2->clipPosi[1] };
+
+    // 透视除法预处理
+    auto create_payload = [](const V2F* v) -> Payload {
+        Payload p;
+        float invW = v->invW; // 假设这是 1/w
+        p.invW = invW;
+        p.depth = v->clipPosi[2] * invW;
+        p.uv = v->uv * invW;
+        p.worldPos = v->worldPosi * invW;
+        p.normal = v->normal * invW;
+        p.mainLight = v->MainLightOri * invW;
+        p.camOri = v->CameraOri * invW;
+        p.vexLight = v->VexLightF * invW;
+        for(int i=0; i<3; ++i) p.pixLight[i] = v->PixLightOri[i] * invW;
+        return p;
+    };
+    Payload pay0 = create_payload(v0);
+    Payload pay1 = create_payload(v1);
+    Payload pay2 = create_payload(v2);
+    // 排序;
+    if (p0[1] > p1[1]) { std::swap(p0, p1); std::swap(pay0, pay1); }
+    if (p0[1] > p2[1]) { std::swap(p0, p2); std::swap(pay0, pay2); }
+    if (p1[1] > p2[1]) { std::swap(p1, p2); std::swap(pay1, pay2); }
+    // 剔除无效高度
+    if (p2[1] < 0 || p0[1] > static_cast<float>(screenHeight)) return;
+    // 判断左右边
+    float totalDy = p2[1] - p0[1];
+    if (totalDy < 1e-5f) return;
+    // 计算长边在 mid Y 处的 x
+    float x_on_long = p0[0] + (p2[0] - p0[0]) * ((p1[1] - p0[1]) / totalDy);
+    bool midIsRight = p1[0] > x_on_long;
+    // 初始化三条边
+    ScanEdge longEdge, shortEdgeTop, shortEdgeBot;
+    // 长边
+    longEdge.Init(p0, pay0, p2, pay2, screenHeight);
+    // 短边上
+    shortEdgeTop.Init(p0, pay0, p1, pay1, screenHeight);
+    // 短边下
+    shortEdgeBot.Init(p1, pay1, p2, pay2, screenHeight);
+    auto DrawSpan = [&](int y, const ScanEdge& left, const ScanEdge& right) {
+        // 整数 X 范围
+        const int xStart = static_cast<int>(std::ceil(left.x - 0.5f));
+        const int xEnd   = static_cast<int>(std::ceil(right.x - 0.5f));
+        // 裁剪 X
+        const int rxStart = std::max(0, xStart);
+        const int rxEnd   = std::min(screenWidth, xEnd);
+        if (rxStart >= rxEnd) return; // 空行
+        // 计算 X 方向的梯度 (dAttr/dx)
+        float spanWidth = right.x - left.x;
+        if (spanWidth <= 1e-5f) spanWidth = 1.0f; // 避免除0
+        const float invSpan = 1.0f / spanWidth;
+        const Payload xStep = (right.current - left.current) * invSpan;
+        // Sub-pixel Pre-stepping X
+        const float preStepX = (static_cast<float>(rxStart) + 0.5f) - left.x;
+        Payload pixelPayload = left.current + (xStep * preStepX);
+        // X 轴循环
+        for (int x = rxStart; x < rxEnd; ++x) {
+            // 透视恢复
+            const float w_pixel = 1.0f / pixelPayload.invW;
+            result.emplace_back();
+            auto&[x_, y_, depth, worldPosi, normal, uv, VexLightF, PixLightOri, MainLightOri, CameraOri, alive] = result.back();
+            alive = true;
+            x_ = x; // 假设你的结构体字段叫 triX/triY
+            y_ = y;
+            // 属性还原: (Attr/w) * w
+            worldPosi = pixelPayload.worldPos * w_pixel;
+            uv        = pixelPayload.uv * w_pixel;
+            depth     = pixelPayload.depth * w_pixel;
+            normal    = pixelPayload.normal * w_pixel;
+            MainLightOri = pixelPayload.mainLight * w_pixel;
+            CameraOri    = pixelPayload.camOri * w_pixel;
+            VexLightF    = pixelPayload.vexLight * w_pixel;
+            for(int k=0; k<3; ++k) PixLightOri[k] = pixelPayload.pixLight[k] * w_pixel;
+            // 步进到下一个像素
+            pixelPayload = pixelPayload + xStep;
+        }
+    };
+
+    // 执行 Y 轴扫描
+    // 如果中点在右，则 左边=长边, 右边=短边上
+    ScanEdge *leftE, *rightE;
+    int midY = static_cast<int>(std::ceil(p1[1] - 0.5f));
+    // 上半部分
+    if (midIsRight) { leftE = &longEdge; rightE = &shortEdgeTop; }
+    else            { leftE = &shortEdgeTop; rightE = &longEdge; }
+    int yEndTop = std::min(midY, shortEdgeTop.yEnd); // 安全边界
+    for (int y = shortEdgeTop.yStart; y < yEndTop; ++y) {
+        DrawSpan(y, *leftE, *rightE);
+        leftE->Step();
+        rightE->Step();
+    }
+    // 下半部分
+    // 切换短边：从 Top->Mid 变为 Mid->Bot
+    // 长边继续走，不需要重置，但需要确保同步 (通常长边已经在上面的循环走到了 midY)
+
+    // 注意：长边可能已经 Step 过了 yStart 到 yEndTop 的距离
+    // 如果上下半部分无缝衔接，长边的当前状态应该是对的。
+    // 为了保险（处理 float 精度误差），通常重新初始化下半部分的左右边逻辑，
+    // 或者简单地继续步进。这里假设 midY 是分界线。
+
+    if (midIsRight) { leftE = &longEdge; rightE = &shortEdgeBot; }
+    else            { leftE = &shortEdgeBot; rightE = &longEdge; }
+
+    // 修正长边的 yStart（如果长边是从 top 开始算的，现在它需要从 midY 继续）
+    // 在这里由于 ScanEdge 内部维护了 current state，只要 y 连续，直接调用 Step 即可。
+    // 唯一的问题是如果 longEdge 的 yStart 比 shortEdgeTop 的 yStart 小（不可能，因为都来自 p0），
+    // 或者 loop 没跑满。
+    // 简单起见，这里直接跑下半部分循环
+    int yEndBot = std::min(screenHeight, shortEdgeBot.yEnd);
+    // 确保从 midY 开始
+    int currentY = std::max(midY, 0);
+
+    // 对齐 longEdge 到 currentY (如果上半部分因为裁剪没跑完)
+    // 这是一个复杂的 corner case。为了鲁棒性，工业级代码通常会计算 deltaY 直接 jump。
+    // 这里假设简单的 Y 连续性
+    for (int y = currentY; y < yEndBot; ++y) {
+        DrawSpan(y, *leftE, *rightE);
+        leftE->Step();
+        rightE->Step();
+    }
+}
