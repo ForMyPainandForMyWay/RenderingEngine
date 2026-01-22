@@ -6,6 +6,7 @@
 #define UNTITLED_LIGHTS_H
 
 #include "Film.h"
+#include "MatPro.hpp"
 #include "Transform.h"
 
 
@@ -26,12 +27,12 @@ public:
                   uint8_t b = 255, uint8_t a = 255);
     void setI(float i = 1);
 
-    void updateP(const VecN<3> &translate);   // 更新位姿
-    void updateQ(const VecN<4> &quaternion);  // 更新旋转
-    void updateS(const VecN<3> &scale);  // 放缩
+    void updateP(const Vec3 &translate);   // 更新位姿
+    void updateQ(const Vec4 &quaternion);  // 更新旋转
+    void updateS(const Vec3 &scale);  // 放缩
 
     [[nodiscard]] float getI() const { return intensity; }
-    [[nodiscard]] VecN<3> getPosi() const { return tf.getPosition(); }
+    [[nodiscard]] Vec3 getPosi() const { return tf.getPosition(); }
     [[nodiscard]] Pixel getColor() const { return color; }
 
     bool alive = false;
@@ -56,8 +57,8 @@ protected:
 
 class MainLight: public Lights {
 public:
-    const MatMN<4, 4>& ViewMat();        // 视角变换矩阵
-    const MatMN<4, 4>& ProjectionMat();  // 返回投影矩阵P，自动更新
+    const Mat4& ViewMat();        // 视角变换矩阵
+    const Mat4& ProjectionMat();  // 返回投影矩阵P，自动更新
     void updateProject();  // 更新投影变换矩阵
 
     friend class Engine;
@@ -65,7 +66,7 @@ public:
 protected:
     enum LType {Direct, Spot};
     LType LightType = Spot;
-    MatMN<4, 4>Projection;  // 投影变换矩阵
+    Mat4 Projection;  // 投影变换矩阵
     bool ProjIsDirty = true;  // 修改光源参数脏位
 };
 

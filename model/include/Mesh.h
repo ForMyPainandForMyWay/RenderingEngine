@@ -18,9 +18,9 @@ struct TextureMap;
 // 表面材质
 struct Material {
     std::string name;
-    VecN<3> Ka{1.0f, 1.0f, 1.0f};   // 环境光
-    VecN<3> Kd{1.0f,1.0f,1.0f};   // 漫反射
-    VecN<3> Ks{1.0f,1.0f,1.0f};   // 高光
+    Vec3 Ka{1.0f, 1.0f, 1.0f};   // 环境光
+    Vec3 Kd{1.0f,1.0f,1.0f};   // 漫反射
+    Vec3 Ks{1.0f,1.0f,1.0f};   // 高光
     float Ns=32;   // 光泽指数
     std::string map_Kd="None"; // 纹理贴图名字(注：材质实际不止会有一个mak_Kd,需要拓展)
     std::string map_Bump="None";  // 法线贴图名字

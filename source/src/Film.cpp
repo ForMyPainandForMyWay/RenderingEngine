@@ -4,6 +4,8 @@
 
 #include "Film.h"
 
+#include "VecPro.hpp"
+
 
 void FloatPixel::operator+=(const FloatPixel& other) {
     r += other.r;
@@ -11,7 +13,7 @@ void FloatPixel::operator+=(const FloatPixel& other) {
     b += other.b;
 }
 
-FloatPixel FloatPixel::operator*(VecN<3> K) const {
+FloatPixel FloatPixel::operator*(Vec3 K) const {
     FloatPixel result{};
     result.r = r * K[0];
     result.g = g * K[1];
@@ -19,13 +21,13 @@ FloatPixel FloatPixel::operator*(VecN<3> K) const {
     return result;
 }
 
-void FloatPixel::operator*=(VecN<3> K) {
+void FloatPixel::operator*=(Vec3 K) {
     r *= K[0];
     g *= K[1];
     b *= K[2];
 }
 
-VecN<3> FloatPixel::toFloat() const {
+Vec3 FloatPixel::toFloat() const {
     return {r, g, b};
 }
 
@@ -36,8 +38,8 @@ Pixel FloatPixel::toPixel() const {
     return {r_, g_, b_ , 255};
 }
 
-VecN<3> Pixel::toFloat() const {
-    VecN<3> result{};
+Vec3 Pixel::toFloat() const {
+    Vec3 result{};
     result[0] = static_cast<float>(r) / 255.0f;
     result[1] = static_cast<float>(g) / 255.0f;
     result[2] = static_cast<float>(b) / 255.0f;
@@ -88,7 +90,7 @@ void Film::save(const std::string &filename) const {
 }
 
 void Film::copyFromPtr(const unsigned char *data) {
-    std::memcpy(image.data(), data, width * height * sizeof(Pixel));;
+    std::memcpy(image.data(), data, width * height * sizeof(Pixel));
 }
 
 // 将8位像素转位浮点数，填充到floatImg，清空image数据

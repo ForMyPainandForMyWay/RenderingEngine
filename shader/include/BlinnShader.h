@@ -8,6 +8,7 @@
 #include <vector>
 
 #include "Shader.h"
+#include "VecPro.hpp"
 
 struct Triangle;
 class EnvironmentLight;
@@ -16,7 +17,7 @@ class Lights;
 struct Pixel;
 class GlobalUniform;
 struct ShadowMap;
-class Uniform;
+struct Uniform;
 struct V2F;
 struct F2P;
 struct Vertex;
@@ -55,8 +56,8 @@ public:
 
     static float CalcHardShadow(
         const MainLight* mainLight,
-        const VecN<4> &worldPos,
-        const VecN<3> &normal,
+        const Vec4 &worldPos,
+        const Vec3 &normal,
         const GlobalUniform &gu,
         const ShadowMap &ShadowMap);
 

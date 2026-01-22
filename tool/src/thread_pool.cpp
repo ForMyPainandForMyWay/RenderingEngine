@@ -6,16 +6,12 @@
 
 //子线程调度
 void ThreadPool::WorkerThread(ThreadPool *master) {
-    while (master->alive) {
-
-        if (Task *task = master->getTask(); task != nullptr) {
-
-            task->run();
-            delete task;
+    while (true) {
+        // 尝试获取任务
+        if (std::function<void()> task; master->popTask(task)) {
+            task();  // 执行任务
             --master->pending_task_count;
-        } else {
-            std::this_thread::yield();
-        }
+        } else return;
     }
 }
 
@@ -37,25 +33,25 @@ ThreadPool::ThreadPool(size_t thread_count) {
 
 ThreadPool::~ThreadPool() {
     wait();
-    alive = false;
+    {
+        std::lock_guard guard(lock);
+        alive = false;
+    }
+    cv.notify_all();  // 唤醒所有线程避免忙等
     for (auto &thread : threads) {
-        thread.join();
+        if (thread.joinable()) thread.join();
     }
     threads.clear();
 }
 
-void ThreadPool::addTask(Task *task) {
-    std::lock_guard guard(lock);
-    tasks.push_back(task);
-    ++this->pending_task_count;
-}
-
-Task* ThreadPool::getTask() {
-    std::lock_guard guard(lock);
-    if (tasks.empty()) {
-        return nullptr;
-    }
-    Task* task = tasks.front();
+bool ThreadPool::popTask(std::function<void()>& task) {
+    std::unique_lock u_lock(lock);
+    cv.wait(u_lock, [this] {
+        return !tasks.empty() || !alive;
+    });
+    if (tasks.empty()) return false;
+    // 移动语义：将任务从队列中 move 出来，避免拷贝 lambda
+    task = std::move(tasks.front());
     tasks.pop_front();
-    return task;
+    return true;
 }
