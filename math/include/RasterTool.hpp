@@ -15,4 +15,5 @@ void DegenerateClip(Triangle &tri);
 
 // 重心坐标
 void BarycentricOptimizedFull(Triangle& tri, std::vector<Fragment>& result, int screenWidth, int screenHeight);
+void Scanline(Triangle& tri, std::vector<Fragment>& result, int screenWidth, int screenHeight);
 #endif //RENDERINGENGINE_RASTERTOOL_H
