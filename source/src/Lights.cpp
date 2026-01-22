@@ -27,23 +27,23 @@ void Lights::setI(const float i) {
     this->intensity = i;
 }
 
-void Lights::updateP(const VecN<3> &translate) {
+void Lights::updateP(const Vec3 &translate) {
     this->tf.multP(translate);
 }
 
-void Lights::updateQ(const VecN<4> &quaternion) {
+void Lights::updateQ(const Vec4 &quaternion) {
     this->tf.multQ(quaternion);
 }
 
-void Lights::updateS(const VecN<3> &scale) {
+void Lights::updateS(const Vec3 &scale) {
     this->tf.multS(scale);
 }
 
-const MatMN<4, 4>& MainLight::ViewMat() {
+const Mat4& MainLight::ViewMat() {
     return this->tf.getViewMat();
 }
 
-const MatMN<4, 4>& MainLight::ProjectionMat() {
+const Mat4& MainLight::ProjectionMat() {
     if (ProjIsDirty) {
         this->updateProject();
         this->ProjIsDirty = false;

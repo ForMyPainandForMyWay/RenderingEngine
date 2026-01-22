@@ -25,8 +25,8 @@ std::unique_ptr<Film> loadPNG(const std::string &path) {
     // 拷贝数据到uv图
     if (data == nullptr) {
         width = height = 1024;
-        return std::make_unique<Film>(width, height);;
-    };
+        return std::make_unique<Film>(width, height);
+    }
     auto uvImg = std::make_unique<Film>(width, height);
     uvImg->copyFromPtr(data);
     stbi_image_free(data);

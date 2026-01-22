@@ -5,6 +5,7 @@
 #ifndef UNTITLED_OBJECTS_H
 #define UNTITLED_OBJECTS_H
 
+#include "MatPro.hpp"
 #include "Transform.h"
 
 class Mesh;
@@ -17,17 +18,17 @@ public:
     explicit RenderObjects(const std::shared_ptr<Mesh>& m);
     void setMesh(const std::shared_ptr<Mesh> &m);
     const MatMN<4,4>& ModelMat();
-    const MatMN<4, 4>& InverseTransposedMat();
+    const Mat4& InverseTransposedMat();
     [[nodiscard]] std::shared_ptr<Mesh> getMesh() const;
 
     // 位置变换接口
-    void updateP(const VecN<3> &translate);
-    void updateQ(const VecN<4> &quaternion);
-    void updateS(const VecN<3> &scale);
+    void updateP(const Vec3 &translate);
+    void updateQ(const Vec4 &quaternion);
+    void updateS(const Vec3 &scale);
 
     // 更新MVP并返回
-    MatMN<4, 4> updateMVP(const MatMN<4, 4> &PV);
-    MatMN<4, 4> MVP;
+    Mat4 updateMVP(const Mat4 &PV);
+    Mat4 MVP;
 
 protected:
     ObjTransform tf;  // 模型变换M

@@ -42,7 +42,7 @@ void SkyShader::GeometryShader(
 
 }
 
-inline float smoothstep(float a, float b, float x) {
+inline float smoothstep(const float a, const float b, const float x) {
     const float t = std::clamp((x - a) / (b - a), 0.0f, 1.0f);
     return t * t * (3.0f - 2.0f * t);
 }
@@ -62,9 +62,9 @@ F2P SkyShader::FragmentShader(
     pix.y = frag.y;
     // 根据高度插值天空颜色
     const float h = std::clamp(frag.worldPosi[1], 0.0f, 1.0f);
-    const VecN<3> skyTop = {0.30f, 0.65f, 1.0f};
-    const VecN<3> skyHorizon = {0.9f,  0.9f,  1.0f};
-    VecN<3> color = lerp(skyHorizon, skyTop, h);
+    constexpr Vec3 skyTop = {0.30f, 0.65f, 1.0f};
+    constexpr Vec3 skyHorizon = {0.9f,  0.9f,  1.0f};
+    Vec3 color = lerp(skyHorizon, skyTop, h);
     const float t = smoothstep(-0.5f, 0.0f, frag.worldPosi[1]);
     color *= t;
     // Pixel 需要uint8_t类型的颜色值

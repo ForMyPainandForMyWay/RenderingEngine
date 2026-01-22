@@ -19,11 +19,13 @@ struct Fragment;
 
 
 // euler = [roll, pitch, yaw] （绕 X、Y、Z 轴旋转，单位：弧度）
-VecN<4> Euler2Quaternion(const VecN<3> &euler);
+Vec4 Euler2Quaternion(const Vec3 &euler);
 // 凸多边形裁剪
 std::vector<Triangle> splitPoly2Tri(const std::vector<V2F>& poly);
 // 透视除法
 void PersDiv(Triangle &tri);
+// 三角形面积 不保证符号
+float TriScreenArea2(const Triangle &tri);
 
 // 对角阵求逆
 template<size_t M>

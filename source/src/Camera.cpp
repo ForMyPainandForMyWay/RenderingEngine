@@ -3,12 +3,12 @@
 //
 
 #include "Camera.h"
-#include "V2F.h"
+#include "MatPro.hpp"
 
 
 Camera::Camera() {
     tf = CameraTransform();
-    up = VecN<3>();
+    up = Vec3();
     up[1] = 1;
 }
 
@@ -21,18 +21,18 @@ void Camera::setParameters(const float F, const float Near, const float Far, con
 }
 
 // 返回视角矩阵V，自动更新
-const MatMN<4, 4>& Camera::ViewMat() {
+const Mat4& Camera::ViewMat() {
     return tf.getViewMat();
 }
 
 // 返回投影矩阵P，自动更新
-const MatMN<4, 4> &Camera::ProjectionMat() {
+const Mat4 &Camera::ProjectionMat() {
     if (ProjIsDirty) this->updateProject();
     return Projection;
 }
 
-MatMN<4, 4> Camera::invProjectionMat() const{
-    MatMN<4,4> InvP(0.0f);
+Mat4 Camera::invProjectionMat() const{
+    Mat4 InvP(0.0f);
 
     const float rad = FOV * 0.5f * 3.1415926535f / 180.0f;
     const float f_val = 1.0f / std::tan(rad); // cot(FOV/2)
@@ -49,12 +49,12 @@ MatMN<4, 4> Camera::invProjectionMat() const{
     return InvP;
 }
 
-MatMN<4, 4> Camera::RMat() const {
+Mat4 Camera::RMat() const {
     return tf.getRMat();
 }
 
 void Camera::updateProject() {
-    MatMN<4,4> P(0.0f);
+    Mat4 P(0.0f);
 
     const float rad = FOV * 0.5f * 3.1415926535f / 180.0f;
     const float f = 1.0f / std::tan(rad);
@@ -72,14 +72,14 @@ void Camera::updateProject() {
     ProjIsDirty = false;
 }
 
-void Camera::updateP(const VecN<3> &translate) {
+void Camera::updateP(const Vec3 &translate) {
     this->tf.multP(translate);
 }
 
-void Camera::updateQ(const VecN<4> &quaternion) {
+void Camera::updateQ(const Vec4 &quaternion) {
     this->tf.multQ(quaternion);
 }
 
-void Camera::updateS(const VecN<3> &scale) {
+void Camera::updateS(const Vec3 &scale) {
     this->tf.multS(scale);
 }

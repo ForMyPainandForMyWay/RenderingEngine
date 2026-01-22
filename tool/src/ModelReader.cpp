@@ -14,7 +14,7 @@
 
 // 解析材质文件,存入哈希表
 void ModelReader::readMTLFile(
-    const bool NeedGamma,
+    const bool Gamma,
     const std::string &mtlFilename,
     std::unordered_map<std::string, std::shared_ptr<Material>> &materialMap,
     std::unordered_map<std::string, std::shared_ptr<TextureMap>> &textureMap,
@@ -59,7 +59,7 @@ void ModelReader::readMTLFile(
                     textureMap[currentMat->map_Kd] = texture;
                     currentMat->setKdTexture(texture);  // 设置材质的纹理贴图
                     // gamma矫正
-                    if (NeedGamma)
+                    if (Gamma)
                         GammaCorrect(texture->uvImg);
                 }
             }
@@ -101,8 +101,8 @@ std::vector<std::string> ModelReader::readObjFile(
     std::filesystem::path p(filename);
     std::string parent_path = p.parent_path().string();
 
-    std::vector<VecN<3>> positions;
-    std::vector<VecN<3>> normals;
+    std::vector<Vec3> positions;
+    std::vector<Vec3> normals;
     std::vector<VecN<2>> uvs;
 
     auto currentMesh = std::make_shared<Mesh>();
@@ -136,12 +136,12 @@ std::vector<std::string> ModelReader::readObjFile(
         ss >> prefix;
 
         if (prefix == "v") {
-            VecN<3> pos{};
+            Vec3 pos{};
             ss >> pos[0] >> pos[1] >> pos[2];
             positions.emplace_back(pos);
         }
         else if (prefix == "vn") {
-            VecN<3> n{};
+            Vec3 n{};
             ss >> n[0] >> n[1] >> n[2];
             normals.emplace_back(n);
         }
@@ -177,7 +177,7 @@ std::vector<std::string> ModelReader::readObjFile(
                     if (vtIdx) vert.uv       = uvs[vtIdx - 1];
                     if (vnIdx) vert.normal   = normals[vnIdx - 1];
                     currentMesh->addVertex(vert);
-                    vertexMap[vertexStr] = currentMesh->getVBONums()-1;;
+                    vertexMap[vertexStr] = currentMesh->getVBONums()-1;
                 }
                 face.addVexIndex(vertexMap[vertexStr]);
             }

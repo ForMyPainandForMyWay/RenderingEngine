@@ -8,10 +8,10 @@
 
 // 注意：初始构造变换类时并不会计算变换矩阵
 Transform::Transform() {
-     this->position = VecN<3>();
-     this->quaternion = VecN<4>();
+     this->position = Vec3();
+     this->quaternion = Vec4();
      this->quaternion[3] = 1;  // 表示无旋转的四元数
-     this->scale = VecN<3>(1.0f);
+     this->scale = Vec3(1.0f);
      this->isDirty = true;
 }
 
@@ -35,22 +35,22 @@ void Transform::setScale(const float x, const float y, const float z) {
      isDirty = true;
 }
 
-void Transform::setQ(const VecN<4> newQ) {
+void Transform::setQ(const Vec4 newQ) {
      this->quaternion = newQ;
      isDirty = true;
 }
 
-void Transform::setP(const VecN<3> newT) {
+void Transform::setP(const Vec3 newT) {
      this->position = newT;
      isDirty = true;
 }
 
-void Transform::setS(const VecN<3> newS) {
+void Transform::setS(const Vec3 newS) {
      this->scale = newS;
      isDirty = true;
 }
 
-void Transform::multQ(const VecN<4>& deltaQ) {
+void Transform::multQ(const Vec4& deltaQ) {
      // 当前四元数
      const float& x1 = quaternion[0];
      const float& y1 = quaternion[1];
@@ -72,19 +72,19 @@ void Transform::multQ(const VecN<4>& deltaQ) {
      isDirty = true;
 }
 
-void Transform::multP(const VecN<3> &deltaT) {
+void Transform::multP(const Vec3 &deltaT) {
      this->position += deltaT;
      isDirty = true;
 }
 
-void Transform::multS(const VecN<3> &deltaS) {
-     this->scale *= deltaS;
+void Transform::multS(const Vec3 &deltaS) {
+     scale = Hadamard(scale, deltaS);
      isDirty = true;
 }
 
 // 四元数计算旋转矩阵，虚部xyz在前，实部w在后
-MatMN<4, 4> Transform::getRMat() const{
-     MatMN<4, 4> R;
+Mat4 Transform::getRMat() const{
+     Mat4 R;
      for(size_t i = 0; i < 4; ++i) {
           R[i][i] = 1.0f;
      }
@@ -111,7 +111,7 @@ MatMN<4, 4> Transform::getRMat() const{
      return R;
 }
 
-MatMN<4, 4> Transform::getTMat() const{
+Mat4 Transform::getTMat() const{
      MatMN<4,4> T;  // 平移矩阵
      // 初始化单位矩阵
      for(size_t i = 0; i < 4; ++i) T[i][i] = 1.0f;
@@ -122,8 +122,8 @@ MatMN<4, 4> Transform::getTMat() const{
      return T;
 }
 
-MatMN<4, 4> Transform::getSMat() const{
-     MatMN<4, 4>S;
+Mat4 Transform::getSMat() const{
+     Mat4 S;
      for (size_t i = 0; i < 3; i++) S[i][i] = scale[i];
      S[3][3] = 1;
      return S;
@@ -131,7 +131,7 @@ MatMN<4, 4> Transform::getSMat() const{
 
 
 ObjTransform::ObjTransform() {
-     this->ModelMatrix = MatMN<4, 4>(0.0f);
+     this->ModelMatrix = Mat4(0.0f);
      for (size_t i = 0; i < 4; ++i) {
           ModelMatrix[i][i] = 1;
      }
@@ -148,16 +148,16 @@ void ObjTransform::update() {
 }
 
 // 世界坐标变换矩阵，自动更新
-const MatMN<4, 4>& ObjTransform::getWorldMat() {
+const Mat4& ObjTransform::getWorldMat() {
      if (isDirty) {
           this->update();
-          this->isDirty = false;;
+          this->isDirty = false;
      }
      return this->ModelMatrix;
 }
 
 // 法向量使用的世界坐标，自动更新
-const MatMN<4, 4> &ObjTransform::getNormalWorldMat() {
+const Mat4 &ObjTransform::getNormalWorldMat() {
      if (isDirty) {
           this->update();
           this->isDirty = false;
@@ -167,7 +167,7 @@ const MatMN<4, 4> &ObjTransform::getNormalWorldMat() {
 
 
 // 用于计算-P得出的位移矩阵
-MatMN<4, 4> CameraTransform::getNegativeTMat() {
+Mat4 CameraTransform::getNegativeTMat() {
      MatMN<4,4> T;  // 平移矩阵
      // 初始化单位矩阵
      for(size_t i = 0; i < 4; ++i) T[i][i] = 1.0f;
@@ -180,10 +180,10 @@ MatMN<4, 4> CameraTransform::getNegativeTMat() {
 void CameraTransform::update() {
      // 视角变换
      if (isDirty)
-          this->ViewMatrix = getRMat().Transpose() * getNegativeTMat();
+          this->ViewMatrix = Transpose(getRMat()) * getNegativeTMat();
 }
 
-const MatMN<4, 4>& CameraTransform::getViewMat() {
+const Mat4& CameraTransform::getViewMat() {
      if (isDirty) {
           this->update();
           this->isDirty = false;
@@ -191,6 +191,6 @@ const MatMN<4, 4>& CameraTransform::getViewMat() {
      return this->ViewMatrix;
 }
 
-const VecN<3>& CameraTransform::getPosition() const {
+const Vec3& CameraTransform::getPosition() const {
      return position;
 }

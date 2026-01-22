@@ -10,7 +10,7 @@
 #include "ModelReader.h"
 #include "RenderObjects.h"
 
-Engine::Engine(const size_t w, const size_t h, bool Gamma)
+Engine::Engine(const size_t w, const size_t h, const bool Gamma)
     : width(w)
     , height(h)
     , img(w, h)
@@ -112,9 +112,9 @@ void Engine::setResolution(const size_t w, const size_t h) {
 // 绘制场景-前向渲染
 void Engine::DrawScene(const std::vector<uint16_t>& models) {
     // SkyPass
-    MatMN<4, 4> PV;
+    Mat4 PV;
     if (NeedSkyBoxPass) {
-        PV = camera.RMat().Transpose() * camera.invProjectionMat();
+        PV = Transpose(camera.RMat()) * camera.invProjectionMat();
         const auto uniform = Uniform(sky.ModelMat(), sky.updateMVP(PV),
                sky.InverseTransposedMat());
         graphic.SkyPass(sky, uniform, globalU, 0);

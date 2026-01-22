@@ -1,13 +1,9 @@
-#include <cassert>
 #include <iostream>
 #include <unordered_map>
 #include <string>
 
 #include "Engine.h"
 #include "Mesh.h"
-#include "RenderObjects.h"
-
-// 假设 VecN, Vertex, Mesh, SubMesh, Material, TextureMap, Film 已定义
 
 void dumpMaterialInfo(const std::unordered_map<std::string, Material*>& materialMap) {
     std::cout << "\n=== 材质信息 ===\n";
@@ -64,7 +60,7 @@ void dumpMeshInfo(const std::unordered_map<std::string, Mesh*>& meshes) {
 }
 
 int main() {
-    Engine engine(500, 500);
+    Engine engine(800, 800);
     const auto meshName = R"(/Users/dongyu/CLionProjects/RenderEngine/bin/test4.obj)";
     const auto meshId = engine.addMesh(meshName);
     uint16_t objID = engine.addObjects(meshId[0]);
@@ -93,13 +89,16 @@ int main() {
     // engine.addTfCommand({1, TfCmd::ROTATE, {-35.0f, 35.0f, 0.0f}});
 
     // 平移
-    engine.addTfCommand({0, CameraID, TfCmd::TRANSLATE, {0.0f, 0.0f, 4.0f}});
+    engine.addTfCommand({0, CameraID, TfCmd::TRANSLATE, {0.0f, 0.0f, 5.0f}});
     engine.addTfCommand({1, MainLightID, TfCmd::TRANSLATE, {0.0f, 0.0f, 4.0f}});
 
     // engine.OpenShadow();
     // engine.OpenSky();
+    auto start = std::chrono::high_resolution_clock::now();
     engine.RenderFrame({ objID, objID2});
-
+    auto end = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+    std::cout << "渲染耗时: " << duration.count() << " 微秒\n";
     return 0;
 }
 

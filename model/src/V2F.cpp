@@ -5,12 +5,12 @@
 #include "V2F.h"
 
 // 不进行齐次除法
-V2F::V2F(const VecN<4> &world, const VecN<4> &clip,
-    const VecN<4> &normal, const VecN<2> &uv,
+V2F::V2F(const Vec4 &world, const Vec4 &clip,
+    const Vec3 &normal, const VecN<2> &uv,
     const float &invW) {
     this->worldPosi = world;
     this->clipPosi = clip;
-    this->normal = VecN<3>{normal[0], normal[1], normal[2]};
+    this->normal = Vec3{normal[0], normal[1], normal[2]};
     this->uv = uv;
     this->invW = invW;
 }

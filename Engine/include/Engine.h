@@ -12,7 +12,10 @@
 #include "Lights.h"
 #include "ShadowMap.h"
 #include "SkyBox.h"
+#include "thread_pool.h"
 
+
+class ThreadPool;
 
 // ID体系:0号为Camera,1号为主光源,2-4号为逐片元光源
 enum sysID : size_t{CameraID, MainLightID, PixL1, PixL2, PixL3, RenderObject, VexLight, Error};
@@ -23,9 +26,8 @@ typedef struct TransformCommand {
     size_t objId{};
     sysID typeId{};
     enum Type { TRANSLATE, ROTATE, SCALE } type = SCALE;
-    VecN<3> value;  // 移动/旋转/缩放值
+    Vec3 value;  // 移动/旋转/缩放值
 } TfCmd;
-
 
 class Engine {
 public:
@@ -80,6 +82,7 @@ private:
 
     size_t width, height;  // 分辨率
     Film img;
+    ThreadPool pool;  // 线程池
 
     Graphic graphic;
     GlobalUniform globalU;  // 全局Uniform

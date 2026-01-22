@@ -12,8 +12,8 @@ struct Material;
 struct Fragment;
 
 struct GBufferData {
-    VecN<3> normal;
-    VecN<4> worldPosi;
+    Vec3 normal;
+    Vec4 worldPosi;
 };
 
 struct GBuffer {

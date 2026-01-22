@@ -48,7 +48,7 @@ bool AllVertexInside(const V2F &p1, const V2F &p2, const V2F &p3) {
 }
 
 // 用于SH算法判断是否在Clip空间的平面内
-bool Inside(const float* plane, const VecN<4> &posi) {
+bool Inside(const float* plane, const Vec4 &posi) {
     // Ax + By + Cz + Dw >= 0 即为在平面内部
     const float val = plane[0]*posi[0] + plane[1]*posi[1] + plane[2]*posi[2] + plane[3]*posi[3];
     return val >= -1e-4f; // 加小 epsilon 防止浮点误差
@@ -66,7 +66,7 @@ V2F Intersect(const V2F &last, const V2F &current, const float* line) {
 
 // SH算法，需要保证传入所有的点都在裁剪体内.返回切分后的三角形序列
 std::vector<Triangle> PolyClip(const V2F &p1, const V2F &p2, const V2F &p3) {
-    std::vector<V2F> output = { p1, p2, p3 };
+    std::vector output = { p1, p2, p3 };
     for (const auto ViewPlane : ViewPlanes) {
         std::vector<V2F> input = output;
         output.clear();
@@ -90,7 +90,5 @@ std::vector<Triangle> PolyClip(const V2F &p1, const V2F &p2, const V2F &p3) {
 
 // NDC空间面剔除，逆时针的三角是正向三角(true)，顺时针三角需要剔除(false)
 void FaceClip(Triangle &tri) {
-    const auto e0 = tri[1].clipPosi - tri[0].clipPosi;
-    const auto e1 = tri[2].clipPosi - tri[0].clipPosi;
-    tri.alive = crossInLow2D(e0, e1) > -1e-3f;
+    tri.alive = TriScreenArea2(tri) > -1e-3f;
 }

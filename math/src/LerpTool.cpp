@@ -38,7 +38,7 @@ Pixel lerp(const Pixel& p1, const Pixel& p2, const float t) {
             static_cast<uint8_t>(std::clamp(a, 0.0f, 255.0f))};
 }
 
-FloatPixel lerp(const FloatPixel& p1, const FloatPixel& p2, float t) {
+FloatPixel lerp(const FloatPixel& p1, const FloatPixel& p2, const float t) {
     const float r = p1.r + (p2.r - p1.r)*t;
     const float g = p1.g + (p2.g - p1.g)*t;
     const float b = p1.b + (p2.b - p1.b)*t;

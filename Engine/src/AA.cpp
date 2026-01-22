@@ -293,14 +293,12 @@ void Graphic::FXAAC(std::vector<FloatPixel>& inBuffer,
             int distPos = 0;
 
             {
-                const size_t c = cordM - step;
-                if (std::abs(inBuffer[c].i - lumaM) >= lumaContrast * 0.5f)
+                if (const size_t c = cordM - step; std::abs(inBuffer[c].i - lumaM) >= lumaContrast * 0.5f)
                     distNeg = 1;
             }
 
             {
-                const size_t c = cordM + step;
-                if (std::abs(inBuffer[c].i - lumaM) >= lumaContrast * 0.5f)
+                if (const size_t c = cordM + step; std::abs(inBuffer[c].i - lumaM) >= lumaContrast * 0.5f)
                     distPos = 1;
             }
 

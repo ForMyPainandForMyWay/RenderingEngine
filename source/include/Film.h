@@ -8,6 +8,7 @@
 #include <filesystem>
 
 #include "Vec.hpp"
+#include "VecPro.hpp"
 
 
 struct Pixel;
@@ -25,9 +26,9 @@ struct FloatPixel {
     float b;
     float i;
     void operator+=(const FloatPixel& other);
-    FloatPixel operator*(VecN<3> K) const;
-    void operator*=(VecN<3> K);
-    [[nodiscard]] VecN<3> toFloat() const;
+    FloatPixel operator*(Vec3 K) const;
+    void operator*=(Vec3 K);
+    [[nodiscard]] Vec3 toFloat() const;
     [[nodiscard]] Pixel toPixel() const;
 };
 
@@ -38,7 +39,7 @@ struct Pixel {
     uint8_t b;
     uint8_t a;  // alpha or padding
 
-    [[nodiscard]] VecN<3> toFloat() const;
+    [[nodiscard]] Vec3 toFloat() const;
     [[nodiscard]] FloatPixel toFloatPixel() const;
 };
 static_assert(sizeof(Pixel) == 4);

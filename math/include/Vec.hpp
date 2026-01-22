@@ -1,279 +1,164 @@
-//
-// Created by yyd on 2025/12/24.
-//
-
 #ifndef UNTITLED_VEXCOMPUTE_H
 #define UNTITLED_VEXCOMPUTE_H
 
 #include <array>
 #include <cmath>
+#include <iostream>
+#include <algorithm>
 
-
-// 非齐次坐标,运行时升纬度
 template<size_t N>
-struct VecN {
+struct alignas(N%4==0 ? 16 : 4) VecN {
     std::array<float, N> data;
 
-    explicit VecN(float scalar) {data.fill(scalar);}
-    explicit VecN(float *arr) {std::copy(arr, arr+N, data.begin());}
-    VecN(std::initializer_list<float> il) {std::copy(il.begin(), il.end(), data.begin());}
-    VecN() : data{} {}
-
-    static float getN();
-
-    float& operator[] (size_t index);
-    const float& operator[](size_t index) const;
-    VecN operator + (const VecN &other) const;
-    VecN operator + (float scalar) const;
-    VecN operator - (const VecN &other) const;
-    VecN operator - (float scalar) const;
-    VecN operator * (float scalar) const;
-    float operator * (const VecN &other) const;
-    VecN operator / (float scalar) const;
-    void operator += (const VecN &other);
-    void operator *= (const VecN &other);
-    void operator *= (float scalar);
-    void operator /= (float w);
-    bool operator == (const VecN &other) const;
-    bool operator > (float scalar) const;
-
-    template<size_t M>
-    friend std::istream& operator>>(std::istream& is, VecN<M>& vec);
-    void show(){ for (auto i=0; i < N; i++) printf("%d ", data[i]); printf("\n"); }
-};
-
-
-template<size_t N>
-float VecN<N>::getN() {
-    return N;
-}
-
-template<size_t N>
-float& VecN<N>::operator[](size_t index) {
-    return data[index];
-}
-
-template<size_t N>
-const float& VecN<N>::operator[](size_t index) const{
-    return data[index];
-}
-
-template<size_t N>
-VecN<N> VecN<N>::operator+(const VecN &other) const {
-    VecN result{};
-    for (size_t i = 0; i < N; i++) {
-        result.data[i] = data[i] + other.data[i];
+    constexpr VecN() noexcept : data{} {}
+    explicit constexpr VecN(float scalar) noexcept { data.fill(scalar); }
+    explicit VecN(const float *arr) noexcept {
+        std::memcpy(data.data(), arr, N * sizeof(float));
     }
-    return result;
-}
 
-template<size_t N>
-VecN<N> VecN<N>::operator+(const float scalar) const {
-    VecN result{};
-    for (size_t i = 0; i < N; i++) {
-        result.data[i] = data[i] + scalar;
+    constexpr VecN(std::initializer_list<float> il) noexcept {
+        const size_t count = std::min(N, il.size());
+        auto it = il.begin();
+        for(size_t i=0; i<count; ++i) data[i] = *it++;
     }
-    return result;
-}
 
-template<size_t N>
-VecN<N> VecN<N>::operator-(const VecN &other) const {
-    VecN result{};
-    for (size_t i = 0; i < N; i++) {
-        result.data[i] = data[i] - other.data[i];
+    static constexpr size_t getN() { return N; }
+
+    // 访问器
+    constexpr float& operator[] (size_t index) { return data[index]; }
+    constexpr const float& operator[](size_t index) const { return data[index]; }
+
+    // 获取裸指针 (用于 SIMD 加载)
+    float* ptr() { return data.data(); }
+    [[nodiscard]] const float* ptr() const { return data.data(); }
+
+    // 长度平方，避免开根号
+    [[nodiscard]] constexpr float lengthSq() const noexcept {
+        float sum = 0.f;
+        for (const float x : data) sum += x * x;
+        return sum;
     }
-    return result;
-}
 
-template<size_t N>
-VecN<N> VecN<N>::operator-(float scalar) const {
-    VecN result{};
-    for (size_t i = 0; i < N; i++) {
-        result.data[i] = data[i] - scalar;
+    [[nodiscard]] float length() const noexcept {
+        return std::sqrt(lengthSq());
     }
-    return result;
-}
 
-template<size_t N>
-VecN<N> VecN<N>::operator*(float scalar) const {
-    VecN result{};
-    for (size_t i = 0; i < N; i++) {
-        result.data[i] = data[i] * scalar;
-    }
-    return result;
-}
-
-template<size_t N>
-VecN<N> VecN<N>::operator/(float scalar) const {
-    VecN result{};
-    for (size_t i = 0; i < N; i++) {
-        result.data[i] = data[i] / scalar;
-    }
-    return result;
-}
-
-template<size_t N>
-void VecN<N>::operator += (const VecN &other) {
-    for (size_t i = 0; i < N; i++) {
-        this->data[i] += other[i];
-    }
-}
-
-template<size_t N>
-void VecN<N>::operator *= (const VecN &other) {
-    for (size_t i = 0; i < N; i++) {
-        this->data[i] *= other[i];
-    }
-}
-
-template<size_t N>
-void VecN<N>::operator *= (const float scalar) {
-    for (size_t i = 0; i < N; i++) {
-        this->data[i] *= scalar;
-    }
-}
-
-template<size_t N>
-void VecN<N>::operator /= (const float w) {
-    for (size_t i = 0; i < N; i++) {
-        this->data[i] /= w;
-    }
-}
-
-template<size_t N>
-float VecN<N>::operator*(const VecN &other) const {
-    float result{0.f};
-    for (size_t i = 0; i < N; i++) {
-        result += data[i] * other.data[i];
-    }
-    return result;
-}
-
-// 比较器,注意浮点数精度问题
-template<size_t N>
-bool VecN<N>::operator==(const VecN &other) const {
-    for (size_t i = 0; i < N; ++i) {
-        if (std::fabs(data[i] - other.data[i]) > 1e-6f) {
-            return false;
+    // 归一化
+    void normalize() noexcept {
+        if (const float lenSq = lengthSq(); lenSq > 1e-8f) { // 避免除以 0
+            float invLen = 1.0f / std::sqrt(lenSq);
+            *this *= invLen;
         }
     }
-    return true;
+};
+
+// 运算符重载（移到结构体外并加上inline）
+template<size_t N>
+constexpr VecN<N> operator + (const VecN<N> &a, const VecN<N> &b) noexcept {
+    VecN<N> res;
+    for (size_t i = 0; i < N; ++i) res.data[i] = a.data[i] + b.data[i];
+    return res;
 }
 
 template<size_t N>
-bool VecN<N>::operator>(float scalar) const {
+constexpr VecN<N> operator - (const VecN<N> &a, const VecN<N> &b) noexcept {
+    VecN<N> res;
+    for (size_t i = 0; i < N; ++i) res.data[i] = a.data[i] - b.data[i];
+    return res;
+}
+
+template<size_t N>
+constexpr VecN<N> operator - (const VecN<N> &a, const float scalar) noexcept {
+    VecN<N> res;
+    for (size_t i = 0; i < N; ++i) res.data[i] = a.data[i] - scalar;
+    return res;
+}
+
+template<size_t N>
+constexpr VecN<N> operator * (const VecN<N> &a, float scalar) noexcept {
+    VecN<N> res;
+    for (size_t i = 0; i < N; ++i) res.data[i] = a.data[i] * scalar;
+    return res;
+}
+
+template<size_t N>
+constexpr VecN<N> operator / (const VecN<N> &a, const float scalar) noexcept {
+    VecN<N> res;
+    float inv = 1.0f / scalar;
+    for (size_t i = 0; i < N; ++i) res.data[i] = a.data[i] * inv;
+    return res;
+}
+
+template<size_t N>
+constexpr float operator * (const VecN<N> &a, const VecN<N> &b) noexcept {
+    float sum = 0.f;
+    for (size_t i = 0; i < N; ++i) sum += a.data[i] * b.data[i];
+    return sum;
+}
+
+template<size_t N>
+constexpr void operator += (VecN<N> &a, const VecN<N> &b) noexcept {
+    for (size_t i = 0; i < N; ++i) a.data[i] += b.data[i];
+}
+
+template<size_t N>
+constexpr void operator *= (VecN<N> &a, float scalar) noexcept {
+    for (size_t i = 0; i < N; ++i) a.data[i] *= scalar;
+}
+
+template<size_t N>
+constexpr void operator /= (VecN<N> &a, const float scalar) noexcept {
+    float inv = 1.0f / scalar;
+    for (size_t i = 0; i < N; ++i) a.data[i] *= inv;
+}
+
+template<size_t N>
+bool operator == (const VecN<N> &a, const VecN<N> &b) noexcept {
     for (size_t i = 0; i < N; ++i) {
-        if (data[i] <= scalar) return false;
+        if (std::fabs(a.data[i] - b.data[i]) > 1e-5f) return false;
     }
     return true;
 }
 
-template<size_t M>
-std::istream& operator>>(std::istream& is, VecN<M>& vec) {
-    for (size_t i = 0; i < M; ++i) {
-        if (!(is >> vec.data[i])) break;
-    }
-    return is;
-}
-
-
-// 通用泛型
-// 计算模长
+// 外部通用函数
+// 归一化返回新向量
 template<size_t N>
-float getLength(const VecN<N> &a) {
-    float result{};
-    for (size_t i = 0; i < N; i++) {
-        result += a.data[i] * a.data[i];
-    }
-    return std::sqrt(result);
+VecN<N> normalize(VecN<N> a) {
+    a.normalize();
+    return a;  // 触发 NRVO 优化，无额外拷贝
 }
 
 // 点乘
 template<size_t N>
-float dot(const VecN<N> &a, const VecN<N> &b) {
+constexpr float dot(const VecN<N> &a, const VecN<N> &b) {
     return a * b;
 }
 
-// 计算夹角余弦值
+// 叉乘
 template<size_t N>
-float cosAngle(const VecN<N> &a, const VecN<N> &b) {
-    const float lenA = getLength(a);
-    const float lenB = getLength(b);
-    if (lenA == 0 || lenB == 0) return INFINITY;
-    return a * b / (lenA * lenB);
-}
-
-// 判断是否同向(非严格)
-template<size_t N>
-bool sameWay(const VecN<N> &a, const VecN<N> &b) {
-    return a * b > 0;
-}
-
-// 是否在左侧 仅限二维向量比较
-template<size_t N>
-bool inLeft(const VecN<N> &a, const VecN<N> &b) {
-    static_assert(N == 2, "inLeft() is only defined for 2D vectors");
-    return a[0] * b[1] - a[1] * b[0] > 0;
-}
-
-// 是否在右侧 仅限二维
-template<size_t N>
-bool inRight(const VecN<N> &a, const VecN<N> &b) {
-    static_assert(N == 2, "inRight() is only defined for 2D vectors");
-    return a[0] * b[1] - a[1] * b[0] < 0;
-}
-
-// a 在 b 方向上的投影
-template<size_t N>
-VecN<N> project(const VecN<N> &a, const VecN<N> &b) {
-    return b  * ( a * b / (b * b) );
-}
-
-// a x b 仅限二三维
-template<size_t N>
-VecN<N> cross(const VecN<N> &a, const VecN<N> &b) {
-    if constexpr (N == 2) {
-        // 2D叉乘返回标量（伪标量）
-        VecN<N> result{};
-        result[0] = a[0] * b[1] - a[1] * b[0];
-        return result;
-    }
-    else if constexpr (N == 3) {
-        // 3D标准叉乘
-        VecN<3> result{};
+constexpr VecN<N> cross(const VecN<N> &a, const VecN<N> &b) {
+    VecN<N> result{};
+    if constexpr (N == 3) {
         result[0] = a[1] * b[2] - a[2] * b[1];
         result[1] = a[2] * b[0] - a[0] * b[2];
         result[2] = a[0] * b[1] - a[1] * b[0];
-        return result;
-    }
-    else {
-        // 编译时错误或运行时错误
-        static_assert(N == 2 || N == 3,
-            "cross() is only defined for 2D and 3D vectors");
-        return VecN<1>{};
-    }
+    } else if constexpr (N == 2) result[0] = a[0] * b[1] - a[1] * b[0];
+    return result;
 }
 
-// 任意维度向量的低维坐标的叉积，注意这里为了光栅化的效果更好专门进行了截断
+// 投影
 template<size_t N>
-float crossInLow2D(const VecN<N> &a, const VecN<N> &b) {
-    auto tmp = a[0]*b[1];
-    auto tmp2 = a[1]*b[0];
-    return tmp - tmp2;
+VecN<N> project(const VecN<N> &a, const VecN<N> &b) {
+    float bLenSq = b.lengthSq();
+    if (bLenSq < 1e-8f) return VecN<N>{}; // 避免除零
+    return b * ( (a * b) / bLenSq ); // 注意：这里不需要 sqrt
 }
 
-// 标准化向量,返回新向量
+// Hadamard积 (逐分量乘法)
 template<size_t N>
-VecN<N> normalize(const VecN<N> &a) {
-    return a / getLength(a);
-}
-
-template<size_t N>
-VecN<N>Hadamard(const VecN<N> &a, const VecN<N> &b) {
+constexpr VecN<N> Hadamard(const VecN<N> &a, const VecN<N> &b) {
     VecN<N> result{};
-    for (size_t i = 0; i < N; i++) {
-        result[i] = a[i] * b[i];
-    }
+    for (size_t i = 0; i < N; i++) result[i] = a[i] * b[i];
     return result;
 }
 
