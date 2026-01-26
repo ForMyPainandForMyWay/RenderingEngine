@@ -3,7 +3,6 @@
 //
 
 #include "Camera.hpp"
-#include "MatPro.hpp"
 
 
 Camera::Camera() {
@@ -17,6 +16,11 @@ void Camera::setParameters(const float F, const float Near, const float Far, con
     NearPlane = Near;
     FarPlane = Far;
     AspectRatio = A;
+    ProjIsDirty = true;
+}
+
+void Camera::setAsp(const float Asp) {
+    this->AspectRatio = Asp;
     ProjIsDirty = true;
 }
 

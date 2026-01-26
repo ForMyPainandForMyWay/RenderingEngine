@@ -57,6 +57,7 @@ protected:
 
 class MainLight: public Lights {
 public:
+    void setAsp(float Asp);
     const Mat4& ViewMat();        // 视角变换矩阵
     const Mat4& ProjectionMat();  // 返回投影矩阵P，自动更新
     void updateProject();  // 更新投影变换矩阵

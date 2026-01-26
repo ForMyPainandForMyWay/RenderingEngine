@@ -28,6 +28,9 @@ Engine::Engine(const size_t w, const size_t h, const bool Gamma)
     VexLights.clear();
     NeedGammaCorrection = Gamma;
     gBuffer = std::make_unique<GBuffer>(w, h);
+    const float aspect = static_cast<float>(w) / static_cast<float>(h);
+    camera.setAsp(aspect);
+    if (mainLight) mainLight->setAsp(aspect);
 }
 
 Engine::~Engine() {
@@ -107,7 +110,10 @@ void Engine::setResolution(const size_t w, const size_t h) {
     tmpBufferF.resize(w * h, FloatPixel{0.0f,0.0f,0.0f,0.0f});
     tmpBufferB.resize(w * h, FloatPixel{0.0f,0.0f,0.0f,0.0f});
     globalU = GlobalUniform(w, h, w, h);
-
+    // 注意还需要修正相机和灯光的Aspect
+    const float aspect = static_cast<float>(w) / static_cast<float>(h);
+    camera.setAsp(aspect);
+    mainLight->setAsp(aspect);
 }
 
 // 绘制场景-前向渲染

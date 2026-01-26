@@ -39,6 +39,12 @@ void Lights::updateS(const Vec3 &scale) {
     this->tf.multS(scale);
 }
 
+void MainLight::setAsp(const float Asp) {
+    AspectRatio = Asp;
+    ProjIsDirty = true;
+
+}
+
 const Mat4& MainLight::ViewMat() {
     return this->tf.getViewMat();
 }

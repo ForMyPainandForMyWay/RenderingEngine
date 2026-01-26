@@ -60,7 +60,7 @@ void dumpMeshInfo(const std::unordered_map<std::string, Mesh*>& meshes) {
 }
 
 int main() {
-    Engine engine(800, 800);
+    Engine engine(480, 360);
     const auto meshName = R"(/Users/dongyu/CLionProjects/RenderEngine/bin/test4.obj)";
     const auto meshId = engine.addMesh(meshName);
     uint16_t objID = engine.addObjects(meshId[0]);
@@ -113,8 +113,8 @@ int main() {
     // engine.OpenShadow();
     // engine.OpenSky();
     auto start = std::chrono::high_resolution_clock::now();
-    engine.RenderFrame({ objID2, objID3, objID4, objID5, objID6, objID7});
-    // engine.RenderFrame({ objID});
+    // engine.RenderFrame({ objID2, objID3, objID4, objID5, objID6, objID7});
+    engine.RenderFrame({ objID});
     auto end = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
     std::cout << "渲染耗时: " << duration.count() << " 微秒\n";
