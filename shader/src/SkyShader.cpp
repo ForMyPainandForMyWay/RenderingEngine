@@ -2,11 +2,11 @@
 // Created by 冬榆 on 2026/1/17.
 //
 
-#include "SkyShader.h"
-#include "F2P.h"
-#include "LerpTool.h"
-#include "Shape.h"
-#include "Uniform.h"
+#include "SkyShader.hpp"
+#include "F2P.hpp"
+#include "LerpTool.hpp"
+#include "Shape.hpp"
+#include "Uniform.hpp"
 
 SkyShader* SkyShader::shader = nullptr;
 

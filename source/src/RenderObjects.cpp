@@ -2,10 +2,10 @@
 // Created by 冬榆 on 2025/12/26.
 //
 
-#include "RenderObjects.h"
+#include "RenderObjects.hpp"
 
 #include "MathTool.hpp"
-#include "Mesh.h"
+#include "Mesh.hpp"
 
 
 RenderObjects::RenderObjects(const std::shared_ptr<Mesh>& m) {

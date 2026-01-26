@@ -6,14 +6,14 @@
 #include <random>
 #include <ranges>
 
-#include "Engine.h"
-#include "F2P.h"
-#include "FragTool.h"
-#include "Mesh.h"
+#include "Engine.hpp"
+#include "F2P.hpp"
+#include "FragTool.hpp"
+#include "Mesh.hpp"
 #include "Ray.hpp"
 #include "RayTraceTool.hpp"
 #include "HitInfo.hpp"
-#include "RenderObjects.h"
+#include "RenderObjects.hpp"
 
 
 Graphic::Graphic(Engine *eg) {

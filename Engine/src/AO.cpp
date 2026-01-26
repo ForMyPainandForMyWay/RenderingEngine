@@ -2,8 +2,8 @@
 // Created by 冬榆 on 2026/1/19.
 //
 
-#include "Engine.h"
-#include "Graphic.h"
+#include "Engine.hpp"
+#include "Graphic.hpp"
 
 #include <vector>
 #include <cmath>

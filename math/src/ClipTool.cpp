@@ -2,8 +2,8 @@
 // Created by 冬榆 on 2026/1/7.
 //
 
-#include "ClipTool.h"
-#include "LerpTool.h"
+#include "ClipTool.hpp"
+#include "LerpTool.hpp"
 #include "MathTool.hpp"
 
 

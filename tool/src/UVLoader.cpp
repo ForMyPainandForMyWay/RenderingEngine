@@ -6,7 +6,7 @@
 
 #include <iostream>
 
-#include "UVLoader.h"
+#include "UVLoader.hpp"
 #include "stb_image.h"
 
 

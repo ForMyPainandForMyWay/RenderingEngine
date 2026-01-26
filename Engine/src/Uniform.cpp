@@ -4,7 +4,7 @@
 
 #include <iostream>
 
-#include "Uniform.h"
+#include "Uniform.hpp"
 
 
 Uniform::Uniform(const Mat4 &mM, const Mat4 &mvpM, const Mat4 &normalM) {

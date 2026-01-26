@@ -3,8 +3,8 @@
 //
 
 #include "MathTool.hpp"
-#include "Shape.h"
-#include "V2F.h"
+#include "Shape.hpp"
+#include "V2F.hpp"
 
 
 Vec4 Euler2Quaternion(const Vec3 &euler) {

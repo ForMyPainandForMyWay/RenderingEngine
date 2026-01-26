@@ -2,8 +2,8 @@
 #include <unordered_map>
 #include <string>
 
-#include "Engine.h"
-#include "Mesh.h"
+#include "Engine.hpp"
+#include "Mesh.hpp"
 
 void dumpMaterialInfo(const std::unordered_map<std::string, Material*>& materialMap) {
     std::cout << "\n=== 材质信息 ===\n";

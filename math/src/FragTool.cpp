@@ -2,9 +2,9 @@
 // Created by 冬榆 on 2026/1/3.
 //
 
-#include "Mesh.h"
-#include "FragTool.h"
-#include "LerpTool.h"
+#include "Mesh.hpp"
+#include "FragTool.hpp"
+#include "LerpTool.hpp"
 
 // 贴图采样
 // 未插值

@@ -9,7 +9,7 @@
 
 #include "Vec.hpp"
 #include "Mat.hpp"
-#include "Shape.h"
+#include "Shape.hpp"
 
 
 struct TextureMap;

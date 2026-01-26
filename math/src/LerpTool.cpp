@@ -5,7 +5,7 @@
 #ifndef RENDERINGENGINE_RASTRTOOL_H
 #define RENDERINGENGINE_RASTRTOOL_H
 
-#include "LerpTool.h"
+#include "LerpTool.hpp"
 
 // 用于SH算法的两点线性插值
 V2F lerpSH(const V2F &v1, const V2F &v2, const float t) {

@@ -4,7 +4,7 @@
 
 #include "RasterTool.hpp"
 #include "MathTool.hpp"
-#include "Shape.h"
+#include "Shape.hpp"
 
 
 // 屏幕坐标三角形退化检测：三点面积是否为0，注意第一个的误差项是0.5,第二个误差项是1.0

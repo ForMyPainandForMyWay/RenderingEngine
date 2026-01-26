@@ -5,6 +5,7 @@
 #include <cmath>
 #include <iostream>
 #include <algorithm>
+#include <cstring>
 
 template<size_t N>
 struct alignas(N%4==0 ? 16 : 4) VecN {

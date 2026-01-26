@@ -3,6 +3,9 @@
 //
 
 #include <algorithm>
+#include <cmath>
+
+#include "GammaTool.hpp"
 
 float srgbToLinear(const float c) {
     if (c <= 0.04045f)

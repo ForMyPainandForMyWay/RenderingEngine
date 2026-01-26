@@ -2,8 +2,8 @@
 // Created by 冬榆 on 2026/1/19.
 //
 
-#include "Engine.h"
-#include "Graphic.h"
+#include "Engine.hpp"
+#include "Graphic.hpp"
 
 constexpr float FXAA_ABSOLUTE_LUMA_THRESHOLD = 0.0312f;
 constexpr float FXAA_RELATIVE_LUMA_THRESHOLD = 0.125f;

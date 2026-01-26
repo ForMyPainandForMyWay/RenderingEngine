@@ -5,8 +5,14 @@
 #ifndef RENDERINGENGINE_HITINFO_HPP
 #define RENDERINGENGINE_HITINFO_HPP
 
+#include <cstdint>
+
+#if defined(__x86_64__) || defined(_M_X64) || defined(__aarch64__) || defined(_M_ARM64)
 #include "MatPro.hpp"
-#include "VecPro.hpp"
+#else
+#include "Vec.hpp"
+#include "Mat.hpp"
+#endif
 
 struct Material;
 
@@ -17,7 +23,6 @@ struct HitInfo {
     Vec4 hitNormal;   // 碰撞点法线 (模型空间)
     VecN<2> hitUV;    // 碰撞点纹理坐标
     uint16_t model{};   // 模型ID
-    // 如果需要，还可以加 VertexColor 等
 
     void trans2World(const Mat4& ModelMat, const Mat4& NormalWorldMat);
 };

@@ -2,10 +2,10 @@
 // Created by yyd on 2025/12/24.
 //
 
-#include "Mesh.h"
-#include "UVLoader.h"
-#include "BlinnShader.h"
-#include "SkyShader.h"
+#include "Mesh.hpp"
+#include "UVLoader.hpp"
+#include "BlinnShader.hpp"
+#include "SkyShader.hpp"
 
 
 Material::Material() : shaders(3, nullptr) {

@@ -4,8 +4,7 @@
 
 #ifndef RENDERINGENGINE_RAY_HPP
 #define RENDERINGENGINE_RAY_HPP
-#include "VecPro.hpp"
-
+#include "Vec.hpp"
 
 struct Ray {
     Vec4 orignPosi;

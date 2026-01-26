@@ -2,13 +2,13 @@
 // Created by 冬榆 on 2025/12/30.
 //
 
-#include "BlinnShader.h"
-#include "F2P.h"
-#include "FragTool.h"
-#include "Mesh.h"
-#include "Uniform.h"
-#include "ShadowMap.h"
-#include "Lights.h"
+#include "BlinnShader.hpp"
+#include "F2P.hpp"
+#include "FragTool.hpp"
+#include "Mesh.hpp"
+#include "Uniform.hpp"
+#include "ShadowMap.hpp"
+#include "Lights.hpp"
 
 
 BlinnShader* BlinnShader::shader = nullptr;

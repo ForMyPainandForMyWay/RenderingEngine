@@ -4,11 +4,11 @@
 
 #include "RayTraceTool.hpp"
 #include "HitInfo.hpp"
-#include "Mesh.h"
+#include "Mesh.hpp"
 #include "Ray.hpp"
-#include "Shape.h"
-#include "RenderObjects.h"
-#include "Graphic.h"
+#include "Shape.hpp"
+#include "RenderObjects.hpp"
+#include "Graphic.hpp"
 
 
 std::optional<HitInfo> MollerTrumbore(

@@ -2,11 +2,11 @@
 // Created by 冬榆 on 2026/1/17.
 //
 
-#include "SkyBox.h"
+#include "SkyBox.hpp"
 
 #include <memory>
-#include "Mesh.h"
-#include "Shape.h"
+#include "Mesh.hpp"
+#include "Shape.hpp"
 
 SkyBox::SkyBox() : mesh(std::make_shared<Mesh>()){
     // 生成2个三角形面网格

@@ -4,12 +4,12 @@
 
 #include <ranges>
 
-#include "Engine.h"
+#include "Engine.hpp"
 
-#include "F2P.h"
-#include "GammaTool.h"
-#include "ModelReader.h"
-#include "RenderObjects.h"
+#include "F2P.hpp"
+#include "GammaTool.hpp"
+#include "ModelReader.hpp"
+#include "RenderObjects.hpp"
 
 Engine::Engine(const size_t w, const size_t h, const bool Gamma)
     : width(w)
@@ -181,8 +181,8 @@ void Engine::PostProcess() {
 void Engine::RenderFrame(const std::vector<uint16_t>& models) {
     BeginFrame();   // 初始化帧
     Application();  // 应用变换
-    // DrawScene(models);  // 绘制指定models
-    DrawScenceRT(models);
+    DrawScene(models);  // 绘制指定models
+    // DrawScenceRT(models);
     PostProcess();   // 画面后处理
     EndFrame();      // 交付帧
 }

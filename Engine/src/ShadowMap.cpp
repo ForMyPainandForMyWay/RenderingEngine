@@ -3,8 +3,10 @@
 //
 
 #include <fstream>
+#include <cmath>
+#include <algorithm>
 
-#include "ShadowMap.h"
+#include "ShadowMap.hpp"
 
 
 ShadowMap::ShadowMap(const size_t width, const size_t height) {

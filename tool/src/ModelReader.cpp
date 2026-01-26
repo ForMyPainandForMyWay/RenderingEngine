@@ -6,10 +6,10 @@
 #include <iostream>
 #include <sstream>
 
-#include "ModelReader.h"
+#include "ModelReader.hpp"
 
-#include "GammaTool.h"
-#include "Mesh.h"
+#include "GammaTool.hpp"
+#include "Mesh.hpp"
 
 
 // 解析材质文件,存入哈希表
