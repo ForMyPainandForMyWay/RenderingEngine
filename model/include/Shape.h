@@ -28,7 +28,7 @@ struct Vertex {
                  normal == other.normal &&
                      uv == other.uv;
     }
-    [[nodiscard]] Vec4 getHomoIndex() const;
+    [[nodiscard]] Vec4 getHomoPosi() const;
     [[nodiscard]] Vec4 getHomoNormal() const;
 };
 

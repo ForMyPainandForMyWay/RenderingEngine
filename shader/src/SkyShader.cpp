@@ -20,7 +20,7 @@ V2F SkyShader::VertexShader(
     const Uniform &u,
     const GlobalUniform &gu) {
     V2F result;
-    result.clipPosi = vex.getHomoIndex();
+    result.clipPosi = vex.getHomoPosi();
     result.invW = 1.0f/result.clipPosi[3];
 
     // 这里的MVP实际是R^{T}P^{-1}

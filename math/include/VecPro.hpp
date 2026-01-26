@@ -12,8 +12,6 @@
     #include "sse2neon.h" // 使用转换层
 #endif
 
-using Vec3 = VecN<3>;
-using Vec4 = VecN<4>;
 
 // Vec4 加法
 inline Vec4 operator+(const Vec4& lhs, const Vec4& rhs) {
@@ -71,9 +69,9 @@ inline VecN<4> Hadamard(const VecN<4> &a, const VecN<4> &b) {
     VecN<4> result;
 
     // 假设 VecN<4> 内部连续存储 float[4] 并16字节对齐
-    __m128 va = _mm_load_ps(&a.data[0]);
-    __m128 vb = _mm_load_ps(&b.data[0]);
-    __m128 vr = _mm_mul_ps(va, vb);
+    const __m128 va = _mm_load_ps(&a.data[0]);
+    const __m128 vb = _mm_load_ps(&b.data[0]);
+    const __m128 vr = _mm_mul_ps(va, vb);
     _mm_store_ps(&result.data[0], vr);
 
     return result;

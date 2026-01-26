@@ -21,13 +21,13 @@ public:
         std::unordered_map<std::string, std::shared_ptr<Mesh>> &meshes,
         std::unordered_map<std::string, std::shared_ptr<Material>> &materialMap,
         std::unordered_map<std::string, std::shared_ptr<TextureMap>> &textureMap,
-        std::unordered_map<std::string, std::shared_ptr<TextureMap>> &bumpMap);
+        std::unordered_map<std::string, std::shared_ptr<TextureMap>> &normalMap);
     static void readMTLFile(
         bool Gamma,
         const std::string &mtlFilename,
         std::unordered_map<std::string, std::shared_ptr<Material>> &materialMap,
         std::unordered_map<std::string, std::shared_ptr<TextureMap>> &textureMap,
-        std::unordered_map<std::string, std::shared_ptr<TextureMap>> &bumpMap);
+        std::unordered_map<std::string, std::shared_ptr<TextureMap>> &normalMap);
     static void splitPoly2Tri(const ObjFace& face, const std::shared_ptr<Mesh>& mesh);
     static void GammaCorrect(const std::unique_ptr<Film> &img);
 };

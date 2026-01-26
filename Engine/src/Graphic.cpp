@@ -3,11 +3,16 @@
 //
 
 #include <iostream>
+#include <random>
 #include <ranges>
 
 #include "Engine.h"
 #include "F2P.h"
+#include "FragTool.h"
 #include "Mesh.h"
+#include "Ray.hpp"
+#include "RayTraceTool.hpp"
+#include "HitInfo.hpp"
 #include "RenderObjects.h"
 
 
@@ -63,9 +68,11 @@ void Graphic::BasePass(const RenderObjects &obj,const Uniform &u, const GlobalUn
     if (mesh == nullptr) return;
     if (mesh->getVBONums() == 0) return;
     // 顶点着色阶段
-    // 更新：使用脏标记+Vector更好，不过需要注意
-    // 在剔除比例较高时，考虑剔除时直接新建一个vector然后逐个将有效面移动过去
-    // 这涉及到CPU的分支预测，后期可以进行优化
+    /*
+       更新：使用脏标记+Vector更好，不过需要注意
+       在剔除比例较高时，考虑剔除时直接新建一个vector然后逐个将有效面移动过去
+       这涉及到CPU的分支预测，后期可以进行优化
+    */
     std::unordered_map<std::shared_ptr<Material>, std::vector<Fragment>> FragMap;
     {
         std::unordered_map<std::shared_ptr<Material>, std::vector<Triangle>> TriMap;
@@ -143,23 +150,120 @@ void Graphic::BasePass(const RenderObjects &obj,const Uniform &u, const GlobalUn
     std::cout << std::endl;
 }
 
-// void Graphic::WriteBuffer(const std::vector<F2P>& f2pVec) const {
-//     for (const auto& f2p : f2pVec) {
-//         if (!f2p.alive) continue;
-//         engine->tmpBufferF[f2p.x + f2p.y*engine->width] = f2p.Albedo;
-//     }
-// }
+void Graphic::RT(
+    const std::vector<uint16_t>& models,
+    const std::vector<RenderObjects>& renderObj,
+    const uint8_t SPP,
+    const uint8_t maxDepth) const {
+    // 相机参数
+    const float fovRad = engine->camera.getFov() * (3.1415926535f / 180.0f);
+    const float Asp = engine->camera.getAspect();
+    const float scale = std::tan(fovRad * 0.5f);
+
+    const Vec3 cameraPos_ = engine->camera.getPosi();
+    const Vec4 cameraPos{cameraPos_[0], cameraPos_[1], cameraPos_[2], 1.0f};
+    const Mat4 cameraRot = engine->camera.RMat();
+
+    const size_t width  = engine->width;
+    const size_t height = engine->height;
+    const size_t pixelCount = width * height;
+
+    constexpr size_t BLOCK_SIZE = 1024;
+
+    std::vector<std::future<std::vector<F2P>>> futures;
+    futures.reserve((pixelCount + BLOCK_SIZE - 1) / BLOCK_SIZE);
+
+    for (size_t i = 0; i < pixelCount; i += BLOCK_SIZE) {
+        size_t start = i;
+        size_t end   = std::min(i + BLOCK_SIZE, pixelCount);
+
+        futures.emplace_back(engine->pool.addTask(
+            [&, start, end, width, height, Asp, scale, SPP, maxDepth]() {
+                std::vector<F2P> localResult;
+                localResult.reserve(end - start);
+
+                for (size_t idx = start; idx < end; ++idx) {
+                    const size_t y = idx / width;
+                    const size_t x = idx % width;
+                    const float ndcX = (2.0f * (static_cast<float>(x) + 0.5f) / static_cast<float>(width)) - 1.0f;
+                    const float ndcY = 1.0f - (2.0f * (static_cast<float>(y) + 0.5f) / static_cast<float>(height));
+                    const float camX = ndcX * Asp * scale;
+                    const float camY = ndcY * scale;
+                    constexpr float camZ = -1.0f;
+                    const Vec4 rayDirCamera{camX, camY, camZ, 0.0f};
+                    const Vec4 rayDirWorld = normalize(cameraRot * rayDirCamera);
+                    const Ray ray(cameraPos, rayDirWorld);
+                    Vec3 radiance(0.0f);
+                    // Path Tracing
+                    for (int s = 0; s < SPP; ++s) {
+                        Ray currentRay = ray;
+                        Vec3 throughput(1.0f);
+                        for (int depth = 0; depth < maxDepth; ++depth) {
+                            const auto hitInfo = GetClosestHit(currentRay, models, renderObj);
+                            if (!hitInfo) break;
+                            const Material* material = hitInfo->material;
+                            Vec3 hitAlbedo = BilinearSample(hitInfo->hitUV, material->KdMap).toFloat();
+                            Vec3 hitEmission = Hadamard(material->Ke, hitAlbedo);
+                            radiance += Hadamard(throughput, hitEmission);
+                            if (depth >= 3) {  // 俄罗斯轮盘赌
+                                if (float maxC = std::max({throughput[0], throughput[1], throughput[2]});
+                                    maxC < 0.1f) {
+                                    const float q = std::max(0.05f, maxC);
+                                    if (RandomFloat() > q) break;
+                                    throughput /= q;
+                                }
+                            }
+                            // BSDF
+                            Vec4 hitPos = currentRay.orignPosi + currentRay.Direction * hitInfo->t;
+                            Vec4 nextDir = SampleCosineHemisphere(hitInfo->hitNormal);
+                            if (dot(nextDir, hitInfo->hitNormal) < 0.0f) break;
+                            throughput = Hadamard(throughput, hitAlbedo);
+                            constexpr float EPS = 1e-4f;
+                            currentRay.orignPosi = hitPos + hitInfo->hitNormal * EPS;
+                            currentRay.Direction = nextDir;
+                        }
+                    }
+                    radiance /= SPP;
+                    localResult.push_back({
+                        x,y,
+                        {radiance[0], radiance[1], radiance[2]},
+                        0.0f});
+                }
+                return localResult;
+            }
+        ));
+    }
+    // 结果合并
+    std::vector<std::vector<F2P>> allParts;
+    allParts.reserve(futures.size());
+    size_t totalCount = 0;
+    for (auto& f : futures) {
+        auto part = f.get();
+        totalCount += part.size();
+        allParts.emplace_back(std::move(part));
+    }
+    std::vector<F2P> finalResult;
+    finalResult.reserve(totalCount);
+    for (auto& part : allParts) {
+        finalResult.insert(
+            finalResult.end(),
+            std::make_move_iterator(part.begin()),
+            std::make_move_iterator(part.end())
+        );
+    }
+    WriteBuffer(finalResult);
+}
+
 void Graphic::WriteBuffer(const std::vector<F2P>& f2pVec) const {
     const size_t count = f2pVec.size();
     if (count == 0) return;
 
-    // 1. 阈值检查
     // 如果像素数量很少（1万），直接主线程串行写完算了。
-    constexpr size_t MIN_PARALLEL_SIZE = 10000;
     const size_t width = engine->width; // 提前取出，避免多次指针解引用
     auto& buffer = engine->tmpBufferF;  // 获取引用
 
-    if (count < MIN_PARALLEL_SIZE) {
+    if (constexpr size_t MIN_PARALLEL_SIZE = 10000;
+        count < MIN_PARALLEL_SIZE) {
         for (const auto& f2p : f2pVec) {
             if (!f2p.alive) continue;
             // 注意：这里没有越界检查，假设上游逻辑保证了 x, y 合法
@@ -187,17 +291,6 @@ void Graphic::WriteBuffer(const std::vector<F2P>& f2pVec) const {
     for (auto& f : futures) f.get();
 }
 
-// 写入GBuffer
-// void Graphic::WriteGBuffer(const std::vector<Fragment>& f2pVec) const {
-//     const size_t width = engine->width;
-//     auto& gData = engine->gBuffer->Gdata; // 使用Gdata替代normalBuffer和worldPosiBuffer
-//     for (const auto& frag : f2pVec) {
-//         if (!frag.alive) continue;
-//         const auto i = frag.x + frag.y * width;
-//         gData[i].normal = frag.normal;      // 写入法线数据
-//         gData[i].worldPosi = frag.worldPosi; // 写入世界坐标数据
-//     }
-// }
 void Graphic::WriteGBuffer(const std::vector<Fragment>& f2pVec) const {
     const size_t count = f2pVec.size();
     if (count == 0) return;

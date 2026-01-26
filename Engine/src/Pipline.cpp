@@ -40,44 +40,6 @@ void Engine::Application() {
 }
 
 // 顶点着色
-// void Graphic::VertexShading(
-//     std::unordered_map<std::shared_ptr<Material>, std::vector<Triangle>>& TriMap,
-//     const Uniform &u, const GlobalUniform &gu, const std::shared_ptr<Mesh>& mesh, const int pass) {
-//     auto VBO = mesh->VBO;
-//     auto EBO = mesh->EBO;
-//     for (const auto &sub : *mesh) {
-//         auto material = sub.getMaterial();
-//         shader = material->getShader(pass);
-//         const auto oft = sub.getOffset();
-//         const auto count = sub.getIdxCount();
-//         const auto oftEnd = count + oft;
-//         uint32_t Min = 0xffffffff;
-//         uint32_t Max = 0;
-//         std::vector<uint32_t> EBOcache;  // 顺序缓存subMesh的EBO索引
-//         EBOcache.reserve(count);
-//         for (auto idx = oft; idx < oftEnd; idx++) {
-//             uint32_t id = EBO[idx];
-//             EBOcache.push_back(id);
-//             Min = id < Min ? id : Min;
-//             Max = id > Max ? id : Max;
-//         }
-//         std::vector<V2F> vexList;  // 计算所有顶点并集中缓存
-//         vexList.reserve(count);
-//         for (auto idx = Min; idx <= Max; idx++) {
-//             vexList.emplace_back(shader->VertexShader(VBO[idx], u, gu));
-//         }
-//
-//         auto& triangleList = TriMap[material];
-//         triangleList.reserve(triangleList.size() + count / 3);  // 预分配内存
-//         TriMap[material].reserve((oftEnd-oft-1) / 3);
-//         for (auto idx = oft; idx < oftEnd; idx+=3) {
-//             V2F v1 =  vexList[EBOcache[idx]];
-//             V2F v2 =  vexList[EBOcache[idx+1]];
-//             V2F v3 =  vexList[EBOcache[idx+2]];
-//             TriMap[material].emplace_back(Triangle{{v1, v2, v3}});
-//         }
-//     }
-// }
 void Graphic::VertexShading(
     std::unordered_map<std::shared_ptr<Material>, std::vector<Triangle>>& TriMap,
     const Uniform &u, const GlobalUniform &gu, const std::shared_ptr<Mesh>& mesh, const int pass) const {
@@ -137,45 +99,8 @@ void Graphic::VertexShading(
         }
     }
 }
+
 // 顶点着色后处理: 视锥剔除、SH裁剪、透视除法、背面剔除、深度映射
-// void Graphic::Clip(std::unordered_map<std::shared_ptr<Material>, std::vector<Triangle>> &map) const{
-//     for (auto& triangles: map | std::views::values) {
-//         // 三点组成一个三角形
-//         std::vector<Triangle> result;
-//         result.reserve(triangles.size());  // 预分配一倍内存
-//         for (auto& triangle : triangles) {
-//             V2F &p1 = triangle[0];
-//             V2F &p2 = triangle[1];
-//             V2F &p3 = triangle[2];
-//             // 快速剔除全部在外的
-//             if (AllVertexOutside(p1, p2, p3)) {
-//                 triangle.alive = false;
-//                 continue;
-//             }
-//             std::vector<Triangle> tris;
-//             // 裁剪
-//             const bool clip = !AllVertexInside(p1, p2, p3);
-//             if (clip) {
-//                 triangle.alive = false;  // 先剔除原来的旧三角
-//                 tris = PolyClip(p1, p2, p3);  // S-H算法.直接返回切分后的三角数组
-//             }
-//             if (clip) {
-//                 for (auto &t : tris) {
-//                     PersDiv(t);   // 透视除法->NDC空间
-//                     FaceClip(t);  // 背面剔除
-//                     // DepthMap(t);  // 深度映射
-//                     result.emplace_back(t);
-//                 }
-//             } else {
-//                 PersDiv(triangle);
-//                 FaceClip(triangle);
-//                 // DepthMap(triangle);
-//             }
-//         }
-//         triangles.insert(triangles.end(),
-//                 result.begin(), result.end());
-//     }
-// }
 void Graphic::Clip(std::unordered_map<std::shared_ptr<Material>, std::vector<Triangle>> &map) const{
     // 遍历每一个材质的三角形列表
     for (auto& triangles: map | std::views::values) {
@@ -305,33 +230,13 @@ void Graphic::ScreenMapping(std::unordered_map<std::shared_ptr<Material>, std::v
     }
 }
 
-// void Graphic::GeometryShading(
-//     std::unordered_map<std::shared_ptr<Material>, std::vector<Triangle>>& TriMap,
-//     const Uniform &u, const std::shared_ptr<Mesh>& mesh, const int pass) {
-//     for (auto& [material, triangles] : TriMap) {
-//         shader = material->getShader(pass);
-//         if (material->BumpMap != nullptr) {
-//             for (auto& tri : triangles) {
-//                 if (!tri.alive) continue;
-//                 shader->GeometryShader(
-//                 tri,material,
-//                 engine->PixLights,
-//                 engine->VexLights,
-//                 engine->mainLight,
-//                 engine->ShadowMap,
-//                 engine->envLight,
-//                 engine->globalU);
-//             }
-//         }
-//     }
-// }
 void Graphic::GeometryShading(
     std::unordered_map<std::shared_ptr<Material>, std::vector<Triangle>>& TriMap,
     const Uniform &u, const std::shared_ptr<Mesh>& mesh, const int pass) const {
     // 遍历每个材质的三角形列表
     for (auto& [material, triangles] : TriMap) {
         const auto shader = material->getShader(pass);
-        if (material->BumpMap == nullptr) {
+        if (material->NormalMap == nullptr) {
             continue;
         }
         size_t count = triangles.size();
@@ -368,32 +273,6 @@ void Graphic::GeometryShading(
 }
 
 // 光栅化接口
-// void Graphic::Rasterization(
-    // std::unordered_map<std::shared_ptr<Material>, std::vector<Triangle>> &TriMap,
-    // std::unordered_map<std::shared_ptr<Material>, std::vector<Fragment>> &FragMap) const {
-    // const int width = static_cast<int>(engine->width);
-    // const int height = static_cast<int>(engine->height);
-    // for (auto& [material, triangles] : TriMap) {
-        // std::vector<Fragment> fragVec;
-        // size_t area = triangles.size()*10;  // 预分配偏移量
-        // for (auto& tri : triangles) {
-            // area += static_cast<size_t>(ceil(fabs(TriScreenArea2(tri))));
-        // }
-        // fragVec.reserve(area);
-        // for (auto& tri : triangles) {
-            // if (!tri.alive) continue;  // 背面剔除、退化剔除
-            // 光栅化并返回该三角形的片元序列
-            // sortTriangle(tri);
-            // std::vector<Fragment> triFrags;  // 在光栅化内部预分配线程缓冲区内存
-            // BarycentricOptimizedFull(tri, triFrags, width, height);
-            // 加入序列到fragVec中
-            // fragVec.insert(fragVec.end(), std::make_move_iterator(triFrags.begin()), std::make_move_iterator(triFrags.end()));
-        // }
-        // fragVec.shrink_to_fit();  // 清空无效内存
-        // 设置片元序列
-        // FragMap.emplace(material, std::move(fragVec));
-    // }
-// }
 void Graphic::Rasterization(
     std::unordered_map<std::shared_ptr<Material>, std::vector<Triangle>> &TriMap,
     std::unordered_map<std::shared_ptr<Material>, std::vector<Fragment>> &FragMap) const {
@@ -433,7 +312,7 @@ void Graphic::Rasterization(
                     for (size_t k = start; k < end; ++k) {
                         if (auto& tri = triangles[k]; tri.alive) { // 利用 cached count 判断 alive
                             Scanline(tri, localFrags, width, height);
-                             // BarycentricOptimizedFull(tri, localFrags, width, height);
+                             // BarycentricOptimizedFull(tri, localFrags, width, height);  // 这是重心坐标插值，性能差点
                         }
                     }
                     return localFrags;
@@ -463,61 +342,26 @@ void Graphic::Rasterization(
 }
 
 // ZTest组件
-// bool Graphic::ZTestPix(const size_t locate, const float depth, std::vector<float> &ZBuffer) {
-//     if (ZBuffer[locate] >= depth) {
-//         ZBuffer[locate] = depth;
-//         return true;
-//     }
-//     return false;
-// }
-// 修改 Graphic::ZTestPix 函数，或者新建一个 ThreadSafeZTestPix
 bool Graphic::ZTestPix(const size_t locate, const float depth, std::vector<float> &ZBuffer) {
-    // 1. 创建对 ZBuffer[locate] 的原子引用
-    // 这不会拷贝数据，只是把普通 float 当作 atomic 来操作
+    // 创建对 ZBuffer[locate] 的原子引用
     const std::atomic_ref zVal(ZBuffer[locate]);
-
     float oldZ = zVal.load(std::memory_order_relaxed);
-
-    // 2. CAS 循环 (Compare-And-Swap)
     while (true) {
-        // 如果新深度比旧深度大（更远），直接失败，不需要更新
         if (oldZ < depth) {
             return false;
         }
-
-        // 尝试把 oldZ 替换为 depth
-        // 如果 zVal 依然等于 oldZ，则替换并返回 true
-        // 如果 zVal 被其他线程改了（不等于 oldZ），则把 zVal 的新值赋给 oldZ，并返回 false (循环重试)
         if (zVal.compare_exchange_weak(oldZ, depth, std::memory_order_relaxed)) {
             return true;
         }
-        // 如果走到这里，说明 compare_exchange_weak 失败了，oldZ 已经被更新为最新值
-        // 循环会继续，再次判断 if (oldZ < depth)
     }
 }
 
 // ZTest传入Fragment
-// void Graphic::Ztest(std::vector<Fragment> &TestFrag, std::vector<float> &ZBuffer) const {
-//     int keptCount = 0;
-//     for (auto &pix : TestFrag) {
-//         if (!pix.alive) continue;
-//         if (const auto locate = pix.x + pix.y * engine->width;
-//             ZTestPix(locate, pix.depth, ZBuffer)) {
-//             pix.keep();
-//             keptCount++;
-//         }
-//         else pix.drop();  // 后续frag不再着色
-//     }
-// }
 void Graphic::Ztest(std::vector<Fragment> &TestFrag, std::vector<float> &ZBuffer) const {
     const size_t count = TestFrag.size();
     if (count == 0) return;
 
-    // 1. 分块并行
-    // ------------------------------------------------
-    // ZTest 计算量极小（基本是访存），所以 BLOCK_SIZE 要很大，避免调度开销
     constexpr size_t BLOCK_SIZE = 8192;
-
     std::vector<std::future<int>> futures;
     futures.reserve((count + BLOCK_SIZE - 1) / BLOCK_SIZE);
 
@@ -532,58 +376,23 @@ void Graphic::Ztest(std::vector<Fragment> &TestFrag, std::vector<float> &ZBuffer
 
                 for (size_t k = start; k < end; ++k) {
                     auto& pix = TestFrag[k];
-
                     if (!pix.alive) continue;
-
-                    // 计算屏幕索引
-                    // const auto locate = pix.x + pix.y * engine->width;
-                    // 注意：这里需要确保 x, y 没越界，虽然通常光栅化阶段保证了
-
-                    // 使用原子操作进行 ZTest
-                    // 如果通过测试，AtomicMinDepth 会自动更新 ZBuffer
                     if (const uint32_t locate = pix.x + pix.y * static_cast<int>(this->engine->width); ZTestPix(locate, pix.depth, ZBuffer)) {
                         pix.keep();
                         localKeptCount++;
-                    } else {
-                        pix.drop(); // 深度测试失败
-                    }
+                    } else pix.drop(); // 深度测试失败
                 }
                 return localKeptCount;
             }
         ));
     }
-
-    // 2. 汇总结果 (Reduce)
-    // ------------------------------------------------
     int totalKept = 0;
     for (auto& f : futures) {
         totalKept += f.get();
     }
-
-    // 如果你需要 totalKept 做统计的话可以使用，否则不需要返回
-    // printf("ZTest Passed: %d\n", totalKept);
 }
 
 // 片元着色器
-// void Graphic::FragmentShading(
-//     const std::unordered_map<std::shared_ptr<Material>, std::vector<Fragment> >& fragMap,
-//     std::vector<F2P> &result, const Uniform &u, const int pass) const {
-//     for (auto& [material, fragVec] : fragMap) {
-//         const auto shader = material->getShader(pass);
-//         for (auto& frag : fragVec) {
-//             if (!frag.alive) continue;
-//             result.emplace_back(
-//                 shader->FragmentShader(
-//                 frag,material,
-//                 engine->PixLights,
-//                 engine->mainLight,
-//                 engine->ShadowMap,
-//                 engine->envLight,
-//                 engine->globalU,
-//                 engine->NeedShadowPass));
-//         }
-//     }
-// }
 void Graphic::FragmentShading(
     const std::unordered_map<std::shared_ptr<Material>, std::vector<Fragment> >& fragMap,
     std::vector<F2P> &result, const Uniform &u, const int pass) const {
@@ -645,17 +454,3 @@ void Graphic::FragmentShading(
         );
     }
 }
-
-// // Lately-Z,传入F2P,不能清除ZBuffer
-// void Graphic::Ztest(std::vector<F2P> &TestPix, std::vector<float> &ZBuffer) const {
-//     int keptCount = 0;
-//     for (auto &pix : TestPix) {
-//         if (const auto locate = pix.x + pix.y * engine->width;
-//             ZTestPix(locate, pix.depth, ZBuffer)) {
-//             pix.keep();
-//             keptCount++;
-//             }
-//         else pix.drop();  // 后续frag不再着色
-//     }
-// }
-

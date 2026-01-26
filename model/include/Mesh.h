@@ -21,11 +21,12 @@ struct Material {
     Vec3 Ka{1.0f, 1.0f, 1.0f};   // 环境光
     Vec3 Kd{1.0f,1.0f,1.0f};   // 漫反射
     Vec3 Ks{1.0f,1.0f,1.0f};   // 高光
+    Vec3 Ke{0.f, 0.f, 0.f};  // 自发光
     float Ns=32;   // 光泽指数
     std::string map_Kd="None"; // 纹理贴图名字(注：材质实际不止会有一个mak_Kd,需要拓展)
-    std::string map_Bump="None";  // 法线贴图名字
+    std::string map_Normal="None";  // 法线贴图名字
     std::shared_ptr<TextureMap> KdMap;  // 纹理贴图指针
-    std::shared_ptr<TextureMap> BumpMap;  // 法线贴图指针
+    std::shared_ptr<TextureMap> NormalMap;  // 法线贴图指针
     Material();
 
     std::vector<Shader*> shaders;  // 延迟渲染,0阴影渲染,1光照渲染
@@ -108,7 +109,7 @@ public:
 
 protected:
     std::vector<Vertex> VBO;   // 渲染顶点表
-    std::vector<uint32_t> EBO;  // 三角面顶点索引，三个一组
+    std::vector<uint32_t> EBO;  // 三角面顶点索引，三个一组连续存储
     std::vector<SubMesh> subMeshes;
     std::string MeshName;
 };

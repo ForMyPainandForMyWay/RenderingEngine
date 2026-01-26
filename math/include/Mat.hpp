@@ -34,6 +34,9 @@ struct MatMN {
     MatMN<N, M> Transpose() const;  // 获取转置
 };
 
+using Mat4 = MatMN<4,4>;
+using Mat3 = MatMN<3,3>;
+
 // 矩阵乘法
 template<size_t M, size_t K, size_t N>
 MatMN<M, N> operator * (const MatMN<M, K> &lhs, const MatMN<K, N>& rhs);

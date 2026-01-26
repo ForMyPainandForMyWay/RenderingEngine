@@ -9,6 +9,7 @@
 #include "Vec.hpp"
 
 
+class RenderObjects;
 
 // 用于生成世界坐标、以及其他变换矩阵
 class Transform{
@@ -32,6 +33,7 @@ public:
     [[nodiscard]] Mat4 getRMat() const;
     [[nodiscard]] Mat4 getTMat() const;
     [[nodiscard]] Mat4 getSMat() const;
+    [[nodiscard]] Mat4 getNegativeTMat() const;  // 返回负位移向量构造的矩阵
 
     virtual void update()=0;  // 更新变换矩阵
 
@@ -50,6 +52,8 @@ public:
     void update() override;
     const Mat4& getWorldMat();
     const Mat4& getNormalWorldMat();
+    friend RenderObjects;
+
 protected:
     Mat4 ModelMatrix;
     Mat4 NormalWorldMat;
@@ -59,7 +63,6 @@ protected:
 // 相机视角变换
 class CameraTransform : public Transform{
 public:
-    Mat4 getNegativeTMat();  // 返回负位移向量构造的矩阵
     void update() override;
     const Mat4& getViewMat();  // 返回视角变换矩阵
     [[nodiscard]] const Vec3& getPosition() const;  // 返回相机位置
