@@ -19,6 +19,10 @@ public:
     [[nodiscard]] Mat4 invProjectionMat() const;  // 返回投影矩阵P的逆矩阵
     [[nodiscard]] Mat4 RMat() const;            // 返回相机旋转矩阵
     [[nodiscard]] Vec3 getPosi() const { return tf.getPosition() ;}  // 返回相机位置
+    [[nodiscard]] float getFov() const { return FOV; }
+    [[nodiscard]] float getAspect() const { return AspectRatio; }
+    [[nodiscard]] float getNear() const { return NearPlane; }
+    [[nodiscard]] float getFar() const { return FarPlane; }
 
     void updateProject();  // 更新投影变换矩阵
     void updateP(const Vec3 &translate);   // 更新位姿

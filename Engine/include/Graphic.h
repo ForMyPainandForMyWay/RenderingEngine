@@ -11,6 +11,9 @@
 #include "MatPro.hpp"
 #include "Shape.h"
 
+struct HitInfo;
+struct Ray;
+struct GBufferData;
 enum class SSAODebugMode;
 class SkyBox;
 class Shader;
@@ -47,9 +50,13 @@ public:
         std::vector<F2P> &result, const Uniform &u, int pass) const;  // 片元着色
     static bool ZTestPix(size_t locate, float depth, std::vector<float> &ZBuffer) ;
     void Ztest(std::vector<Fragment> &TestFrag, std::vector<float> &ZBuffer) const;  // EarlyZ
-    // void Ztest(std::vector<F2P> &TestPix, std::vector<float> &ZBuffer) const;  // Lately-Z
     void WriteBuffer(const std::vector<F2P>& f2pVec) const;
     void WriteGBuffer(const std::vector<Fragment>& f2pVec) const;
+
+    void RT(const std::vector<uint16_t>& models,
+        const std::vector<RenderObjects>& renderObj, uint8_t SPP=1, uint8_t maxDepth=8) const;
+    static std::optional<HitInfo> GetClosestHit(Ray ray,
+        const std::vector<uint16_t>& models, const std::vector<RenderObjects>& renderObj);
 
     void SSAO(
         const std::vector<FloatPixel> &inBuffer,

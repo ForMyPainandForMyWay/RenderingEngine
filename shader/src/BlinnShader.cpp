@@ -22,8 +22,8 @@ V2F BlinnShader::VertexShader(
     const Vertex &vex,
     const Uniform &u,
     const GlobalUniform &gu) {
-    Vec4 world = u.M * vex.getHomoIndex();
-    Vec4 clip = u.MVP * vex.getHomoIndex();
+    Vec4 world = u.M * vex.getHomoPosi();
+    Vec4 clip = u.MVP * vex.getHomoPosi();
     const Vec4 tmp = normalize(u.normalTfMat * vex.getHomoNormal());
     const Vec3 normal = {tmp[0], tmp[1], tmp[2]};
     return {world, clip, normal, vex.uv, 1/clip[3]};
@@ -138,9 +138,9 @@ F2P BlinnShader::FragmentShader(
     // 采样漫反射贴图
     pix.Albedo = BilinearSample(frag.uv, material->KdMap);
     // 判断是否有法线贴图
-    const bool hasBump = (material->BumpMap != nullptr);
+    const bool hasNorm = (material->NormalMap != nullptr);
     // 法线贴图采样与解码（自动处理空指针）
-    const Vec3 bumpSample = Sample(frag.uv, material->BumpMap).toFloat()*2.0f-1.0f;
+    const Vec3 normalSample = Sample(frag.uv, material->NormalMap).toFloat()*2.0f-1.0f;
     // 阴影计算
     float shadow = 1.0f;
     if (NeedShadow && mainLight != nullptr) {
@@ -150,8 +150,8 @@ F2P BlinnShader::FragmentShader(
     const Vec3 fragPos = {frag.worldPosi[0], frag.worldPosi[1], frag.worldPosi[2]};
     // 计算法线N和视线V
     Vec3 N, V;
-    if (hasBump) {
-        N = normalize(bumpSample);          // 切线空间法线（假设已正交化）
+    if (hasNorm) {
+        N = normalize(normalSample);          // 切线空间法线（假设已正交化）
         V = normalize(frag.CameraOri);     // 切线空间视线方向（由 GS 提供）
     } else {
         N = normalize(frag.normal);         // 世界空间几何法线
@@ -173,7 +173,7 @@ F2P BlinnShader::FragmentShader(
         const float dist2 = dot(Lvec_world, Lvec_world);
         const Vec3 lightColor = mainLight->getColor().toFloat() * mainLight->getI();
         Vec3 L;
-        if (hasBump) L = normalize(frag.MainLightOri); // 切线空间方向（GS 已转换）
+        if (hasNorm) L = normalize(frag.MainLightOri); // 切线空间方向（GS 已转换）
         else L = normalize(Lvec_world);        // 世界空间方向
         finalColorF += ApplyLighting(
             Albedo, material, N, L, V, dist2, lightColor, shadow
@@ -189,7 +189,7 @@ F2P BlinnShader::FragmentShader(
         const Vec3 lightColor = light[i].getColor().toFloat() * light[i].getI();
 
         Vec3 L;
-        if (hasBump) L = normalize(frag.PixLightOri[i]); // 切线空间方向
+        if (hasNorm) L = normalize(frag.PixLightOri[i]); // 切线空间方向
         else L = normalize(Lvec_world);          // 世界空间方向
 
         finalColorF += ApplyLighting(

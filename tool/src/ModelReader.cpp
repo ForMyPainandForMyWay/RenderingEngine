@@ -18,7 +18,7 @@ void ModelReader::readMTLFile(
     const std::string &mtlFilename,
     std::unordered_map<std::string, std::shared_ptr<Material>> &materialMap,
     std::unordered_map<std::string, std::shared_ptr<TextureMap>> &textureMap,
-    std::unordered_map<std::string, std::shared_ptr<TextureMap>> &bumpMap) {
+    std::unordered_map<std::string, std::shared_ptr<TextureMap>> &normalMap) {
 
     std::ifstream mtlFile(mtlFilename);
     if (!mtlFile.is_open()) {
@@ -47,12 +47,12 @@ void ModelReader::readMTLFile(
             if (prefix == "Ka") ss >> currentMat->Ka[0] >> currentMat->Ka[1] >> currentMat->Ka[2];
             else if (prefix == "Kd") ss >> currentMat->Kd[0] >> currentMat->Kd[1] >> currentMat->Kd[2];
             else if (prefix == "Ks") ss >> currentMat->Ks[0] >> currentMat->Ks[1] >> currentMat->Ks[2];
+            else if (prefix == "Ke") ss >> currentMat->Ke[0] >> currentMat->Ke[1] >> currentMat->Ke[2];
             else if (prefix == "Ns") ss >> currentMat->Ns;
             else if (prefix == "map_Kd") {
                 ss >> currentMat->map_Kd;  // 记录纹理贴图名字（路径）
                 // 查找哈希表,如果没有该元素,则存入哈希表
                 if (!textureMap.contains(currentMat->map_Kd)) {
-                    // auto texture = new TextureMap(currentMat->map_Kd);
                     auto texture = std::make_shared<TextureMap>(currentMat->map_Kd);
                     // 初始化之后转换为float(自动清空8位数据)
                     texture->uvImg->Trans2FloatPixel();
@@ -61,17 +61,16 @@ void ModelReader::readMTLFile(
                     // gamma矫正
                     if (Gamma)
                         GammaCorrect(texture->uvImg);
-                }
+                } else currentMat->KdMap = textureMap[currentMat->map_Kd];
             }
-            else if (prefix == "map_Bump") {
-                ss >> currentMat->map_Bump;
-                if (!bumpMap.contains(currentMat->map_Bump)) {
-                    // auto texture = new TextureMap(currentMat->map_Bump);
-                    auto texture = std::make_shared<TextureMap>(currentMat->map_Bump);
+            else if (prefix == "norm") {
+                ss >> currentMat->map_Normal;
+                if (!normalMap.contains(currentMat->map_Normal)) {
+                    auto texture = std::make_shared<TextureMap>(currentMat->map_Normal);
                     texture->uvImg->Trans2FloatPixel();
-                    bumpMap[currentMat->map_Bump] = texture;
-                    currentMat->BumpMap = texture;  // 设置材质的法线贴图
-                }
+                    normalMap[currentMat->map_Normal] = texture;
+                    currentMat->NormalMap = texture;  // 设置材质的法线贴图
+                } else currentMat->NormalMap = normalMap[currentMat->map_Normal];
             }
         }
     }
@@ -89,7 +88,7 @@ std::vector<std::string> ModelReader::readObjFile(
     std::unordered_map<std::string, std::shared_ptr<Mesh>> &meshes,
     std::unordered_map<std::string, std::shared_ptr<Material>> &materialMap,
     std::unordered_map<std::string, std::shared_ptr<TextureMap>> &textureMap,
-    std::unordered_map<std::string, std::shared_ptr<TextureMap>> &bumpMap){
+    std::unordered_map<std::string, std::shared_ptr<TextureMap>> &normalMap){
 
     std::vector<std::string> meshId;
     std::ifstream file(filename);
@@ -187,7 +186,7 @@ std::vector<std::string> ModelReader::readObjFile(
             std::string mtl;
             ss >> mtl;
             readMTLFile(Gamma, (std::filesystem::path(parent_path) / mtl).string(),
-                        materialMap, textureMap, bumpMap);
+                        materialMap, textureMap, normalMap);
         }
         else if (prefix == "usemtl") {
             pushSubMesh();

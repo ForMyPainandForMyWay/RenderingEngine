@@ -6,7 +6,7 @@
 
 
 // 返回齐次坐标
-Vec4 Vertex::getHomoIndex() const{
+Vec4 Vertex::getHomoPosi() const{
     return Vec4{position[0], position[1], position[2], 1};
 }
 

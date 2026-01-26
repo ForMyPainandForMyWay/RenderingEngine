@@ -6,6 +6,7 @@
 
 #include "Engine.h"
 
+#include "F2P.h"
 #include "GammaTool.h"
 #include "ModelReader.h"
 #include "RenderObjects.h"
@@ -61,7 +62,7 @@ void Engine::addTfCommand(const TransformCommand &cmd) {
 // 添加网格模型，返回网格名字
 std::vector<std::string> Engine::addMesh(const std::string &filename) {
     auto MiD = ModelReader::readObjFile(
-        NeedGammaCorrection, filename, meshes, materialMap, textureMap, bumpMap);
+        NeedGammaCorrection, filename, meshes, materialMap, textureMap, normalMap);
     return MiD;
 }
 
@@ -147,6 +148,14 @@ void Engine::DrawScene(const std::vector<uint16_t>& models) {
     }
 }
 
+void Engine::DrawScenceRT(const std::vector<uint16_t>& models) {
+    for (auto& model : models) {
+        auto& renderObj = renderObjs.at(model);
+        renderObj.ModelMat();  // 更新M
+    }
+    graphic.RT(models, renderObjs);
+}
+
 // 后处理阶段,工作集中于tmpBuffer
 void Engine::PostProcess() {
     // 环境光遮蔽
@@ -172,7 +181,8 @@ void Engine::PostProcess() {
 void Engine::RenderFrame(const std::vector<uint16_t>& models) {
     BeginFrame();   // 初始化帧
     Application();  // 应用变换
-    DrawScene(models);  // 绘制指定models
+    // DrawScene(models);  // 绘制指定models
+    DrawScenceRT(models);
     PostProcess();   // 画面后处理
     EndFrame();      // 交付帧
 }

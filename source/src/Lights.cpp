@@ -55,7 +55,7 @@ const Mat4& MainLight::ProjectionMat() {
 void MainLight::updateProject() {
     if (LightType == Spot) {
         // 透视投影（Spot 光）
-        MatMN<4,4> P(0.0f);
+        Mat4 P(0.0f);
         const float rad = FOV * 0.5f * 3.1415926535f / 180.0f;
         const float f = 1.0f / std::tan(rad);
         const float n = NearPlane;
@@ -70,7 +70,7 @@ void MainLight::updateProject() {
     }
     else if (LightType == Direct) {
         // 正交投影（Directional 光）
-        MatMN<4,4> P(0.0f);
+        Mat4 P(0.0f);
         const float l = Left;
         const float r = Right;
         const float b = Bottom;

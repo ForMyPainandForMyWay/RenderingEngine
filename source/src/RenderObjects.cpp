@@ -3,6 +3,8 @@
 //
 
 #include "RenderObjects.h"
+
+#include "MathTool.hpp"
 #include "Mesh.h"
 
 
@@ -16,6 +18,22 @@ void RenderObjects::setMesh(const std::shared_ptr<Mesh> &m) {
 // 仅返回Tf矩阵，自动更新计算
 const Mat4& RenderObjects::ModelMat() {
     return this->tf.getWorldMat();
+}
+
+Mat4 RenderObjects::invModelMat() const{
+    const Mat4 invR = Transpose(tf.getRMat());
+    const Mat4 invS = diagMatInverse(tf.getSMat());
+    const Mat4 invT = tf.getNegativeTMat();
+    return invS * invR * invT;
+}
+
+// 不保证应用更新的方法
+const Mat4& RenderObjects::ModelMatUnsafe() const{
+    return tf.ModelMatrix;
+}
+
+const Mat4& RenderObjects::NormalMatUnsafe() const {
+    return tf.NormalWorldMat;
 }
 
 // 用于计算法向量的Tf矩阵

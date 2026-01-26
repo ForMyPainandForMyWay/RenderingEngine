@@ -52,6 +52,9 @@ struct alignas(N%4==0 ? 16 : 4) VecN {
     }
 };
 
+using Vec3 = VecN<3>;
+using Vec4 = VecN<4>;
+
 // 运算符重载（移到结构体外并加上inline）
 template<size_t N>
 constexpr VecN<N> operator + (const VecN<N> &a, const VecN<N> &b) noexcept {

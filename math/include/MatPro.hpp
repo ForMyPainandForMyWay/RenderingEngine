@@ -14,8 +14,6 @@
     #include "sse2neon.h" // 使用转换层
 #endif
 
-using Mat4 = MatMN<4,4>;
-using Mat3 = MatMN<3,3>;
 
 // ------------------------------------------------------------------
 // 特化1：Mat4 * Mat4
@@ -131,6 +129,9 @@ inline Mat4 operator + (const Mat4 &lhs, const Mat4 &rhs) {
     return res;
 }
 
+// ------------------------------------------------------------------
+// 特化4：矩阵转置
+// ------------------------------------------------------------------
 inline Mat4 Transpose(const Mat4& m) {
     Mat4 result;
 
@@ -164,4 +165,33 @@ inline Mat4 Transpose(const Mat4& m) {
     return result;
 }
 
+// ------------------------------------------------------------------
+// 特化5：对角阵求逆
+// ------------------------------------------------------------------
+inline Mat4 diagMatInverse(const Mat4& mat) {
+    // 提取对角线元素到一个 __m128 寄存器
+    const __m128 diag = _mm_set_ps(
+        mat[3][3], // 注意：_mm_set_ps 是 [a,b,c,d] -> [d,c,b,a] 存储顺序
+        mat[2][2],
+        mat[1][1],
+        mat[0][0]
+    );
+
+    // 计算倒数：_mm_rcp_ps（快速近似）或精确除法
+    // 若需高精度，用_mm_div_ps(1.0f, diag)
+    const __m128 ones = _mm_set1_ps(1.0f);
+    const __m128 inv_diag = _mm_div_ps(ones, diag); // 精确倒数
+
+    // 将结果写回 Mat4
+    alignas(16) float result_arr[4];
+    _mm_store_ps(result_arr, inv_diag);
+
+    MatMN<4, 4> result{};
+    result[0][0] = result_arr[0];
+    result[1][1] = result_arr[1];
+    result[2][2] = result_arr[2];
+    result[3][3] = result_arr[3];
+
+    return result;
+}
 #endif //RENDERINGENGINE_MATVECPRO_HPP

@@ -112,7 +112,7 @@ Mat4 Transform::getRMat() const{
 }
 
 Mat4 Transform::getTMat() const{
-     MatMN<4,4> T;  // 平移矩阵
+     Mat4 T;  // 平移矩阵
      // 初始化单位矩阵
      for(size_t i = 0; i < 4; ++i) T[i][i] = 1.0f;
 
@@ -167,8 +167,8 @@ const Mat4 &ObjTransform::getNormalWorldMat() {
 
 
 // 用于计算-P得出的位移矩阵
-Mat4 CameraTransform::getNegativeTMat() {
-     MatMN<4,4> T;  // 平移矩阵
+Mat4 Transform::getNegativeTMat() const{
+     Mat4 T;  // 平移矩阵
      // 初始化单位矩阵
      for(size_t i = 0; i < 4; ++i) T[i][i] = 1.0f;
      // 设置平移向量

@@ -54,6 +54,7 @@ public:
     void BeginFrame();   // 初始化帧
     void EndFrame();  // 交付帧
     void DrawScene(const std::vector<uint16_t>& models);  // 绘制场景
+    void DrawScenceRT(const std::vector<uint16_t>& models);  // 光线追踪路径
     void PostProcess();  // 后处理
     void Write2Front();  // // 写入绘制缓冲区(交付),自行转换伽马矫正
     friend class Graphic;
@@ -62,7 +63,7 @@ private:
     // 场景资源
     std::unordered_map<std::string, std::shared_ptr<Material>> materialMap;
     std::unordered_map<std::string, std::shared_ptr<TextureMap>> textureMap;
-    std::unordered_map<std::string, std::shared_ptr<TextureMap>> bumpMap;
+    std::unordered_map<std::string, std::shared_ptr<TextureMap>> normalMap;
     std::unordered_map<std::string, std::shared_ptr<Mesh>> meshes;
     SkyBox sky;
     std::vector<RenderObjects> renderObjs;
