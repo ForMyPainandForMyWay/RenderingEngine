@@ -8,7 +8,6 @@
 #include <vector>
 
 #include "Shader.hpp"
-#include "VecPro.hpp"
 
 struct Triangle;
 class EnvironmentLight;
