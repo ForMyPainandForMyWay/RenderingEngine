@@ -5,7 +5,6 @@
 #ifndef RENDERINGENGINE_RAYTRACETOOL_HPP
 #define RENDERINGENGINE_RAYTRACETOOL_HPP
 
-#include <optional>
 #include <random>
 
 #if defined(__x86_64__) || defined(_M_X64) || defined(__aarch64__) || defined(_M_ARM64)
@@ -34,14 +33,13 @@ std::optional<HitInfo> MollerTrumbore(
     const Vertex& v3,
     const Vec3& rayPosiModel,
     const Vec3& rayDirModel,
-    const Material* material,
-    float& closestT,
-    uint16_t modelID);
+    float& closestT);
+
 float GetRandomFloat();
 Vec4 SampleCosineHemisphere(const Vec4& N_);
 inline float RandomFloat() {
     static std::mt19937 rng(std::random_device{}());
-    static std::uniform_real_distribution<float> dist(0.0f, 1.0f);
+    static std::uniform_real_distribution dist(0.0f, 1.0f);
     return dist(rng);
 }
 #endif //RENDERINGENGINE_RAYTRACETOOL_HPP

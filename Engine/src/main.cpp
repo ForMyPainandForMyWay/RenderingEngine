@@ -60,7 +60,7 @@ void dumpMeshInfo(const std::unordered_map<std::string, Mesh*>& meshes) {
 }
 
 int main() {
-    Engine engine(480, 360);
+    Engine engine(800, 800);
     const auto meshName = R"(/Users/dongyu/CLionProjects/RenderEngine/bin/test4.obj)";
     const auto meshId = engine.addMesh(meshName);
     uint16_t objID = engine.addObjects(meshId[0]);
@@ -87,15 +87,18 @@ int main() {
     engine.SetMainLight();
 
     // 物体转动
-    engine.addTfCommand({objID2, RenderObject, TfCmd::ROTATE, {45.0f, 135.0f, 0.0f}});
-    engine.addTfCommand({objID2, RenderObject, TfCmd::SCALE, {0.5f, 0.5f, 0.5f}});
+    // engine.addTfCommand({objID2, RenderObject, TfCmd::ROTATE, {45.0f, 135.0f, 0.0f}});
+    // engine.addTfCommand({objID2, RenderObject, TfCmd::SCALE, {0.5f, 0.5f, 0.5f}});
+    engine.addTfCommand({objID, RenderObject, TfCmd::SCALE, {0.7f, 0.7f, 0.7f}});
+    engine.addTfCommand({objID, RenderObject, TfCmd::ROTATE, {-25.0f, 0.0f, 0.0f}});
+
     // engine.addTfCommand({objID2, RenderObject, TfCmd::ROTATE, {35.0f, -35.0f, 0.0f}});
     // engine.addTfCommand({objID, TfCmd::ROTATE, {0.0f, 0.0f, 0.0f}});
     // engine.addTfCommand({objID, RenderObject, TfCmd::ROTATE, {-35.0f, 35.0f, 0.0f}});
 
-    engine.addTfCommand({objID3, RenderObject, TfCmd::TRANSLATE, {0,2.0,0.0f}});
+    engine.addTfCommand({objID3, RenderObject, TfCmd::TRANSLATE, {0.0f, 2.0f,0.0f}});
     engine.addTfCommand({objID4, RenderObject, TfCmd::TRANSLATE, {0.0f,-2.0f,0.0f}});
-    engine.addTfCommand({objID5, RenderObject, TfCmd::TRANSLATE, {2.0f,0.0f,0.0f}});
+    engine.addTfCommand({objID5, RenderObject, TfCmd::TRANSLATE, {2.0f, 0.0f,0.0f}});
     engine.addTfCommand({objID6, RenderObject, TfCmd::TRANSLATE, {-2.0f,0.f,0.0f}});
     engine.addTfCommand({objID7, RenderObject, TfCmd::TRANSLATE, {0.0f,0.f,-2.0f}});
     // engine.addTfCommand({objID, RenderObject, TfCmd::TRANSLATE, {0,0,0.5f}});
@@ -113,8 +116,8 @@ int main() {
     // engine.OpenShadow();
     // engine.OpenSky();
     auto start = std::chrono::high_resolution_clock::now();
-    // engine.RenderFrame({ objID2, objID3, objID4, objID5, objID6, objID7});
-    engine.RenderFrame({ objID});
+    engine.RenderFrame({ objID, objID3, objID4, objID5, objID6, objID7});
+    // engine.RenderFrame({ objID});
     auto end = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
     std::cout << "渲染耗时: " << duration.count() << " 微秒\n";

@@ -3,3 +3,10 @@
 //
 
 #include "Ray.hpp"
+
+Ray TransformRayToModel(const Ray& worldRay, const Mat4& invMat) {
+    Ray localRay;
+    localRay.orignPosi = invMat * worldRay.orignPosi;
+    localRay.Direction = invMat * worldRay.Direction;
+    return localRay;
+}

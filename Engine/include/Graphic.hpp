@@ -7,7 +7,6 @@
 
 #include <unordered_map>
 #include <vector>
-#include <optional>
 
 #include "Shape.hpp"
 
@@ -21,7 +20,7 @@ class GlobalUniform;
 class Engine;
 class Uniform;
 class RenderObjects;
-struct Mesh;
+class Mesh;
 
 
 // 用于绘制的类
@@ -53,10 +52,7 @@ public:
     void WriteBuffer(const std::vector<F2P>& f2pVec) const;
     void WriteGBuffer(const std::vector<Fragment>& f2pVec) const;
 
-    void RT(const std::vector<uint16_t>& models,
-        const std::vector<RenderObjects>& renderObj, uint8_t SPP=1, uint8_t maxDepth=8) const;
-    static std::optional<HitInfo> GetClosestHit(Ray ray,
-        const std::vector<uint16_t>& models, const std::vector<RenderObjects>& renderObj);
+    void RT(uint8_t SPP = 1, uint8_t maxDepth = 8) const;  // 光线追踪
 
     void SSAO(
         const std::vector<FloatPixel> &inBuffer,
