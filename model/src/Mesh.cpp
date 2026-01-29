@@ -126,8 +126,9 @@ size_t Mesh::getEBONums() const {
     return this->EBO.size();
 }
 
+// 返回三角形数量
 size_t Mesh::getTriNums() const {
-    return this->EBO.size();
+    return this->EBO.size() / 3;
 }
 
 bool Mesh::vexIsEmpty() const {

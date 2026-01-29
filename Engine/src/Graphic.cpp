@@ -3,7 +3,6 @@
 //
 
 #include <iostream>
-#include <random>
 #include <ranges>
 
 #include "Engine.hpp"
@@ -151,8 +150,6 @@ void Graphic::BasePass(const RenderObjects &obj,const Uniform &u, const GlobalUn
 }
 
 void Graphic::RT(
-    const std::vector<uint16_t>& models,
-    const std::vector<RenderObjects>& renderObj,
     const uint8_t SPP,
     const uint8_t maxDepth) const {
     // 相机参数
@@ -185,7 +182,7 @@ void Graphic::RT(
                 for (size_t idx = start; idx < end; ++idx) {
                     const size_t y = idx / width;
                     const size_t x = idx % width;
-                    const float ndcX = (2.0f * (static_cast<float>(x) + 0.5f) / static_cast<float>(width)) - 1.0f;
+                    const float ndcX = 2.0f * (static_cast<float>(x) + 0.5f) / static_cast<float>(width) - 1.0f;
                     const float ndcY = 1.0f - (2.0f * (static_cast<float>(y) + 0.5f) / static_cast<float>(height));
                     const float camX = ndcX * Asp * scale;
                     const float camY = ndcY * scale;
@@ -199,9 +196,9 @@ void Graphic::RT(
                         Ray currentRay = ray;
                         Vec3 throughput(1.0f);
                         for (int depth = 0; depth < maxDepth; ++depth) {
-                            const auto hitInfo = GetClosestHit(currentRay, models, renderObj);
+                            const auto hitInfo = engine->GetClosestHit(currentRay);
                             if (!hitInfo) break;
-                            const Material* material = hitInfo->material;
+                            const auto material = hitInfo->mat;
                             Vec3 hitAlbedo = BilinearSample(hitInfo->hitUV, material->KdMap).toFloat();
                             Vec3 hitEmission = Hadamard(material->Ke, hitAlbedo);
                             radiance += Hadamard(throughput, hitEmission);

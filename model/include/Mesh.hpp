@@ -7,6 +7,7 @@
 
 #include "Shape.hpp"
 
+struct BLAS;
 class Shader;
 struct Film;
 class BlinnShader;
@@ -106,6 +107,9 @@ public:
     [[nodiscard]] Vertex& getVertex(const size_t index) { return VBO[index]; }
 
     friend class Graphic;
+    friend struct BLAS;
+    int BLASIdx = -1;  // 模型BVH索引,为-1说明没有建立BVH
+    std::shared_ptr<BLAS> BuildBLAS();
 
 protected:
     std::vector<Vertex> VBO;   // 渲染顶点表

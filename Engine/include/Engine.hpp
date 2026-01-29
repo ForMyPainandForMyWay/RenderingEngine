@@ -5,8 +5,7 @@
 #ifndef UNTITLED_ENGINE_H
 #define UNTITLED_ENGINE_H
 
-#include <queue>
-
+#include "BVH.hpp"
 #include "Camera.hpp"
 #include "GBuffer.hpp"
 #include "Graphic.hpp"
@@ -17,6 +16,7 @@
 #include "thread_pool.hpp"
 
 
+struct BLAS;
 class ThreadPool;
 
 // ID体系:0号为Camera,1号为主光源,2-4号为逐片元光源
@@ -33,7 +33,7 @@ typedef struct TransformCommand {
 
 class Engine {
 public:
-    Engine(size_t w, size_t h, bool Gamma=false);
+    Engine(size_t w, size_t h, bool Gamma=false, bool RT=true);
     ~Engine();
     void SetMainLight();
     void SetEnvLight(uint8_t r, uint8_t g, uint8_t b, float I);
@@ -49,6 +49,9 @@ public:
     sysID addPixLight(Lights &light);
     size_t addVexLight(Lights &light);
     void setResolution(size_t w, size_t h);
+    // 光线追踪
+    void BuildTLAS(const std::vector<uint16_t>& models);
+    std::optional<HitInfo> GetClosestHit(const Ray &worldRay) const;
 
 
     void Application();  // 应用物体、相机与光源的变换
@@ -58,7 +61,8 @@ public:
     void DrawScene(const std::vector<uint16_t>& models);  // 绘制场景
     void DrawScenceRT(const std::vector<uint16_t>& models);  // 光线追踪路径
     void PostProcess();  // 后处理
-    void Write2Front();  // // 写入绘制缓冲区(交付),自行转换伽马矫正
+    void Write2Front();  // 写入绘制缓冲区(交付),自行转换伽马矫正
+
     friend class Graphic;
 
 private:
@@ -67,6 +71,8 @@ private:
     std::unordered_map<std::string, std::shared_ptr<TextureMap>> textureMap;
     std::unordered_map<std::string, std::shared_ptr<TextureMap>> normalMap;
     std::unordered_map<std::string, std::shared_ptr<Mesh>> meshes;
+    std::vector<std::shared_ptr<BLAS>> blasList;
+    std::unique_ptr<TLAS> tlas;
     SkyBox sky;
     std::vector<RenderObjects> renderObjs;
     std::array<Lights, 3> PixLights;  // 主要光源(逐像素光源)
@@ -77,6 +83,7 @@ private:
 
     // 变换指令队列
     std::queue<TransformCommand> tfCommand;
+    bool IsRT;  // 是否是光线追踪渲染路径
     bool NeedShadowPass = false;  // 是否需要阴影Pass
     bool NeedSkyBoxPass = false;  // 是否需要天空盒Pass
     bool NeedGammaCorrection = false;  // 是否需要伽马矫正

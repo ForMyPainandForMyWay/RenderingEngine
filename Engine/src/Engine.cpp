@@ -5,13 +5,13 @@
 #include <ranges>
 
 #include "Engine.hpp"
-
 #include "F2P.hpp"
 #include "GammaTool.hpp"
+#include "Mesh.hpp"
 #include "ModelReader.hpp"
 #include "RenderObjects.hpp"
 
-Engine::Engine(const size_t w, const size_t h, const bool Gamma)
+Engine::Engine(const size_t w, const size_t h, const bool Gamma, const bool RT)
     : width(w)
     , height(h)
     , img(w, h)
@@ -31,6 +31,7 @@ Engine::Engine(const size_t w, const size_t h, const bool Gamma)
     const float aspect = static_cast<float>(w) / static_cast<float>(h);
     camera.setAsp(aspect);
     if (mainLight) mainLight->setAsp(aspect);
+    IsRT = RT;
 }
 
 Engine::~Engine() {
@@ -66,6 +67,13 @@ void Engine::addTfCommand(const TransformCommand &cmd) {
 std::vector<std::string> Engine::addMesh(const std::string &filename) {
     auto MiD = ModelReader::readObjFile(
         NeedGammaCorrection, filename, meshes, materialMap, textureMap, normalMap);
+    for (const auto& mID : MiD) {
+        const auto mesh = meshes.at(mID);
+        if (mesh->BLASIdx != -1) continue;
+        mesh->BLASIdx = static_cast<int>(blasList.size());
+        auto blas = mesh->BuildBLAS();
+        blasList.emplace_back(blas);
+    }
     return MiD;
 }
 
@@ -159,7 +167,7 @@ void Engine::DrawScenceRT(const std::vector<uint16_t>& models) {
         auto& renderObj = renderObjs.at(model);
         renderObj.ModelMat();  // 更新M
     }
-    graphic.RT(models, renderObjs);
+    graphic.RT();
 }
 
 // 后处理阶段,工作集中于tmpBuffer
@@ -187,8 +195,11 @@ void Engine::PostProcess() {
 void Engine::RenderFrame(const std::vector<uint16_t>& models) {
     BeginFrame();   // 初始化帧
     Application();  // 应用变换
-    DrawScene(models);  // 绘制指定models
-    // DrawScenceRT(models);
+    // 绘制指定models
+    if (IsRT) {
+    BuildTLAS(models);// 光线追踪需要初始化BVH
+    DrawScenceRT(models);
+    } else DrawScene(models);
     PostProcess();   // 画面后处理
     EndFrame();      // 交付帧
 }
