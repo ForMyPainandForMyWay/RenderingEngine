@@ -99,7 +99,7 @@ private:
     Graphic graphic;
     GlobalUniform globalU;  // 全局Uniform
     std::vector<float> ZBuffer;  // Z-Buffer
-    ShadowMap ShadowMap;  // 阴影Z-Buffer
+    ShadowMap SdMap;  // 阴影Z-Buffer
     std::unique_ptr<GBuffer> gBuffer;  // GBuffer
     Film *frontBuffer{};  // 正在显示的Buffer
     Film *backBuffer{};  // 正在绘制的Buffer

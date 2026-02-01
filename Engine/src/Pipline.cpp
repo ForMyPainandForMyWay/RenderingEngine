@@ -258,7 +258,7 @@ void Graphic::GeometryShading(
                             this->engine->PixLights,
                             this->engine->VexLights,
                             this->engine->mainLight,
-                            this->engine->ShadowMap,
+                            this->engine->SdMap,
                             this->engine->envLight,
                             this->engine->globalU
                         );
@@ -424,7 +424,7 @@ void Graphic::FragmentShading(
                                 material,
                                 this->engine->PixLights,
                                 this->engine->mainLight,
-                                this->engine->ShadowMap,
+                                this->engine->SdMap,
                                 this->engine->envLight,
                                 this->engine->globalU,
                                 this->engine->NeedShadowPass

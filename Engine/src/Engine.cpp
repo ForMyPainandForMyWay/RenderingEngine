@@ -17,7 +17,7 @@ Engine::Engine(const size_t w, const size_t h, const bool Gamma, const bool RT)
     , img(w, h)
     , graphic(this)
     , globalU(w, h, w, h)
-    , ShadowMap(w, h)
+    , SdMap(w, h)
     , frontBuffer(new Film(w, h))
     , backBuffer(new Film(w, h)) {
     // 预备分配缓冲
@@ -46,7 +46,7 @@ void Engine::SetMainLight() {
     delete mainLight;
     mainLight = new MainLight();  // 先不进行详细参数设置
     mainLight->setI(5.0f);
-    ShadowMap.resize(width, height);
+    SdMap.resize(width, height);
     globalU.setShadowViewPort(width, height);
 }
 
@@ -209,7 +209,7 @@ void Engine::BeginFrame() {
     std::ranges::fill(ZBuffer, 1.0f);
     std::ranges::fill(tmpBufferF, FloatPixel{0.0f,0.0f,0.0f,0.0f});
     std::ranges::fill(tmpBufferB, FloatPixel{0.0f,0.0f,0.0f,0.0f});
-    ShadowMap.clear();    // 清空backBuffer
+    SdMap.clear();    // 清空backBuffer
     backBuffer->clear();
     gBuffer = std::make_unique<GBuffer>(width, height);
 }
