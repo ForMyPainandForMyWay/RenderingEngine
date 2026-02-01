@@ -2,8 +2,8 @@
 // Created by 冬榆 on 2025/12/29.
 //
 
+#include <cmath>
 #include <future>
-#include <iostream>
 #include <ranges>
 
 #include "RenderObjects.hpp"
@@ -289,7 +289,7 @@ void Graphic::Rasterization(
         for (size_t i = 0; i < triCount; ++i) {
             if (const auto& tri = triangles[i]; tri.alive) {
                 // 计算该三角形的片元数估算值
-                triFragCounts[i] = static_cast<uint32_t>(ceil(fabs(TriScreenArea2(tri))));
+                triFragCounts[i] = static_cast<uint32_t>(std::ceil(std::fabs(TriScreenArea2(tri))));
             } else triFragCounts[i] = 0;
         }
         constexpr size_t BLOCK_SIZE = 512;

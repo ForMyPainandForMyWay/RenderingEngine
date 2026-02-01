@@ -22,7 +22,6 @@ struct MatMN {
         static_assert(sizeof...(Args) == M, "Number of arguments must be exactly M.");
     }
 
-    float get(size_t row, size_t col);
     VecN<N>& operator[](size_t row) { return data[row]; }
     const VecN<N>& operator[](size_t row) const { return data[row]; }
 
@@ -103,13 +102,6 @@ template<size_t M, size_t N>
 bool operator > (const MatMN<M, N> &lhs, float scalar) {
     for (size_t i = 0; i < M; i++) if (!(lhs[i] > scalar)) return false;
     return true;
-}
-
-// x是行号,y是列号.
-template<size_t M, size_t N>
-float MatMN<M, N>::get(size_t row, size_t col) {
-    if (row >= M || col >= N) throw std::out_of_range("Index out of bounds");
-    return data[row][col]; // 行优先
 }
 
 // 优化写法是读取 lhs[i][k] 后，将其与 rhs 的第 k 行整行相乘累加

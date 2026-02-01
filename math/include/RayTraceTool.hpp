@@ -5,6 +5,7 @@
 #ifndef RENDERINGENGINE_RAYTRACETOOL_HPP
 #define RENDERINGENGINE_RAYTRACETOOL_HPP
 
+#include <optional>
 #include <random>
 
 #if defined(__x86_64__) || defined(_M_X64) || defined(__aarch64__) || defined(_M_ARM64)

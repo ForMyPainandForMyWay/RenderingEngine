@@ -3,16 +3,15 @@
 //
 #ifndef RENDERINGENGINE_BVH_HPP
 #define RENDERINGENGINE_BVH_HPP
+#include <optional>
 #include <vector>
+#include <cstdint>
 
 #include "AABB.hpp"
-#include "Mat.hpp"
 
 struct HitInfo;
-struct Material;
 struct Ray;
 class Mesh;
-struct AABB;
 
 // 基础 BVH 节点（通用）
 struct BVHNode {

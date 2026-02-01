@@ -5,6 +5,8 @@
 #ifndef UNTITLED_ENGINE_H
 #define UNTITLED_ENGINE_H
 
+#include <queue>
+
 #include "BVH.hpp"
 #include "Camera.hpp"
 #include "GBuffer.hpp"
@@ -33,7 +35,7 @@ typedef struct TransformCommand {
 
 class Engine {
 public:
-    Engine(size_t w, size_t h, bool Gamma=false, bool RT=true);
+    Engine(size_t w, size_t h, bool Gamma=false, bool RT=false);
     ~Engine();
     void SetMainLight();
     void SetEnvLight(uint8_t r, uint8_t g, uint8_t b, float I);
