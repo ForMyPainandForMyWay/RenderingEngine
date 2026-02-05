@@ -6,6 +6,7 @@
 #include <optional>
 #include <vector>
 #include <cstdint>
+#include <memory>
 
 #include "AABB.hpp"
 
@@ -24,7 +25,7 @@ struct BVHNode {
 
 // BLAS: 针对具体 Mesh。Mesh设置一个属性，指向 BLAS
 struct BLAS {
-    Mesh* mesh;  // 用于反向查找Mesh
+    std::shared_ptr<Mesh> mesh;  // 用于反向查找Mesh
     std::vector<uint32_t> triangles;  // 本地空间的三角形下标索引，索引内容是EBO的三角形顶点索引序列中每个三角形的首个顶点下表
     std::vector<BVHNode> nodes;       // 本地空间的BVH树
     AABB rootBounds;                  // 本地空间的整体包围盒

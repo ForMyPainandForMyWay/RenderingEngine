@@ -4,7 +4,10 @@
 
 #include <iostream>
 #include <ranges>
+#include <thrust/host_vector.h>
 
+#include "BVH.cuh"
+#include "DATAPackegGPU.cuh"
 #include "Engine.hpp"
 #include "F2P.hpp"
 #include "FragTool.hpp"
@@ -12,7 +15,11 @@
 #include "Ray.hpp"
 #include "RayTraceTool.hpp"
 #include "HitInfo.hpp"
+#include "Interface.cuh"
 #include "RenderObjects.hpp"
+#include "TransfomTool.cuh"
+#include "Mesh.cuh"
+#include "Shape.cuh"
 
 
 Graphic::Graphic(Engine *eg) {
@@ -165,9 +172,172 @@ void Graphic::RT(
     const size_t height = engine->height;
     const size_t pixelCount = width * height;
 
-    constexpr size_t BLOCK_SIZE = 1024;
+    // 最终结果容器
+    std::vector<F2P> finalResult;
+    finalResult.reserve(pixelCount); // 预分配避免重复扩容
 
+    #if USE_CUDA
+    // 这里进入CUDA逻辑，先把数据打包好，然后送入接口函数
+    // 打包相机数据
+    CameraDataGPU cameraDataGPU{
+        Asp, scale, Vec4ToFloat4(cameraPos), Mas4ToGPU(cameraRot), width, height, pixelCount};
+
+    // 构建纹理贴图映射表
+    int textNums = 0;
+    std::unordered_map<std::shared_ptr<TextureMap>, int> TextMap;
+    for (const auto& text : engine->textureMap | std::views::values) {
+        TextMap[text] = textNums++;
+    }
+
+    // 转移Material
+    uint32_t  materialIdx = 0;
+    uint32_t MaterialNums = engine->materialMap.size();
+    uint32_t texPixelNUms = 0;
+    MaterialGPU MaterialsGPU[MaterialNums];  // MaterialGPU 数据容器
+    std::unordered_map<std::shared_ptr<Material>, size_t> MaterialGPUMap;  // 临时记录 Material* - id 的映射结构
+    for (const auto& material : engine->materialMap | std::views::values) {
+        MaterialGPUMap[material] = materialIdx;
+        MaterialsGPU[materialIdx].Ke = Vec3ToFloat3(material->Ke);  // 记录material的Ke
+        // 记录Material的贴图像素的数量和贴图缓冲区偏移量
+        const auto& KdMap = material->KdMap;
+        if (!KdMap) {  // 记录纹理贴图Id，当没有贴图的时候赋值为-1
+            MaterialsGPU[materialIdx].KdMapId = -1;
+            MaterialsGPU[materialIdx].KdPixCount = 0;
+            continue;
+        }
+        MaterialsGPU[materialIdx].KdMapId = TextMap[KdMap];
+        MaterialsGPU[materialIdx].KdPixCount = KdMap->uvImg->floatImg.size();
+        MaterialsGPU[materialIdx].KdPixOffset = texPixelNUms;
+        texPixelNUms+=MaterialsGPU[materialIdx].KdPixCount;  // 这里先统计贴图像素总数，后一个循环进行拷贝
+        materialIdx++;
+    }
+
+    // VBO、EBO、SubMesh 数据容器准备
+    uint32_t VBONums = 0;
+    uint32_t EBONums = 0;
+    uint32_t SubMeshNum = 0;
+    uint32_t MeshIdx = 0;  // Mesh指针
+    std::unordered_map<std::shared_ptr<Mesh>, size_t> MeshMapGPU;  // 临时记录 Mesh* - id 的映射结构
+    for (const auto& instance : engine->tlas->instances) {
+        const std::shared_ptr<Mesh> mesh = engine->blasList[instance.blasIdx]->mesh;
+        if (MeshMapGPU.contains(mesh)) continue;  // 如果这个材质已经索引过了，则跳过
+        MeshMapGPU[mesh] = MeshIdx++;  // 记录 Mesh* - id 映射
+        VBONums += mesh->getVBONums();
+        EBONums += mesh->getEBONums();
+        SubMeshNum += mesh->getSubMeshNums();
+    }
+    SubMeshGPU SubMeshesGPU[SubMeshNum];
+    VertexGPU VBO[VBONums];
+    uint32_t EBO[EBONums];
+
+    // 打包Mesh结构、VBO和EBO
+    uint32_t meshNum = MeshMapGPU.size();
+    MeshGPU MeshesGPU[meshNum];  // Mesh数据容器
+
+    size_t VBOIdx = 0;  // VBO指针
+    size_t EBOIdx = 0;  // EBO指针
+    size_t SMIdx = 0;   // SubMesh指针
+
+    // 遍历Mesh* - id Map获取对应Mesh
+    for (const auto& [mesh, MeshId] : MeshMapGPU) {
+        auto& meshGPU = MeshesGPU[MeshId];
+        meshGPU.MeshEBOCount = mesh->getEBONums();
+        meshGPU.MeshEBOffset = EBOIdx;
+
+        meshGPU.MeshVBOCount = mesh->getVBONums();
+        meshGPU.MeshVBOffset = VBOIdx;
+
+        meshGPU.MeshSubCount = mesh->getSubMeshNums();
+        meshGPU.MeshSubOffset = SMIdx;
+
+        // 存储顶点数据
+        for (const auto& vertex : mesh->VBO) {
+            Vertex2GPU(vertex, VBO[VBOIdx++]);
+        }
+        // 存储Edge索引数据
+        std::ranges::copy(mesh->EBO, EBO+EBOIdx);  // 似乎可以不用拷贝直接给一个指针
+        EBOIdx += meshGPU.MeshEBOCount;  // 后续不能再使用EBOIdx
+
+        // 存储SubMesh数据
+        for (const auto &submesh : *mesh) {
+            // 设置SubMesh的 绝对索引
+            auto& submeshGPU = SubMeshesGPU[SMIdx++];
+            submeshGPU.SubEBOffset = submesh.getOffset() + meshGPU.MeshEBOffset;  // EBO绝对索引
+            submeshGPU.SubEBOCount = submesh.getIdxCount();
+            submeshGPU.MaterialId = MaterialGPUMap[submesh.getMaterial()];  // 记录SubMesh的 Material id 代替指针
+        }
+    }
+    ScenceDataGPU scenceData{
+        MaterialsGPU,
+        MaterialNums,
+        VBO,
+        VBONums,
+        EBO,
+        EBONums,
+        MeshesGPU,
+        meshNum,
+        SubMeshesGPU,
+        SubMeshNum,
+        // texPixelsGPU,
+        TextMap,
+        texPixelNUms};
+    // 上述代码打包了 cameraDataGPU VBO EBO MeshesGPU SubMeshesGPU MaterialsGPU texPixelsGPU -> cameraDataGPU scenceData
+
+    // 打包TLAS数据
+    TLASGPU tlasGPU{};
+    tlasGPU.instanceCount = engine->tlas->instances.size();
+    tlasGPU.nodeCount = engine->tlas->nodes.size();
+    auto* instancesGPU = new InstanceGPU[tlasGPU.instanceCount];
+    auto* nodesGPU = new BVHNodeGPU[tlasGPU.nodeCount];
+    tlasGPU.instances = instancesGPU;
+    tlasGPU.nodes = nodesGPU;
+
+    const auto& TLASInsCPU = engine->tlas->instances.data();
+    const auto& TLASNodesCPU = engine->tlas->nodes.data();
+
+    std::memcpy(instancesGPU, TLASInsCPU, tlasGPU.instanceCount * sizeof(InstanceGPU));
+    std::memcpy(nodesGPU, TLASNodesCPU, tlasGPU.nodeCount * sizeof(BVHNodeGPU));
+
+    // 打包BLAS数据(BLAS是全局存储的Mesh的BVH数据)
+    uint32_t BLASNums = engine->blasList.size();
+    BLASGPU BlasGPU[BLASNums];
+    uint32_t triNums = 0;
+    uint32_t nodeNums = 0;
+    for (uint32_t i = 0; i < BLASNums; ++i) {
+        const auto& blasCPU = engine->blasList[i];
+        BLASGPU& blasGPU = BlasGPU[i];
+        blasGPU.nodeCount = blasCPU->nodes.size();
+        blasGPU.triangleCount = blasCPU->triangles.size();
+        blasGPU.MeshGPUId = MeshMapGPU[blasCPU->mesh];
+        // 拷贝三角索引和节点数据
+        blasGPU.triangleOffset = triNums;  // 这是绝对索引
+        blasGPU.nodeOffset = nodeNums;
+
+        blasGPU.triangleCount = blasCPU->triangles.size();
+        blasGPU.nodeCount = blasCPU->nodes.size();
+
+        triNums += blasGPU.triangleCount;
+        nodeNums += blasGPU.nodeCount;
+    }
+    // 打包BLAS的Node和Tri数据
+    uint32_t BlasTriGPU[triNums];  // 注意这里的三角形索引是相对索引不是绝对索引
+    BVHNodeGPU BlasNodesGPU[nodeNums];
+    for (size_t i = 0; i < BLASNums; ++i) {
+        const auto& blasCPU = engine->blasList[i];
+        BLASGPU& blasGPU = BlasGPU[i];
+        // 这里拷贝的是相对索引，使用的时候需要加上Mesh索引偏移量
+        memcpy(BlasTriGPU+blasGPU.triangleOffset, blasCPU->triangles.data(), blasGPU.triangleCount * sizeof(uint32_t));
+        memcpy(BlasNodesGPU+blasGPU.nodeOffset, blasCPU->nodes.data(), blasGPU.nodeCount * sizeof(BVHNodeGPU));
+    }
+
+    BVHDataGPU bvh{BlasGPU, BlasTriGPU, triNums, BlasNodesGPU, nodeNums, BLASNums, tlasGPU};
+    // 上面打包了 BlasGPU[] tlasGPU -> bvh
+    Inter(cameraDataGPU, bvh, scenceData, finalResult);
+
+    #else
+    // CPU逻辑
     std::vector<std::future<std::vector<F2P>>> futures;
+    constexpr size_t BLOCK_SIZE = 1024;
     futures.reserve((pixelCount + BLOCK_SIZE - 1) / BLOCK_SIZE);
 
     for (size_t i = 0; i < pixelCount; i += BLOCK_SIZE) {
@@ -239,8 +409,6 @@ void Graphic::RT(
         totalCount += part.size();
         allParts.emplace_back(std::move(part));
     }
-    std::vector<F2P> finalResult;
-    finalResult.reserve(totalCount);
     for (auto& part : allParts) {
         finalResult.insert(
             finalResult.end(),
@@ -248,6 +416,8 @@ void Graphic::RT(
             std::make_move_iterator(part.end())
         );
     }
+    #endif
+    // 写入缓冲区
     WriteBuffer(finalResult);
 }
 
@@ -255,7 +425,7 @@ void Graphic::WriteBuffer(const std::vector<F2P>& f2pVec) const {
     const size_t count = f2pVec.size();
     if (count == 0) return;
 
-    // 如果像素数量很少（1万），直接主线程串行写完算了。
+    // 如果像素数量很少（1e4），直接主线程串行写完
     const size_t width = engine->width; // 提前取出，避免多次指针解引用
     auto& buffer = engine->tmpBufferF;  // 获取引用
 

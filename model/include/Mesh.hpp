@@ -109,7 +109,7 @@ public:
     friend class Graphic;
     friend struct BLAS;
     int BLASIdx = -1;  // 模型BVH索引,为-1说明没有建立BVH
-    std::shared_ptr<BLAS> BuildBLAS();
+    [[nodiscard]] std::shared_ptr<BLAS> BuildBLAS(const std::shared_ptr<Mesh>& smesh) const;
 
 protected:
     std::vector<Vertex> VBO;   // 渲染顶点表

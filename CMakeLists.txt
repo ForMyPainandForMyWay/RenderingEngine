@@ -1,26 +1,42 @@
 cmake_minimum_required(VERSION 4.1)
-project(RenderingEngine)
+project(RenderingEngine CXX)
 
 set(CMAKE_CXX_STANDARD 20)
+set(EXECUTABLE_OUTPUT_PATH "${PROJECT_SOURCE_DIR}/bin")
 
-if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64|amd64|x64")
-    set(ENABLE_SSE ON)
-elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "i386|i686|x86")
+# SIMD支持
+if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64|amd64|x64|i386|i686|x86")
     set(ENABLE_SSE ON)
 else()
     set(ENABLE_SSE OFF)
 endif()
 
+# CUDA支持
+find_package(CUDAToolkit QUIET)
+if(CUDAToolkit_FOUND AND NOT DEFINED ENV{FORCE_CPU})
+    set(USE_CUDA 1)
+    enable_language(CUDA)
+    set(CMAKE_CUDA_ARCHITECTURES native)
+    set(CMAKE_CUDA_SEPARABLE_COMPILATION ON)  # CUDA启用可重定位设备代码，方便device代码链接
+else()
+    set(USE_CUDA 0)
+endif()
 
-set(EXECUTABLE_OUTPUT_PATH "${PROJECT_SOURCE_DIR}/bin")
-
+# 入口
 file(GLOB_RECURSE SRC "${PROJECT_SOURCE_DIR}/*/src/*.cpp")
-
-
 add_executable(untitled ${SRC})
+target_compile_definitions(untitled PRIVATE USE_CUDA=${USE_CUDA})
+
+if(USE_CUDA)
+    file(GLOB_RECURSE SRCcuda "${PROJECT_SOURCE_DIR}/Engine/CUDART/src/*.cu")
+    target_sources(untitled PRIVATE ${SRCcuda})
+    target_include_directories(untitled PUBLIC ${PROJECT_SOURCE_DIR}/Engine/CUDART/include)
+endif()
 
 if(ENABLE_SSE AND NOT MSVC)
-    target_compile_options(untitled PRIVATE -msse4.1)
+    target_compile_options(untitled PRIVATE
+            $<$<COMPILE_LANGUAGE:CXX>:-msse4.1>
+    )
 endif()
 
 target_include_directories(untitled PUBLIC
