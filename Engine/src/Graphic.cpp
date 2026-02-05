@@ -4,10 +4,7 @@
 
 #include <iostream>
 #include <ranges>
-#include <thrust/host_vector.h>
 
-#include "BVH.cuh"
-#include "DATAPackegGPU.cuh"
 #include "Engine.hpp"
 #include "F2P.hpp"
 #include "FragTool.hpp"
@@ -15,11 +12,15 @@
 #include "Ray.hpp"
 #include "RayTraceTool.hpp"
 #include "HitInfo.hpp"
-#include "Interface.cuh"
 #include "RenderObjects.hpp"
+#if USE_CUDA
+#include "BVH.cuh"
+#include "DATAPackegGPU.cuh"
+#include "Interface.cuh"
 #include "TransfomTool.cuh"
 #include "Mesh.cuh"
 #include "Shape.cuh"
+#endif
 
 
 Graphic::Graphic(Engine *eg) {
