@@ -25,10 +25,10 @@ struct BuildTask {
     int end;       // 三角形列表结束
 };
 
-std::shared_ptr<BLAS> Mesh::BuildBLAS() {
+std::shared_ptr<BLAS> Mesh::BuildBLAS(const std::shared_ptr<Mesh>& smesh) const{
     if (triIsEmpty()) return nullptr;
     auto blas = std::make_shared<BLAS>();
-    blas->mesh = this;
+    blas->mesh = smesh;
 
     const size_t triCount = getTriNums();
     std::vector<TriInfo> triInfos;

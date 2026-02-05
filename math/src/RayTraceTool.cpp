@@ -82,7 +82,7 @@ Vec4 SampleCosineHemisphere(const Vec4& N_) {
     const Vec3 up = std::abs(N[2]) < 0.999f ? Vec3{0.0f, 0.0f, 1.0f} : Vec3{1.0f, 0.0f, 0.0f};
     const Vec3 T = normalize(cross(up, N));
     const Vec3 B = cross(N, T);
-    Vec3 result = normalize(T * x + B * y + N * z);
+    const Vec3 result = normalize(T * x + B * y + N * z);
     // 转换并返回世界空间方向(齐次)
     return {result[0], result[1], result[2], 0.0f};
 }
@@ -114,7 +114,6 @@ std::optional<HitInfo> Engine::GetClosestHit(const Ray& worldRay) const {
             // 获取对应的 BLAS
             const auto blas = blasList[inst.blasIdx];
             // 遍历 BLAS
-            // D. 如果命中，处理结果
             if (auto subHit = blas->Intersect(localRay, closestT);
                 subHit.has_value()) {
                 // 更新全局最近距离
@@ -127,7 +126,7 @@ std::optional<HitInfo> Engine::GetClosestHit(const Ray& worldRay) const {
                 Mat4 invTrans = inst.invTransform.Transpose();
                 Vec4 localN = {subHit->hitNormal[0], subHit->hitNormal[1], subHit->hitNormal[2], 0.0f}; // w=0
                 Vec4 worldN = invTrans * localN;
-                worldHit.hitNormal = normalize({worldN[0], worldN[1], worldN[2]});
+                worldHit.hitNormal = normalize({worldN[0], worldN[1], worldN[2], 0.0f});
                 worldHit.mat = subHit->mat; // 材质传递
                 worldHit.hitUV = subHit->hitUV;
                 closestHit = worldHit;

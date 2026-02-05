@@ -23,7 +23,7 @@ enum class Channel: uint8_t {
     B = 2,
 };
 
-struct FloatPixel {
+struct alignas(16) FloatPixel {  // 这里的对齐模式是为了适配CUDA的float4
     float r;
     float g;
     float b;

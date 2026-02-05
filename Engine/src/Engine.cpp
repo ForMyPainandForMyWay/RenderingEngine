@@ -71,7 +71,7 @@ std::vector<std::string> Engine::addMesh(const std::string &filename) {
         const auto mesh = meshes.at(mID);
         if (mesh->BLASIdx != -1) continue;
         mesh->BLASIdx = static_cast<int>(blasList.size());
-        auto blas = mesh->BuildBLAS();
+        auto blas = mesh->BuildBLAS(mesh);
         blasList.emplace_back(blas);
     }
     return MiD;
