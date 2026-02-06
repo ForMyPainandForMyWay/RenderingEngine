@@ -63,7 +63,7 @@ public:
 
 protected:
     // 需要渲染的三角面的顶点区间索引,offset所指即为首个顶点
-    uint32_t indexOffset{}, indexCount{};
+    size_t indexOffset{}, indexCount{};
     std::shared_ptr<Material> material;  // 材质,默认为nullptr
 };
 

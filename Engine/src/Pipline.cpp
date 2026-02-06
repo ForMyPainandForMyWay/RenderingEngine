@@ -52,8 +52,8 @@ void Graphic::VertexShading(
         const auto oft = sub.getOffset();
         const auto count = sub.getIdxCount();
         const auto oftEnd = count + oft;
-        uint32_t Min = 0xffffffff;
-        uint32_t Max = 0;
+        size_t Min = 0xffffffff;
+        size_t Max = 0;
         // 预处理 EBO 和 Min/Max (串行)
         std::vector<uint32_t> EBOcache;
         EBOcache.reserve(count);
@@ -173,24 +173,6 @@ void Graphic::Clip(std::unordered_map<std::shared_ptr<Material>, std::vector<Tri
 }
 
 // 视口变换把坐标从NDC转换到Screen、面积退化检测
-// void Graphic::ScreenMapping(std::unordered_map<std::shared_ptr<Material>, std::vector<Triangle>> &map, const Mat4&ViewPort) {
-//     for (auto& triangles : map | std::views::values) {
-//         for (auto& tri : triangles) {
-//             if (!tri.alive) continue;
-//             tri[0].clipPosi = ViewPort * tri[0].clipPosi;
-//             tri[1].clipPosi = ViewPort * tri[1].clipPosi;
-//             tri[2].clipPosi = ViewPort * tri[2].clipPosi;
-//             auto clampCoord = [&](Vec4& p) {
-//                 if (p[0] < 0 && p[0] > -1e-4) p[0] = 0.0f;
-//                 if (p[1] < 0 && p[1] > -1e-4) p[1] = 0.0f;
-//             };  // 舍入处理
-//             clampCoord(tri[0].clipPosi);
-//             clampCoord(tri[1].clipPosi);
-//             clampCoord(tri[2].clipPosi);
-//             DegenerateClip(tri);  // 退化检测(面积过小的三角)
-//         }
-//     }
-// }
 void Graphic::ScreenMapping(std::unordered_map<std::shared_ptr<Material>, std::vector<Triangle>> &map, const Mat4& ViewPort) const {
     // 遍历每个材质的三角形列表
     for (auto& triangles : map | std::views::values) {
@@ -377,7 +359,8 @@ void Graphic::Ztest(std::vector<Fragment> &TestFrag, std::vector<float> &ZBuffer
                 for (size_t k = start; k < end; ++k) {
                     auto& pix = TestFrag[k];
                     if (!pix.alive) continue;
-                    if (const uint32_t locate = pix.x + pix.y * static_cast<int>(this->engine->width); ZTestPix(locate, pix.depth, ZBuffer)) {
+                    if (const auto locate = pix.x + pix.y * static_cast<int>(this->engine->width);
+                        ZTestPix(locate, pix.depth, ZBuffer)) {
                         pix.keep();
                         localKeptCount++;
                     } else pix.drop(); // 深度测试失败

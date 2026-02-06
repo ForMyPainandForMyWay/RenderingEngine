@@ -59,7 +59,7 @@ struct Film {
     void fill(uint8_t r, uint8_t g, uint8_t b, uint8_t a=255);
     void Trans2FloatPixel();
 
-    uint32_t width, height;
+    size_t width, height;
     std::vector<Pixel> image;  // 以0为起始索引(为了适配帧缓冲使用指针)
     std::vector<FloatPixel> floatImg;  // 浮点化
 };

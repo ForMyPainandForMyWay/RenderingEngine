@@ -107,7 +107,7 @@ std::vector<std::string> ModelReader::readObjFile(
     auto currentMesh = std::make_shared<Mesh>();
     SubMesh currentSubMesh{currentMesh};
     // 用于标记顶点的哈希表，key为顶点在f行的“a/b/c”
-    std::unordered_map<std::string, uint32_t> vertexMap;
+    std::unordered_map<std::string, size_t> vertexMap;
 
     auto pushSubMesh = [&]() {
         currentSubMesh.updateCount(currentMesh);

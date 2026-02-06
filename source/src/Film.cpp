@@ -77,8 +77,8 @@ void Film::save(const std::string &filename) const {
     if (!fp) { perror("fopen: can not open file"); return; }
     fprintf(fp,
     "P7\n"
-    "WIDTH %u\n"
-    "HEIGHT %u\n"
+    "WIDTH %lu\n"
+    "HEIGHT %lu\n"
     "DEPTH 4\n"
     "MAXVAL 255\n"
     "TUPLTYPE RGB_ALPHA\n"
