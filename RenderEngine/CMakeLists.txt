@@ -32,9 +32,9 @@ add_executable(untitled ${SRC})
 target_compile_definitions(untitled PRIVATE USE_CUDA=${USE_CUDA})
 
 if(USE_CUDA)
-    file(GLOB_RECURSE SRCcuda "${PROJECT_SOURCE_DIR}/Engine/CUDART/src/*.cu")
+    file(GLOB_RECURSE SRCcuda "RenderEngine/Engine/CUDART/src/*.cu")
     target_sources(untitled PRIVATE ${SRCcuda})
-    target_include_directories(untitled PUBLIC ${PROJECT_SOURCE_DIR}/Engine/CUDART/include)
+    target_include_directories(untitled PUBLIC Engine/CUDART/include)
 endif()
 
 if(ENABLE_SSE AND NOT MSVC)
@@ -44,11 +44,11 @@ if(ENABLE_SSE AND NOT MSVC)
 endif()
 
 target_include_directories(untitled PUBLIC
-        ${PROJECT_SOURCE_DIR}/tool/include
-        ${PROJECT_SOURCE_DIR}/source/include
-        ${PROJECT_SOURCE_DIR}/math/include
-        ${PROJECT_SOURCE_DIR}/model/include
-        ${PROJECT_SOURCE_DIR}/Lib
-        ${PROJECT_SOURCE_DIR}/Engine/include
-        ${PROJECT_SOURCE_DIR}/shader/include
+        tool/include
+        source/include
+        math/include
+        model/include
+        Lib
+        Engine/include
+        shader/include
 )
