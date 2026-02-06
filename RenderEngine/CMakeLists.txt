@@ -5,10 +5,13 @@ set(CMAKE_CXX_STANDARD 20)
 set(EXECUTABLE_OUTPUT_PATH "${PROJECT_SOURCE_DIR}/bin")
 
 # SIMD支持
-if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64|amd64|x64|i386|i686|x86")
-    set(ENABLE_SSE ON)
+string(TOLOWER "${CMAKE_SYSTEM_PROCESSOR}" LOWER_PROCESSOR)
+if(LOWER_PROCESSOR MATCHES "x86_64|amd64|x64|i386|i686|x86")
+    set(ENABLE_SIMD 1)  # x86
+elseif (LOWER_PROCESSOR MATCHES "armv7|aarch64|arm64")
+    set(ENABLE_SIMD 2)  # arm
 else()
-    set(ENABLE_SSE OFF)
+    set(ENABLE_SIMD 0)
 endif()
 
 # CUDA支持
@@ -16,9 +19,9 @@ include(CheckLanguage)
 check_language(CUDA)
 if(CMAKE_CUDA_COMPILER AND NOT DEFINED ENV{FORCE_CPU})
     enable_language(CUDA)
-    if(CUDAToolkit_FOUND AND NOT DEFINED ENV{FORCE_CPU})
-    find_package(CUDAToolkit QUIET)
-    set(USE_CUDA 1)
+    if(CUDAToolkit_FOUND)
+        find_package(CUDAToolkit QUIET)
+        set(USE_CUDA 1)
     else ()
         set(USE_CUDA 0)
     endif ()
@@ -37,10 +40,22 @@ if(USE_CUDA)
     target_include_directories(untitled PUBLIC Engine/CUDART/include)
 endif()
 
-if(ENABLE_SSE AND NOT MSVC)
-    target_compile_options(untitled PRIVATE
-            $<$<COMPILE_LANGUAGE:CXX>:-msse4.1>
-    )
+if(ENABLE_SIMD AND NOT MSVC)
+    if (ENABLE_SIMD EQUAL 1)
+        target_compile_options(untitled PRIVATE
+                $<$<COMPILE_LANGUAGE:CXX>:-msse4.1>
+        )
+    elseif (ENABLE_SIMD EQUAL 2)
+        if(LOWER_PROCESSOR MATCHES "armv7")
+            target_compile_options(untitled PRIVATE
+                    $<$<COMPILE_LANGUAGE:CXX>:-mfpu=neon -mfloat-abi=hard>
+            )
+        else()  # aarch64 / arm64 / arm64e
+            target_compile_options(untitled PRIVATE
+                    $<$<COMPILE_LANGUAGE:CXX>:-march=armv8-a+simd>
+            )
+        endif()
+    endif ()
 endif()
 
 target_include_directories(untitled PUBLIC
