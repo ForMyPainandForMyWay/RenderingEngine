@@ -52,7 +52,7 @@ public:
     void WriteBuffer(const std::vector<F2P>& f2pVec) const;
     void WriteGBuffer(const std::vector<Fragment>& f2pVec) const;
 
-    void RT(uint8_t SPP = 1, uint8_t maxDepth = 8) const;  // 光线追踪
+    void RT(uint8_t SSP = 1, uint8_t maxDepth = 8) const;  // 光线追踪
 
     void SSAO(
         const std::vector<FloatPixel> &inBuffer,

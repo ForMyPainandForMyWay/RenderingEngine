@@ -23,7 +23,10 @@ bool __host__ checkErrorFail(const cudaError_t error) {
     return true;
 }
 
-void __host__ Inter(const CameraDataGPU& CmDataCPU, const BVHDataGPU& bvh, const ScenceDataGPU& scenceData, std::vector<F2P>& result) {
+void __host__ Inter(
+    const std::uint8_t SSP,
+    const uint8_t maxDepth,
+    const CameraDataGPU& CmDataCPU, const BVHDataGPU& bvh, const ScenceDataGPU& scenceData, std::vector<F2P>& result) {
     // 这里拿到了打包好的数据
     // 先传送 相机数据 BVH 到 GPU常量内存
     cudaError_t error = cudaMemcpyToSymbol(CmDataGPu, &CmDataCPU, sizeof(CameraDataGPU));
@@ -140,14 +143,14 @@ void __host__ Inter(const CameraDataGPU& CmDataCPU, const BVHDataGPU& bvh, const
     if (checkErrorFail(error)) return;
 
     // 主机端启动
-    const int totalPixels = CmDataCPU.width * CmDataCPU.height;
+    const int totalPixels = static_cast<int>(CmDataCPU.width * CmDataCPU.height);
     constexpr int threadsPerBlock = 256; //  ≤1024
     const int blocksPerGrid = (totalPixels + threadsPerBlock - 1) / threadsPerBlock; // 向上取整
     // 结果缓冲区
     F2PGPU* resultGPU;
     cudaMalloc(&resultGPU, sizeof(F2PGPU) * totalPixels);
     // 启动核函数
-    pathTracing<<<blocksPerGrid, threadsPerBlock>>>(resultGPU, 1);
+    pathTracing<<<blocksPerGrid, threadsPerBlock>>>(resultGPU, SSP, maxDepth);
 
     result.resize(totalPixels);
     error = cudaMemcpy(

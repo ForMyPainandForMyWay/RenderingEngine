@@ -158,7 +158,7 @@ void Graphic::BasePass(const RenderObjects &obj,const Uniform &u, const GlobalUn
 }
 
 void Graphic::RT(
-    const uint8_t SPP,
+    const uint8_t SSP,
     const uint8_t maxDepth) const {
     // 相机参数
     const float fovRad = engine->camera.getFov() * (3.1415926535f / 180.0f);
@@ -333,7 +333,7 @@ void Graphic::RT(
 
     BVHDataGPU bvh{BlasGPU, BlasTriGPU, triNums, BlasNodesGPU, nodeNums, BLASNums, tlasGPU};
     // 上面打包了 BlasGPU[] tlasGPU -> bvh
-    Inter(cameraDataGPU, bvh, scenceData, finalResult);
+    Inter(SSP, maxDepth, cameraDataGPU, bvh, scenceData, finalResult);
 
     #else
     // CPU逻辑
