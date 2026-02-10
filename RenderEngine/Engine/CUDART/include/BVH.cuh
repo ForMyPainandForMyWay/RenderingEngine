@@ -5,7 +5,6 @@
 #ifndef RENDERINGENGINE_BVH_CUH
 #define RENDERINGENGINE_BVH_CUH
 #include <cstdint>
-#include <thrust/device_vector.h>
 
 #include "AABB.cuh"
 #include "Math.cuh"

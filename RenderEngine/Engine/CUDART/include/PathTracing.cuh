@@ -13,12 +13,12 @@
     #define CONST extern
 #endif
 
-CONST __constant__  CameraDataGPU CmDataGPu;
-CONST __constant__  InstanceGPU TlasInstanceGPU[128];  // TLAS实例数量需要控制上限
-CONST __constant__  BVHNodeGPU TlasNodesGPU[256];
-CONST __constant__  cudaTextureObject_t texObjsGPU[128];  // 纹理描述符
-CONST __constant__  size_t tlasNodeNums;
-CONST __constant__  size_t tlasInstanceNums;
+CONST __constant__ CameraDataGPU CmDataGPu;
+CONST __constant__ InstanceGPU TlasInstanceGPU[128];  // TLAS实例数量需要控制上限
+CONST __constant__ BVHNodeGPU TlasNodesGPU[256];
+CONST __constant__ cudaTextureObject_t texObjsGPU[128];  // 纹理描述符
+CONST __constant__ size_t tlasNodeNums;
+CONST __constant__ size_t tlasInstanceNums;
 
 CONST __device__ BLASGPU* blasGPU;
 CONST __device__ uint32_t* BlasTriGPU;  // 三角形的相对索引，使用时需要加上blas的offset

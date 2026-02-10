@@ -191,11 +191,11 @@ void Graphic::RT(
     }
 
     // 转移Material
-    uint32_t  materialIdx = 0;
+    int  materialIdx = 0;
     uint32_t MaterialNums = engine->materialMap.size();
     uint32_t texPixelNUms = 0;
     MaterialGPU MaterialsGPU[MaterialNums];  // MaterialGPU 数据容器
-    std::unordered_map<std::shared_ptr<Material>, size_t> MaterialGPUMap;  // 临时记录 Material* - id 的映射结构
+    std::unordered_map<std::shared_ptr<Material>, int> MaterialGPUMap;  // 临时记录 Material* - id 的映射结构
     for (const auto& material : engine->materialMap | std::views::values) {
         MaterialGPUMap[material] = materialIdx;
         MaterialsGPU[materialIdx].Ke = Vec3ToFloat3(material->Ke);  // 记录material的Ke

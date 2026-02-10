@@ -11,7 +11,7 @@
 
 
 // 加在PNG图像到uv中
-std::unique_ptr<Film> loadPNG(const std::string &path) {
+std::unique_ptr<Film> loadImg(const std::string &path) {
     int width=0, height=0, channel=4;
 
     if (!stbi_info(path.c_str(), &width, &height, &channel)) {

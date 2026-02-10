@@ -4,6 +4,8 @@
 
 #ifndef RENDERINGENGINE_DATAPACKEGGPU_CUH
 #define RENDERINGENGINE_DATAPACKEGGPU_CUH
+#include <unordered_map>
+#include <memory>
 
 #include "BVH.cuh"
 #include "Shape.cuh"
