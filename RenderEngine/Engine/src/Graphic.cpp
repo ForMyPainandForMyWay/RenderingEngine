@@ -346,7 +346,7 @@ void Graphic::RT(
         size_t end   = std::min(i + BLOCK_SIZE, pixelCount);
 
         futures.emplace_back(engine->pool.addTask(
-            [&, start, end, width, height, Asp, scale, SPP, maxDepth]() {
+            [&, start, end, width, height, Asp, scale, SSP, maxDepth]() {
                 std::vector<F2P> localResult;
                 localResult.reserve(end - start);
 
@@ -363,7 +363,7 @@ void Graphic::RT(
                     const Ray ray(cameraPos, rayDirWorld);
                     Vec3 radiance(0.0f);
                     // Path Tracing
-                    for (int s = 0; s < SPP; ++s) {
+                    for (int s = 0; s < SSP; ++s) {
                         Ray currentRay = ray;
                         Vec3 throughput(1.0f);
                         for (int depth = 0; depth < maxDepth; ++depth) {
@@ -391,7 +391,7 @@ void Graphic::RT(
                             currentRay.Direction = nextDir;
                         }
                     }
-                    radiance /= SPP;
+                    radiance /= SSP;
                     localResult.push_back({
                         x,y,
                         {radiance[0], radiance[1], radiance[2]},
