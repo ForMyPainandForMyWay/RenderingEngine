@@ -20,7 +20,7 @@ void Material::setKdTexture(const std::shared_ptr<TextureMap> &kd) {
 
 // 从图像初始化纹理贴图数据
 TextureMap::TextureMap(const std::string &path) {
-    this->uvImg = loadPNG(path);
+    this->uvImg = loadImg(path);
     this->width = this->uvImg->width;
     this->height = this->uvImg->height;
 }

@@ -60,8 +60,9 @@ void dumpMeshInfo(const std::unordered_map<std::string, Mesh*>& meshes) {
 }
 
 int main() {
-    Engine engine(800, 800, false, true);
-    const auto meshName = R"(./test4.obj)";
+    Engine engine(800, 800, true, true);
+    // const auto meshName = R"(./test4.obj)";
+    const auto meshName = R"(./Frog.obj)";
     const auto meshId = engine.addMesh(meshName);
     uint16_t objID = engine.addObjects(meshId[0]);
 
@@ -90,13 +91,20 @@ int main() {
     // engine.addTfCommand({objID2, RenderObject, TfCmd::ROTATE, {45.0f, 135.0f, 0.0f}});
     // engine.addTfCommand({objID2, RenderObject, TfCmd::SCALE, {0.5f, 0.5f, 0.5f}});
 
-    engine.addTfCommand({objID, RenderObject, TfCmd::SCALE, {0.7f, 0.7f, 0.7f}});
-    engine.addTfCommand({objID, RenderObject, TfCmd::ROTATE, {-45.0f, 0.0f, 0.0f}});
-    engine.addTfCommand({objID, RenderObject, TfCmd::TRANSLATE, {0.0f, -0.5f, 0.0f}});
+    // 蛙蛙
+    engine.addTfCommand({objID, RenderObject, TfCmd::SCALE, {0.08f, 0.08f, 0.08f}});
+    engine.addTfCommand({objID, RenderObject, TfCmd::ROTATE, {90.0f, 0.0f, 180.0f}});
+    engine.addTfCommand({objID, RenderObject, TfCmd::TRANSLATE, {0.1f, -0.5f, 0.0f}});
+
+    // 苏珊娜
+    // engine.addTfCommand({objID, RenderObject, TfCmd::SCALE, {0.7f, 0.7f, 0.7f}});
+    // engine.addTfCommand({objID, RenderObject, TfCmd::ROTATE, {-45.0f, 0.0f, 0.0f}});
+    // engine.addTfCommand({objID, RenderObject, TfCmd::TRANSLATE, {0.0f, -0.5f, 0.0f}});
 
     // engine.addTfCommand({objID, TfCmd::ROTATE, {0.0f, 0.0f, 0.0f}});
     // engine.addTfCommand({objID, RenderObject, TfCmd::ROTATE, {-35.0f, 35.0f, 0.0f}});
 
+    // 墙壁
     engine.addTfCommand({objID3, RenderObject, TfCmd::TRANSLATE, {0.0f, 2.0f,0.0f}});
     engine.addTfCommand({objID4, RenderObject, TfCmd::TRANSLATE, {0.0f,-2.0f,0.0f}});
     engine.addTfCommand({objID5, RenderObject, TfCmd::TRANSLATE, {2.0f, 0.0f,0.0f}});
