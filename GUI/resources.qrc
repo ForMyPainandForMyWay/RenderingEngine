@@ -1,0 +1,20 @@
+<RCC>
+    <qresource prefix="/">
+        <!-- 主窗口文件 -->
+        <file>qml/MainWindow.qml</file>
+        
+        <!-- 组件目录 -->
+        <file>qml/components/Block.qml</file>
+        <file>qml/components/CheckLight.qml</file>
+        <file>qml/components/SetLightButton.qml</file>
+        
+        <!-- 视图目录 -->
+        <file>qml/views/CameraBlockColumn.qml</file>
+        <file>qml/views/ColorBlockColumn.qml</file>
+        <file>qml/views/MeshBlockColumn.qml</file>
+        <file>qml/views/PosiBlockColumn.qml</file>
+        
+        <!-- 控件目录 -->
+        <file>qml/widgets/TopMenuBar.qml</file>
+    </qresource>
+</RCC>
