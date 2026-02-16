@@ -215,6 +215,14 @@ void Graphic::ScreenMapping(std::unordered_map<std::shared_ptr<Material>, std::v
 void Graphic::GeometryShading(
     std::unordered_map<std::shared_ptr<Material>, std::vector<Triangle>>& TriMap,
     const Uniform &u, const std::shared_ptr<Mesh>& mesh, const int pass) const {
+
+    const auto& PixLights = engine->PixLights;
+    const auto& VexLights = engine->VexLights;
+    const auto& mainLight = engine->mainLight;
+    const auto& SdMap = engine->SdMap;
+    const auto& envlight = engine->envLight;
+    const auto& globalU = engine->globalU;
+
     // 遍历每个材质的三角形列表
     for (auto& [material, triangles] : TriMap) {
         const auto shader = material->getShader(pass);
@@ -230,19 +238,19 @@ void Graphic::GeometryShading(
             const size_t start = i;
             const size_t end = std::min(i + BLOCK_SIZE, count);
             futures.emplace_back(engine->pool.addTask(
-                [&triangles, shader, material, start, end, this] {
+                [&triangles, shader, material, start, end, PixLights, VexLights, mainLight, SdMap, envlight, globalU] {
                     for (size_t k = start; k < end; ++k) {
                         auto& tri = triangles[k];
                         if (!tri.alive) continue;
                         shader->GeometryShader(
                             tri,
                             material,
-                            this->engine->PixLights,
-                            this->engine->VexLights,
-                            this->engine->mainLight,
-                            this->engine->SdMap,
-                            this->engine->envLight,
-                            this->engine->globalU
+                            PixLights,
+                            VexLights,
+                            mainLight,
+                            SdMap,
+                            envlight,
+                            globalU
                         );
                     }
                 }
@@ -380,6 +388,13 @@ void Graphic::FragmentShading(
     const std::unordered_map<std::shared_ptr<Material>, std::vector<Fragment> >& fragMap,
     std::vector<F2P> &result, const Uniform &u, const int pass) const {
 
+    const bool& NeedShadowPass = engine->settings[engine->renderSetting].NeedShadowPass;
+    const auto& PixLights = engine->PixLights;
+    const auto& mainLight = engine->mainLight;
+    const auto& SdMap = engine->SdMap;
+    const auto& envLight = engine->envLight;
+    const auto& globalU = engine->globalU;
+
     std::vector<std::future<std::vector<F2P>>> futures;
     //  遍历材质 Fragment 列表并分发任务
     for (const auto& [material, fragVec] : fragMap) {
@@ -393,7 +408,7 @@ void Graphic::FragmentShading(
             const size_t end = std::min(i + BLOCK_SIZE, count);
             // 提交任务
             futures.emplace_back(engine->pool.addTask(
-                [shader, material, &fragVec, start, end, this] {
+                [shader, material, &fragVec, start, end, SdMap, PixLights, mainLight, envLight, globalU, NeedShadowPass] {
                     // A. 线程局部存储
                     std::vector<F2P> localResult;
                     // 预分配内存：假设大部分 fragment 都是 alive 的
@@ -405,12 +420,12 @@ void Graphic::FragmentShading(
                             shader->FragmentShader(
                                 frag,
                                 material,
-                                this->engine->PixLights,
-                                this->engine->mainLight,
-                                this->engine->SdMap,
-                                this->engine->envLight,
-                                this->engine->globalU,
-                                this->engine->NeedShadowPass
+                                PixLights,
+                                mainLight,
+                                SdMap,
+                                envLight,
+                                globalU,
+                                NeedShadowPass
                             )
                         );
                     }

@@ -63,10 +63,10 @@ void Graphic::ShadowPass(const RenderObjects &obj,const Uniform &u, const Global
     }
     size_t count = 0;
     for (auto &FragVec: FragMap | std::views::values) {
-        Ztest(FragVec, engine->SdMap.ZBufferShadow);
+        Ztest(FragVec, engine->SdMap->ZBufferShadow);
         count += FragVec.size();
     }
-    engine->SdMap.save();
+    // engine->SdMap->save();  // 将shadowMap写入文件
 }
 
 // 基础纹理绘制,pass表示绘制层级

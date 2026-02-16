@@ -35,7 +35,7 @@ void BlinnShader::GeometryShader(
     const std::array<Lights, 3> &PixLight,
     const std::vector<Lights> &VexLight,
     const MainLight *mainLight,
-    const ShadowMap &shadowMap,
+    const std::shared_ptr<ShadowMap> &shadowMap,
     const EnvironmentLight *envlight,
     const GlobalUniform &gu) {
     // 对三角形顶点计算TBN矩阵并应用于光源相机的位置向量
@@ -121,7 +121,7 @@ F2P BlinnShader::FragmentShader(
     const std::shared_ptr<Material> &material,
     const std::array<Lights, 3> &light,
     const MainLight *mainLight,
-    const ShadowMap &shadowMap,
+    const std::shared_ptr<ShadowMap> &shadowMap,
     const EnvironmentLight *envlight,
     const GlobalUniform &gu,
     const bool NeedShadow) {
@@ -210,7 +210,7 @@ float BlinnShader::CalcHardShadow(
     const Vec4 &worldPos,
     const Vec3 &normal,
     const GlobalUniform &gu,
-    const ShadowMap &ShadowMap) {
+    const std::shared_ptr<ShadowMap> &ShadowMap) {
     Vec4 lightClip = gu.getShadowPV() * worldPos;
     Vec4 projPos = lightClip / lightClip[3];  // 透视除法->NDC空间
     const auto U = projPos[0] * 0.5f + 0.5f;  // 透视除法->shadow uv
@@ -228,6 +228,6 @@ float BlinnShader::CalcHardShadow(
     // const float depth = ShadowMap.Sample(U, V);
     // const float shadow = (Z - bias > depth) ? 0.0f : 1.0f;
     // const float shadow = ShadowMap.SamplePCSS(Z, bias, U, V,0.005f, 3, 1, 15);
-    const float shadow = ShadowMap.SamplePCF(Z, bias, U, V, 1);
+    const float shadow = ShadowMap->SamplePCF(Z, bias, U, V, 1);
     return shadow;
 }

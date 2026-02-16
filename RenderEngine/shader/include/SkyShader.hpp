@@ -23,21 +23,21 @@ public:
         const GlobalUniform &gu) override;
 
     void GeometryShader(
-    Triangle &tri,
-    const std::shared_ptr<Material> &material,
-    const std::array<Lights, 3> &PixLight,
-    const std::vector<Lights> &VexLight,
-    const MainLight *mainLight,
-    const ShadowMap &shadowMap,
-    const EnvironmentLight *envlight,
-    const GlobalUniform &gu) override;
+        Triangle &tri,
+        const std::shared_ptr<Material> &material,
+        const std::array<Lights, 3> &PixLight,
+        const std::vector<Lights> &VexLight,
+        const MainLight *mainLight,
+        const std::shared_ptr<ShadowMap> &shadowMap,
+        const EnvironmentLight *envlight,
+        const GlobalUniform &gu) override;
 
     F2P FragmentShader(
         const Fragment &frag,
         const std::shared_ptr<Material> &material,
         const std::array<Lights, 3> &light,
         const MainLight *mainLight,
-        const ShadowMap &shadowMap,
+        const std::shared_ptr<ShadowMap> &shadowMap,
         const EnvironmentLight *envlight,
         const GlobalUniform &gu,
         bool NeedShadow) override;

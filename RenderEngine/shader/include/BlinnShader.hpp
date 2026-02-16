@@ -39,7 +39,7 @@ public:
         const std::array<Lights, 3> &PixLight,
         const std::vector<Lights> &VexLight,
         const MainLight *mainLight,
-        const ShadowMap &shadowMap,
+        const std::shared_ptr<ShadowMap> &shadowMap,
         const EnvironmentLight *envlight,
         const GlobalUniform &gu) override;
 
@@ -48,7 +48,7 @@ public:
         const std::shared_ptr<Material> &material,
         const std::array<Lights, 3> &light,
         const MainLight *mainLight,
-        const ShadowMap &shadowMap,
+        const std::shared_ptr<ShadowMap> &shadowMap,
         const EnvironmentLight *envlight,
         const GlobalUniform &gu,
         bool NeedShadow) override;
@@ -58,7 +58,7 @@ public:
         const Vec4 &worldPos,
         const Vec3 &normal,
         const GlobalUniform &gu,
-        const ShadowMap &ShadowMap);
+        const std::shared_ptr<ShadowMap> &ShadowMap);
 
 protected:
     static BlinnShader *shader;

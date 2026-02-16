@@ -4,9 +4,9 @@
 
 #ifndef MYQTAPP_SETTINGPROXY_HPP
 #define MYQTAPP_SETTINGPROXY_HPP
-#include <coroutine>
 #include <qobject.h>
 
+class IEngine;
 
 class SettingProxy : public QObject{
     Q_OBJECT
@@ -14,8 +14,9 @@ class SettingProxy : public QObject{
     Q_PROPERTY(int VertexNums READ VertexNums NOTIFY VertexNumsChanged)
 
 public:
-    explicit SettingProxy(QObject *parent = nullptr);
+    explicit SettingProxy(IEngine* engine, QObject *parent = nullptr);
     ~SettingProxy() override;
+    IEngine* engine{};
 
 public slots:
     // 全局渲染设置

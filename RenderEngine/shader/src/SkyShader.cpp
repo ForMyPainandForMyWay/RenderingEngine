@@ -36,11 +36,9 @@ void SkyShader::GeometryShader(
     const std::array<Lights, 3> &PixLight,
     const std::vector<Lights> &VexLight,
     const MainLight *mainLight,
-    const ShadowMap &shadowMap,
+    const std::shared_ptr<ShadowMap> &shadowMap,
     const EnvironmentLight *envlight,
-    const GlobalUniform &gu) {
-
-}
+    const GlobalUniform &gu) {}
 
 inline float smoothstep(const float a, const float b, const float x) {
     const float t = std::clamp((x - a) / (b - a), 0.0f, 1.0f);
@@ -52,7 +50,7 @@ F2P SkyShader::FragmentShader(
     const std::shared_ptr<Material> &material,
     const std::array<Lights, 3> &light,
     const MainLight *mainLight,
-    const ShadowMap &shadowMap,
+    const std::shared_ptr<ShadowMap> &shadowMap,
     const EnvironmentLight *envlight,
     const GlobalUniform &gu,
     bool NeedShadow) {

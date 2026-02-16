@@ -30,17 +30,21 @@ int main() {
     const uint16_t objID6 = engine->addObjects(meshId4[0]);
     const uint16_t objID7 = engine->addObjects(meshId4[0]);
 
+    const auto [t, v] = engine->getTriVexNums();
+    std::cout << "三角形数量: " << t << " 顶点数量: " << v << std::endl;
+
     engine->SetEnvLight(100, 100, 100, 1.0f);
     engine->SetMainLight();
 
     // 物体转动
-    // engine.addTfCommand({objID2, RenderObject, TfCmd::ROTATE, {45.0f, 135.0f, 0.0f}});
-    // engine.addTfCommand({objID2, RenderObject, TfCmd::SCALE, {0.5f, 0.5f, 0.5f}});
+    engine->addTfCommand(objID2, RenderObject, ROTATE, {45.0f, 135.0f, 0.0f});
+    // engine->addTfCommand(objID2, RenderObject, SCALE, {0.5f, 0.5f, 0.5f});
+    engine->addTfCommand(objID2, RenderObject, TRANSLATE, {0.0f, 0.0f, -3.0f});
 
     // 蛙蛙
-    engine->addTfCommand(objID, RenderObject, TfType::SCALE, {0.08f, 0.08f, 0.08f});
-    engine->addTfCommand(objID, RenderObject, TfType::ROTATE, {90.0f, 0.0f, 180.0f});
-    engine->addTfCommand(objID, RenderObject, TfType::TRANSLATE, {0.1f, -0.5f, 0.0f});
+    // engine->addTfCommand(objID, RenderObject, TfType::SCALE, {0.08f, 0.08f, 0.08f});
+    // engine->addTfCommand(objID, RenderObject, TfType::ROTATE, {90.0f, 0.0f, 180.0f});
+    // engine->addTfCommand(objID, RenderObject, TfType::TRANSLATE, {0.1f, -0.5f, 0.0f});
 
     // 苏珊娜
     // engine.addTfCommand({objID, RenderObject, TfCmd::SCALE, {0.7f, 0.7f, 0.7f}});
@@ -58,8 +62,8 @@ int main() {
     engine->addTfCommand(objID7, RenderObject, TfType::TRANSLATE, {0.0f,0.f,-2.0f});
 
     // 相机灯光转动
-    // engine.addTfCommand({0, CameraID, TfCmd::TRANSLATE, {4.0f, 0.0f, 0.0f}});
-    // engine.addTfCommand({0, CameraID, TfCmd::ROTATE, {0.0f, 40.0f, 0.0f}});
+    engine->addTfCommand(0, CameraID, TRANSLATE, {4.0f, 0.0f, 0.0f});
+    engine->addTfCommand(0, CameraID, ROTATE, {0.0f, 40.0f, 0.0f});
     // engine.addTfCommand({1, TfCmd::TRANSLATE, {3.0f, 4.0f, 4.5f}});
     // engine.addTfCommand({1, TfCmd::ROTATE, {-35.0f, 35.0f, 0.0f}});
 
@@ -67,14 +71,14 @@ int main() {
     engine->addTfCommand(0, CameraID, TfType::TRANSLATE, {0.0f, 0.0f, 3.0f});
     engine->addTfCommand(1, MainLightID, TfType::TRANSLATE, {0.0f, 0.0f, 4.0f});
 
-    // engine.OpenShadow();
+    engine->OpenShadow();
     // engine.OpenSky();
     auto start = std::chrono::high_resolution_clock::now();
     // engine.RenderFrame({ objID2, objID3, objID4, objID5, objID6, objID7});
     // engine.RenderFrame({ objID3, objID2, objID6});
 
-    engine->RenderFrame({ objID, objID3, objID4, objID5, objID6, objID7});
-    // engine.RenderFrame({ objID});
+    // engine->RenderFrame({ objID, objID3, objID4, objID5, objID6, objID7});
+    engine->RenderFrame({ objID, objID2});
     auto end = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
     std::cout << "渲染耗时: " << duration.count() << " 微秒\n";

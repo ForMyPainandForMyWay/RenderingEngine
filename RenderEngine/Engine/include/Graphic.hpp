@@ -18,7 +18,7 @@ class SkyBox;
 class Shader;
 class GlobalUniform;
 class Engine;
-class Uniform;
+struct Uniform;
 class RenderObjects;
 class Mesh;
 
