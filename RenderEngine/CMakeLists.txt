@@ -37,12 +37,17 @@ file(GLOB_RECURSE SRC "${PROJECT_SOURCE_DIR}/*/src/*.cpp")
 add_library(RenderEngine SHARED ${SRC})
 target_compile_definitions(RenderEngine PRIVATE USE_CUDA=${USE_CUDA})
 # 导出动态库接口头文件
+set(outpath "${PROJECT_SOURCE_DIR}/bin/IEngine.hpp")
+set(inpath "${PROJECT_SOURCE_DIR}/Engine/include/IEngine.hpp")
 add_custom_command(
-        TARGET RenderEngine POST_BUILD
+        OUTPUT ${outpath}
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        ${PROJECT_SOURCE_DIR}/Engine/include/IEngine.hpp
-        ${PROJECT_SOURCE_DIR}/bin/IEngine.hpp
-)
+        ${inpath}
+        ${outpath}
+        DEPENDS ${inpath}
+        VERBATIM)
+add_custom_target(SyncExportHeader ALL DEPENDS ${outpath})
+add_dependencies(RenderEngine SyncExportHeader)
 
 if(USE_CUDA)
     file(GLOB_RECURSE SRCcuda "${PROJECT_SOURCE_DIR}/Engine/CUDART/src/*.cu")

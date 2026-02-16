@@ -32,7 +32,7 @@ public:
         const std::array<Lights, 3> &PixLight,
         const std::vector<Lights> &VexLight,
         const MainLight *mainLight,
-        const ShadowMap &shadowMap,
+        const std::shared_ptr<ShadowMap> &shadowMap,
         const EnvironmentLight *envlight,
         const GlobalUniform &gu) = 0;
     virtual F2P FragmentShader(
@@ -40,7 +40,7 @@ public:
         const std::shared_ptr<Material> &material,
         const std::array<Lights, 3> &light,
         const MainLight *mainLight,
-        const ShadowMap &shadowMap,
+        const std::shared_ptr<ShadowMap> &shadowMap,
         const EnvironmentLight *envlight,
         const GlobalUniform &gu,
         bool NeedShadow) = 0;

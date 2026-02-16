@@ -5,6 +5,7 @@
 #include <QDebug>
 #include <QUrl>
 
+#include "IEngine.hpp"
 #include "SettingProxy.hpp"
 
 
@@ -20,13 +21,13 @@ void SettingProxy::setFXAA(const int &FXAALevel) {
     currentFXAA = FXAALevel;
     qDebug() << "set FXAA: " << currentFXAA;
     if (currentFXAA == 3) {
-
+        engine->SetAA(FXAAQ);
     } else if (currentFXAA == 2) {
-
+        engine->SetAA(FXAAC);
     } else if (currentFXAA == 1) {
-
+        engine->SetAA(FXAA);
     } else {
-
+        engine->SetAA(NOAA);
     }
 }
 
@@ -35,9 +36,9 @@ void SettingProxy::enableSkyBox(const bool &enableSky) {
     currentSky = enableSky;
     qDebug() << "enableSkyBox: " << currentSky;
     if (currentSky) {
-
+        engine->OpenSky();
     } else {
-
+        engine->CloseSky();
     }
 
 }
@@ -47,9 +48,9 @@ void SettingProxy::enableSSAO(const bool &enableSSAO) {
     currentSSAO = enableSSAO;
     qDebug() << "enableSSAO: " << currentSSAO;
     if (currentSSAO) {
-
+        engine->OpenAO();
     } else {
-
+        engine->CloseAO();
     }
 }
 
@@ -58,17 +59,22 @@ void SettingProxy::enableShadow(const bool &enableShadow) {
     currentShadow = enableShadow;
     qDebug() << "enableShadow: " << currentShadow;
     if (currentShadow) {
-
+        engine->OpenShadow();
     } else {
-
+        engine->CloseShadow();
     }
 }
 
 void SettingProxy::openObj(const QUrl &url) {
-    const QString filepath = url.toLocalFile();
+    const std::string filepath = url.toLocalFile().toUtf8().toStdString();
     qDebug() << "openObj: " << filepath;
 
     // 注意这里读取完毕后，需要更新一下统计数据再发送信号
+    const auto meshId = engine->addMesh(filepath);
+    uint16_t objID = engine->addObjects(meshId[0]);  // TODO: 注意这里还没有计划GUI的渲染物体列表
+    const auto [tri, vex] = engine->getTriVexNums();
+    triNums = static_cast<int>(tri);
+    vexNums = static_cast<int>(vex);
 
     emit TriangleNumsChanged();
     emit VertexNumsChanged();

@@ -20,7 +20,7 @@ constexpr int   FXAA_CONSOLE_SEARCH_STEPS = 2;
 constexpr float FXAA_CONSOLE_SUBPIX_CAP   = 0.5f;
 
 
-// 1.0 FXAA
+// FXAA
 void Graphic::FXAA(std::vector<FloatPixel>& inBuffer, std::vector<FloatPixel>& outBuffer) const {
     const auto w = engine->width;
     const auto h = engine->height;
@@ -46,7 +46,7 @@ void Graphic::FXAA(std::vector<FloatPixel>& inBuffer, std::vector<FloatPixel>& o
             const float lumaMax = std::max({lumaM, lumaN, lumaS, lumaW, lumaE});
             const float lumaContrast = lumaMax - lumaMin;
 
-            // 2. Edge threshold
+            // Edge threshold
             const float edgeThreshold = std::max(
                 FXAA_ABSOLUTE_LUMA_THRESHOLD,
                 lumaMax * FXAA_RELATIVE_LUMA_THRESHOLD
@@ -152,7 +152,7 @@ void Graphic::FXAAQ(std::vector<FloatPixel>& inBuffer,
             }
 
             // --------------------------------------------------
-            // 2. Edge orientation
+            // Edge orientation
             // --------------------------------------------------
             const float gradH = std::abs(lumaW - lumaE);
             const float gradV = std::abs(lumaN - lumaS);
@@ -161,7 +161,7 @@ void Graphic::FXAAQ(std::vector<FloatPixel>& inBuffer,
             const int step = isHorizontal ? w : 1;
 
             // --------------------------------------------------
-            // 3. Edge search (both directions)
+            // Edge search (both directions)
             // --------------------------------------------------
             int distNeg = 0, distPos = 0;
 
@@ -196,7 +196,7 @@ void Graphic::FXAAQ(std::vector<FloatPixel>& inBuffer,
             edgeBlend = std::clamp(edgeBlend, 0.0f, 1.0f);
 
             // --------------------------------------------------
-            // 4. Sub-pixel AA (与你现有代码一致)
+            // Sub-pixel AA
             // --------------------------------------------------
             const float lumaAvg =
                 (lumaN + lumaS + lumaW + lumaE) * 0.25f;
@@ -213,7 +213,7 @@ void Graphic::FXAAQ(std::vector<FloatPixel>& inBuffer,
             subpixBlend = std::min(subpixBlend, FXAA_QUALITY_SUBPIX_CAP);
 
             // --------------------------------------------------
-            // 5. Final blend
+            // Final blend
             // --------------------------------------------------
             const float finalBlend = std::max(edgeBlend, subpixBlend);
 
@@ -243,7 +243,7 @@ void Graphic::FXAAC(std::vector<FloatPixel>& inBuffer,
     const int w = static_cast<int>(engine->width);
     const int h = static_cast<int>(engine->height);
 
-    // 1. 预计算亮度
+    // 预计算亮度
     for (auto& [r, g, b, i] : inBuffer) {
         i = 0.213f * r + 0.715f * g + 0.072f * b;
     }
@@ -307,12 +307,7 @@ void Graphic::FXAAC(std::vector<FloatPixel>& inBuffer,
                 edgeBlend = std::abs(static_cast<float>(distPos - distNeg));
             }
 
-            // Console 版 edgeBlend 极其保守
             edgeBlend = std::clamp(edgeBlend, 0.0f, 1.0f);
-
-            // --------------------------------------------------
-            // Sub-pixel AA（Console 版更弱）
-            // --------------------------------------------------
             const float lumaAvg =
                 (lumaN + lumaS + lumaW + lumaE) * 0.25f;
 
@@ -328,7 +323,7 @@ void Graphic::FXAAC(std::vector<FloatPixel>& inBuffer,
             subpixBlend = std::min(subpixBlend, FXAA_CONSOLE_SUBPIX_CAP);
 
             // --------------------------------------------------
-            // Final blend (Console = 稳定优先)
+            // Final blend (Console稳定优先)
             // --------------------------------------------------
             const float finalBlend = std::max(edgeBlend, subpixBlend);
 

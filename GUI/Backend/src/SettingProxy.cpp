@@ -4,8 +4,8 @@
 
 #include "SettingProxy.hpp"
 
-SettingProxy::SettingProxy(QObject *parent)
-    : QObject(parent){}
+SettingProxy::SettingProxy(IEngine* engine, QObject *parent)
+    : QObject(parent) { this->engine = engine; }
 SettingProxy::~SettingProxy() = default;
 
 

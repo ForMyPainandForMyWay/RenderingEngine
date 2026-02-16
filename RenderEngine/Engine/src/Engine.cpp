@@ -17,10 +17,10 @@ Engine::Engine(const size_t w, const size_t h, const bool Gamma, const bool RT)
     , img(w, h)
     , graphic(this)
     , globalU(w, h, w, h)
-    , SdMap(w, h)
     , frontBuffer(new Film(w, h))
     , backBuffer(new Film(w, h)) {
     // 预备分配缓冲
+    SdMap = std::make_shared<ShadowMap>(w, h);
     ZBuffer.resize(w * h, 1.0f);
     tmpBufferF.resize(w * h, FloatPixel{0.0f, 0.0f, 0.0f, 0.0f});
     tmpBufferB.resize(w * h, FloatPixel{0.0f, 0.0f, 0.0f, 0.0f});
@@ -31,7 +31,7 @@ Engine::Engine(const size_t w, const size_t h, const bool Gamma, const bool RT)
     const float aspect = static_cast<float>(w) / static_cast<float>(h);
     camera.setAsp(aspect);
     if (mainLight) mainLight->setAsp(aspect);
-    IsRT = RT;
+    settings[!renderSetting].IsRT = RT;
 }
 
 Engine::~Engine() {
@@ -46,7 +46,7 @@ void Engine::SetMainLight() {
     delete mainLight;
     mainLight = new MainLight();  // 先不进行详细参数设置
     mainLight->setI(5.0f);
-    SdMap.resize(width, height);
+    SdMap->resize(width, height);
     globalU.setShadowViewPort(width, height);
 }
 
@@ -59,7 +59,7 @@ void Engine::SetEnvLight(const uint8_t r, const uint8_t g, const uint8_t b, cons
 }
 
 // 添加变换指令到队列中
-void Engine::addTfCommand(const TransformCommand &cmd) {
+void Engine::addTfCommand(const TfCmd &cmd) {
     tfCommand.push(cmd);
 }
 
@@ -130,6 +130,8 @@ void Engine::setResolution(const size_t w, const size_t h) {
 
 // 绘制场景-前向渲染
 void Engine::DrawScene(const std::vector<uint16_t>& models) {
+    const bool NeedSkyBoxPass = settings[renderSetting].NeedSkyBoxPass;
+    const bool NeedShadowPass = settings[renderSetting].NeedShadowPass;
     // SkyPass
     Mat4 PV;
     if (NeedSkyBoxPass) {
@@ -176,6 +178,8 @@ void Engine::DrawScenceRT(const std::vector<uint16_t>& models) {
 
 // 后处理阶段,工作集中于tmpBuffer
 void Engine::PostProcess() {
+    const bool NeedAo = settings[renderSetting].NeedAo;
+    const auto aaType = settings[renderSetting].aaType;
     // 环境光遮蔽
     if (NeedAo) {
         std::ranges::fill(tmpBufferB, FloatPixel{0.0f,0.0f,0.0f,0.0f});
@@ -197,6 +201,9 @@ void Engine::PostProcess() {
 
 // 帧绘制管理
 void Engine::RenderFrame(const std::vector<uint16_t>& models) {
+    // 交换双缓冲
+    renderSetting = !renderSetting;
+    const bool IsRT = settings[renderSetting].IsRT;
     BeginFrame();   // 初始化帧
     Application();  // 应用变换
     // 绘制指定models
@@ -213,7 +220,7 @@ void Engine::BeginFrame() {
     std::ranges::fill(ZBuffer, 1.0f);
     std::ranges::fill(tmpBufferF, FloatPixel{0.0f,0.0f,0.0f,0.0f});
     std::ranges::fill(tmpBufferB, FloatPixel{0.0f,0.0f,0.0f,0.0f});
-    SdMap.clear();    // 清空backBuffer
+    SdMap->clear();    // 清空backBuffer
     backBuffer->clear();
     gBuffer = std::make_unique<GBuffer>(width, height);
 }
@@ -240,4 +247,15 @@ void Engine::Write2Front() {
         pix.b = linearToSrgb(pix.b);
         backBuffer->image[i] = pix.toPixel();
     }
+}
+
+std::array<size_t, 2> Engine::getTriVexNums() {
+    size_t TriNums = 0;
+    size_t VexNums = 0;
+    for (const auto& rObj : renderObjs) {
+        const auto& mesh = rObj.getMesh();
+        TriNums += mesh->getTriNums();
+        VexNums += mesh->getVBONums();
+    }
+    return {TriNums, VexNums};
 }
