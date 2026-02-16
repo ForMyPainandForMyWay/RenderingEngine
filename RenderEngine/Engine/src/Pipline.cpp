@@ -24,9 +24,9 @@ void Engine::Application() {
         // 泛型 lambda：接受任意具有 updateP/Q/S 接口的对象
         auto applyCmd = [&](auto& obj) {
             switch (type) {
-                case TfCmd::TRANSLATE: obj.updateP(value);break;
-                case TfCmd::ROTATE: obj.updateQ(Euler2Quaternion(value));break;  // 注意转弧度制
-                case TfCmd::SCALE: obj.updateS(value);break;
+                case TRANSLATE: obj.updateP(value);break;
+                case ROTATE: obj.updateQ(Euler2Quaternion(value));break;  // 注意转弧度制
+                case SCALE: obj.updateS(value);break;
                 default: break;
             }
         };
@@ -75,7 +75,7 @@ void Graphic::VertexShading(
             size_t end = std::min(i + BLOCK_SIZE, vertexCount);
             // 提交任务到线程池
             // 按值捕获基础类型，按引用捕获 vexList/VBO 等大对象
-            futures.emplace_back(engine->pool.addTask([&, start, end, Min]() {
+            futures.emplace_back(engine->pool.addTask([&, start, end, Min] {
                 for (size_t k = start; k < end; k++) {
                     // 计算绝对索引
                     const uint32_t vboIndex = Min + k;
@@ -112,7 +112,7 @@ void Graphic::Clip(std::unordered_map<std::shared_ptr<Material>, std::vector<Tri
         for (size_t i = 0; i < count; i += BLOCK_SIZE) {
             size_t start = i;
             size_t end = std::min(i + BLOCK_SIZE, count);
-            futures.emplace_back(engine->pool.addTask([&triangles, start, end]() {
+            futures.emplace_back(engine->pool.addTask([&triangles, start, end] {
                 std::vector<Triangle> localResult;
                 // 假设 10% 发生裁剪产生新三角
                 localResult.reserve((end - start) / 10);
@@ -185,7 +185,7 @@ void Graphic::ScreenMapping(std::unordered_map<std::shared_ptr<Material>, std::v
             size_t start = i;
             size_t end = std::min(i + BLOCK_SIZE, count);
             // 捕获 ViewPort和 triangles
-            futures.emplace_back(engine->pool.addTask([&triangles, &ViewPort, start, end]() {
+            futures.emplace_back(engine->pool.addTask([&triangles, &ViewPort, start, end] {
                 // 为了性能，将 lambda 放在任务内部
                 auto clampCoord = [](Vec4& p) {
                     // 这里去掉了 -1e-4 的判断，通常直接判断 < 0 即可，
@@ -230,7 +230,7 @@ void Graphic::GeometryShading(
             const size_t start = i;
             const size_t end = std::min(i + BLOCK_SIZE, count);
             futures.emplace_back(engine->pool.addTask(
-                [&triangles, shader, material, start, end, this]() {
+                [&triangles, shader, material, start, end, this] {
                     for (size_t k = start; k < end; ++k) {
                         auto& tri = triangles[k];
                         if (!tri.alive) continue;
@@ -353,7 +353,7 @@ void Graphic::Ztest(std::vector<Fragment> &TestFrag, std::vector<float> &ZBuffer
 
         // 提交任务，返回该块 kept 的数量
         futures.emplace_back(engine->pool.addTask(
-            [&TestFrag, &ZBuffer, start, end, this]() {
+            [&TestFrag, &ZBuffer, start, end, this] {
                 int localKeptCount = 0;
 
                 for (size_t k = start; k < end; ++k) {
@@ -393,7 +393,7 @@ void Graphic::FragmentShading(
             const size_t end = std::min(i + BLOCK_SIZE, count);
             // 提交任务
             futures.emplace_back(engine->pool.addTask(
-                [shader, material, &fragVec, start, end, this]() {
+                [shader, material, &fragVec, start, end, this] {
                     // A. 线程局部存储
                     std::vector<F2P> localResult;
                     // 预分配内存：假设大部分 fragment 都是 alive 的

@@ -24,7 +24,7 @@ Engine::Engine(const size_t w, const size_t h, const bool Gamma, const bool RT)
     ZBuffer.resize(w * h, 1.0f);
     tmpBufferF.resize(w * h, FloatPixel{0.0f, 0.0f, 0.0f, 0.0f});
     tmpBufferB.resize(w * h, FloatPixel{0.0f, 0.0f, 0.0f, 0.0f});
-    CloseShadow(); // 默认关闭阴影
+    Engine::CloseShadow(); // 默认关闭阴影
     VexLights.clear();
     NeedGammaCorrection = Gamma;
     gBuffer = std::make_unique<GBuffer>(w, h);
@@ -61,6 +61,10 @@ void Engine::SetEnvLight(const uint8_t r, const uint8_t g, const uint8_t b, cons
 // 添加变换指令到队列中
 void Engine::addTfCommand(const TransformCommand &cmd) {
     tfCommand.push(cmd);
+}
+
+void Engine::addTfCommand(const size_t objId, const sysID typeId, const TfType Ttype, std::array<float, 3> value) {
+    addTfCommand({objId, typeId, Ttype, {value[0], value[1], value[2]}});
 }
 
 // 添加网格模型，返回网格名字
