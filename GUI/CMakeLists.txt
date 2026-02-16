@@ -17,6 +17,9 @@ qt_add_executable(RenderGUI
 )
 
 target_link_libraries(RenderGUI PRIVATE Qt6::Core Qt6::Gui Qt6::Quick Qt6::Qml)
+# 链接动态库
+target_link_libraries(RenderGUI PRIVATE ${PROJECT_SOURCE_DIR}/bin/libRenderEngine.dylib)
+
 target_include_directories(RenderGUI PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/Backend/include
 )

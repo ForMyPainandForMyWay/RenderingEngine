@@ -30,7 +30,7 @@ struct MatMN {
 
     MatMN& operator = (MatMN&& other) noexcept = default;
 
-    MatMN<N, M> Transpose() const;  // 获取转置
+    [[nodiscard]] MatMN<N, M> Transpose() const;  // 获取转置
 };
 
 using Mat4 = MatMN<4,4>;
@@ -53,7 +53,7 @@ MatMN<M, N> operator + (const MatMN<M, N> &lhs, const MatMN<M, N> &rhs) {
 template<size_t M, size_t N>
 MatMN<M, N> operator + (const MatMN<M, N> &lhs, float scalar) {
     MatMN<M, N> result{};
-    for (size_t i = 0; i < M; i++) result[i] = scalar;
+    for (size_t i = 0; i < M; i++) result[i] = lhs[i] + scalar;
     return result;
 }
 

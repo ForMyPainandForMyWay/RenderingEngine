@@ -346,7 +346,7 @@ void Graphic::RT(
         size_t end   = std::min(i + BLOCK_SIZE, pixelCount);
 
         futures.emplace_back(engine->pool.addTask(
-            [&, start, end, width, height, Asp, scale, SSP, maxDepth]() {
+            [&, start, end, width, height, Asp, scale, SSP, maxDepth] {
                 std::vector<F2P> localResult;
                 localResult.reserve(end - start);
 
@@ -446,7 +446,7 @@ void Graphic::WriteBuffer(const std::vector<F2P>& f2pVec) const {
         size_t start = i;
         size_t end = std::min(i + BLOCK_SIZE, count);
         futures.emplace_back(engine->pool.addTask(
-            [&f2pVec, &buffer, width, start, end]() {
+            [&f2pVec, &buffer, width, start, end] {
                 for (size_t k = start; k < end; ++k) {
                     const auto& f2p = f2pVec[k];
                     if (!f2p.alive) continue;

@@ -270,7 +270,7 @@ struct ScanEdge {
 
     // 初始化边
     void Init(const VecN<2>& pTop, const Payload& vTop,
-              const VecN<2>& pBot, const Payload& vBot, int screenH) {
+              const VecN<2>& pBot, const Payload& vBot, const int screenH) {
         yStart = static_cast<int>(std::ceil(pTop[1] - 0.5f)); // 向上取整对齐像素中心
         yEnd   = static_cast<int>(std::ceil(pBot[1] - 0.5f));
         yEnd   = std::min(yEnd, screenH); // 裁剪
@@ -288,7 +288,7 @@ struct ScanEdge {
         step  = (vBot - vTop) * invDy;
         // 因为扫描线是从整数 Y 开始的，而顶点可能是浮点数 Y。
         // 需要把属性向前推演 (yStart + 0.5 - pTop.y)
-        float preStepY = (static_cast<float>(yStart) + 0.5f) - pTop[1];
+        const float preStepY = (static_cast<float>(yStart) + 0.5f) - pTop[1];
         x = pTop[0] + dx_dy * preStepY;
         current = vTop + (step * preStepY);
     }
@@ -316,7 +316,7 @@ void Scanline(Triangle& tri, std::vector<Fragment>& result, int screenWidth, int
     // 透视除法预处理
     auto create_payload = [](const V2F* v) -> Payload {
         Payload p;
-        float invW = v->invW; // 假设这是 1/w
+        const float invW = v->invW; // 假设这是 1/w
         p.invW = invW;
         p.depth = v->clipPosi[2] * invW;
         p.uv = v->uv * invW;
@@ -351,7 +351,7 @@ void Scanline(Triangle& tri, std::vector<Fragment>& result, int screenWidth, int
     shortEdgeTop.Init(p0, pay0, p1, pay1, screenHeight);
     // 短边下
     shortEdgeBot.Init(p1, pay1, p2, pay2, screenHeight);
-    auto DrawSpan = [&](int y, const ScanEdge& left, const ScanEdge& right) {
+    auto DrawSpan = [&](const int y, const ScanEdge& left, const ScanEdge& right) {
         // 整数 X 范围
         const int xStart = static_cast<int>(std::ceil(left.x - 0.5f));
         const int xEnd   = static_cast<int>(std::ceil(right.x - 0.5f));

@@ -36,7 +36,7 @@ public:
             if (!alive) {
                 return std::future<return_type>();
             }
-            tasks.emplace_back([task](){
+            tasks.emplace_back([task]{
                 (*task)(); // 执行 packaged_task，结果会自动进入 future
             });
 

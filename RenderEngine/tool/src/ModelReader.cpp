@@ -109,7 +109,7 @@ std::vector<std::string> ModelReader::readObjFile(
     // 用于标记顶点的哈希表，key为顶点在f行的“a/b/c”
     std::unordered_map<std::string, size_t> vertexMap;
 
-    auto pushSubMesh = [&]() {
+    auto pushSubMesh = [&] {
         currentSubMesh.updateCount(currentMesh);
         if (currentSubMesh.getIdxCount() != 0) {
             currentMesh->addSubMesh(currentSubMesh);
@@ -117,7 +117,7 @@ std::vector<std::string> ModelReader::readObjFile(
         }
     };
 
-    auto pushMesh = [&]() {
+    auto pushMesh = [&] {
         pushSubMesh();
         if (!currentMesh->vexIsEmpty() && !meshes.contains(currentMesh->getName())) {
             meshes[currentMesh->getName()] = currentMesh;

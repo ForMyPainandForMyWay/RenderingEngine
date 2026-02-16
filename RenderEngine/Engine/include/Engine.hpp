@@ -7,6 +7,7 @@
 
 #include <queue>
 
+#include "IEngine.hpp"
 #include "BVH.hpp"
 #include "Camera.hpp"
 #include "GBuffer.hpp"
@@ -21,43 +22,40 @@
 struct BLAS;
 class ThreadPool;
 
-// ID体系:0号为Camera,1号为主光源,2-4号为逐片元光源
-enum sysID : size_t{CameraID, MainLightID, PixL1, PixL2, PixL3, RenderObject, VexLight, Error};
-enum AATpye{NOAA, FXAA, FXAAC, FXAAQ};  // 抗锯齿效果
-
 // 变换指令(累积变换)
 typedef struct TransformCommand {
     size_t objId{};
     sysID typeId{};
-    enum Type { TRANSLATE, ROTATE, SCALE } type = SCALE;
+    TfType type{};
     Vec3 value;  // 移动/旋转/缩放值
 } TfCmd;
 
-class Engine {
+class Engine: public IEngine {
 public:
     Engine(size_t w, size_t h, bool Gamma=false, bool RT=false);
-    ~Engine();
-    void SetMainLight();
-    void SetEnvLight(uint8_t r, uint8_t g, uint8_t b, float I);
-    void CloseShadow() { NeedShadowPass = false; }
-    void OpenShadow() { NeedShadowPass = true; }
-    void CloseSky() { NeedSkyBoxPass = false; }
-    void OpenSky() { NeedSkyBoxPass = true; }
-    void SetAA(const AATpye type){ aaType = type; }
-    void OpenAO() { NeedAo = true; }
-    void addTfCommand(const TransformCommand &cmd);
-    std::vector<std::string> addMesh(const std::string &filename);
-    size_t addObjects(const std::string &meshName);
-    sysID addPixLight(Lights &light);
-    size_t addVexLight(Lights &light);
-    void setResolution(size_t w, size_t h);
+    ~Engine() override;
+    void SetMainLight() override;
+    void SetEnvLight(uint8_t r, uint8_t g, uint8_t b, float I) override;
+    void CloseShadow() override { NeedShadowPass = false; }
+    void OpenShadow() override { NeedShadowPass = true; }
+    void CloseSky() override { NeedSkyBoxPass = false; }
+    void OpenSky() override { NeedSkyBoxPass = true; }
+    void SetAA(const AATpye aatype) override { aaType = aatype; }
+    void OpenAO() override { NeedAo = true; }
+    void addTfCommand(const TransformCommand &cmd) override;
+    void addTfCommand(size_t objId, sysID typeId, TfType Ttype, std::array<float, 3> value) override;
+    std::vector<std::string> addMesh(const std::string &filename) override;
+    size_t addObjects(const std::string &meshName) override;
+    sysID addPixLight(Lights &light) override;
+    size_t addVexLight(Lights &light) override;
+    void setResolution(size_t w, size_t h) override;
     // 光线追踪
     void BuildTLAS(const std::vector<uint16_t>& models);
     std::optional<HitInfo> GetClosestHit(const Ray &worldRay) const;
 
 
     void Application();  // 应用物体、相机与光源的变换
-    void RenderFrame(const std::vector<uint16_t>& models);  // 绘制每帧的入口，帧绘制管理
+    void RenderFrame(const std::vector<uint16_t>& models) override;  // 绘制每帧的入口，帧绘制管理
     void BeginFrame();   // 初始化帧
     void EndFrame();  // 交付帧
     void DrawScene(const std::vector<uint16_t>& models);  // 绘制场景

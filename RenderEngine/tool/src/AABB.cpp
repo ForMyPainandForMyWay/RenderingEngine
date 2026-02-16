@@ -41,7 +41,7 @@ int AABB::maxDimension() const {
     return ext[1] > ext[2] ? 1 : 2;
 }
 
-bool IntersectAABB(const AABB& aabb, const Vec3& rayOrigin, const Vec3& rayDirInv, float tMaxLimit, float& tEntry) {
+bool IntersectAABB(const AABB& aabb, const Vec3& rayOrigin, const Vec3& rayDirInv, const float tMaxLimit, float& tEntry) {
     const float tx1 = (aabb.Pmin[0] - rayOrigin[0]) * rayDirInv[0];
     const float tx2 = (aabb.Pmax[0] - rayOrigin[0]) * rayDirInv[0];
     float tmin = std::min(tx1, tx2);
