@@ -4,6 +4,7 @@
 
 #ifndef RENDERINGENGINE_IENGINE_H
 #define RENDERINGENGINE_IENGINE_H
+#include <cstdint>
 
 
 #if defined(_WIN32)
@@ -32,7 +33,7 @@ public:
     IEngine() = default;
     virtual ~IEngine() = default;
     virtual void SetMainLight() = 0;
-    virtual void SetEnvLight(uint8_t r, uint8_t g, uint8_t b, float I) = 0;
+    virtual void SetEnvLight(std::uint8_t r, uint8_t g, uint8_t b, float I) = 0;
     virtual void CloseShadow() = 0;
     virtual void OpenShadow() = 0;
     virtual void CloseSky() = 0;
