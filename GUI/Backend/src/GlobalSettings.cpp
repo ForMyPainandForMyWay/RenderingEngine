@@ -5,6 +5,7 @@
 #include <QDebug>
 #include <QUrl>
 
+#include "FrameProvider.hpp"
 #include "IEngine.hpp"
 #include "SettingProxy.hpp"
 
@@ -12,14 +13,16 @@
 void SettingProxy::setRenderMode(const bool &isRaster) {
     if (isRaster == currentMode) return;
     currentMode = isRaster;
-    qDebug() << "setRenderMode is Raster:" << currentMode;
-    // 后续完善流程
+    if (!currentMode) {
+        engine->SetRtMode();
+    } else {
+        engine->SetRasMode();
+    }
 }
 
 void SettingProxy::setFXAA(const int &FXAALevel) {
     if (FXAALevel == currentFXAA) return;
     currentFXAA = FXAALevel;
-    qDebug() << "set FXAA: " << currentFXAA;
     if (currentFXAA == 3) {
         engine->SetAA(FXAAQ);
     } else if (currentFXAA == 2) {
@@ -34,19 +37,16 @@ void SettingProxy::setFXAA(const int &FXAALevel) {
 void SettingProxy::enableSkyBox(const bool &enableSky) {
     if (enableSky == currentSky) return;
     currentSky = enableSky;
-    qDebug() << "enableSkyBox: " << currentSky;
     if (currentSky) {
         engine->OpenSky();
     } else {
         engine->CloseSky();
     }
-
 }
 
 void SettingProxy::enableSSAO(const bool &enableSSAO) {
     if (enableSSAO == currentSSAO) return;
     currentSSAO = enableSSAO;
-    qDebug() << "enableSSAO: " << currentSSAO;
     if (currentSSAO) {
         engine->OpenAO();
     } else {
@@ -57,7 +57,6 @@ void SettingProxy::enableSSAO(const bool &enableSSAO) {
 void SettingProxy::enableShadow(const bool &enableShadow) {
     if (enableShadow == currentShadow) return;
     currentShadow = enableShadow;
-    qDebug() << "enableShadow: " << currentShadow;
     if (currentShadow) {
         engine->OpenShadow();
     } else {
@@ -67,11 +66,17 @@ void SettingProxy::enableShadow(const bool &enableShadow) {
 
 void SettingProxy::openObj(const QUrl &url) {
     const std::string filepath = url.toLocalFile().toUtf8().toStdString();
-    qDebug() << "openObj: " << filepath;
-
     // 注意这里读取完毕后，需要更新一下统计数据再发送信号
+    engine->stopLoop();
     const auto meshId = engine->addMesh(filepath);
-    uint16_t objID = engine->addObjects(meshId[0]);  // TODO: 注意这里还没有计划GUI的渲染物体列表
+    uint16_t objID_ = engine->addObjects(meshId[0]);
+
+    delete currentRecv;
+    if (fp) {
+        currentRecv = new Receiver(fp, 400, 400);
+        engine->startLoop({objID_}, currentRecv);
+    }
+    objID = objID_;
     const auto [tri, vex] = engine->getTriVexNums();
     triNums = static_cast<int>(tri);
     vexNums = static_cast<int>(vex);

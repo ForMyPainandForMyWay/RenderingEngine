@@ -32,7 +32,7 @@ void Engine::Application() {
         };
         if (typeId == CameraID) applyCmd(camera);         // camera 提供 updateP/Q/S
         else if (typeId == MainLightID && mainLight!= nullptr) applyCmd(*mainLight);  // light 提供相同接口
-        else if (typeId >= PixL1 && typeId <= PixL3 && PixLights[typeId-PixL1].alive) applyCmd(PixLights[objId]);
+        else if (typeId >= PixL1 && typeId <= PixL3 && PixLights[typeId-PixL1].alive) applyCmd(PixLights[objId-PixL1]);
         else if (typeId == RenderObject) applyCmd(renderObjs.at(objId));
         else if (typeId == VexLight) applyCmd(VexLights.at(objId));
         // else applyCmd(renderObjs.at(objId));  // renderObj 也提供相同接口
@@ -388,7 +388,7 @@ void Graphic::FragmentShading(
     const std::unordered_map<std::shared_ptr<Material>, std::vector<Fragment> >& fragMap,
     std::vector<F2P> &result, const Uniform &u, const int pass) const {
 
-    const bool& NeedShadowPass = engine->settings[engine->renderSetting].NeedShadowPass;
+    const bool& NeedShadowPass = engine->settings[0].NeedShadowPass;
     const auto& PixLights = engine->PixLights;
     const auto& mainLight = engine->mainLight;
     const auto& SdMap = engine->SdMap;

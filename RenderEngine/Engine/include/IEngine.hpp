@@ -27,13 +27,26 @@ enum AATpye{NOAA, FXAA, FXAAC, FXAAQ};  // 抗锯齿效果
 // ID体系:0号为Camera,1号为主光源,2-4号为逐片元光源
 enum sysID : size_t{CameraID, MainLightID, PixL1, PixL2, PixL3, RenderObject, VexLight, Error};
 enum TfType { TRANSLATE, ROTATE, SCALE };
+enum LType{Direct, Point, Spot, Ambient};
+
+
+class IFrameReceiver {
+public:
+    virtual ~IFrameReceiver() = default;
+    virtual void OnFrameReady(const void* data) = 0;
+};
 
 class IEngine {
 public:
     IEngine() = default;
     virtual ~IEngine() = default;
-    virtual void SetMainLight() = 0;
-    virtual void SetEnvLight(std::uint8_t r, uint8_t g, uint8_t b, float I) = 0;
+    virtual void SetMainLight(uint8_t r, uint8_t g, uint8_t b, float I) = 0;
+    virtual void SetEnvLight(uint8_t r, uint8_t g, uint8_t b, float I) = 0;
+    virtual void SetPixLight(sysID plId, uint8_t r, uint8_t g, uint8_t b, float I) = 0;
+
+    virtual void SetRtMode() = 0;
+    virtual void SetRasMode() = 0;
+
     virtual void CloseShadow() = 0;
     virtual void OpenShadow() = 0;
     virtual void CloseSky() = 0;
@@ -41,16 +54,23 @@ public:
     virtual void SetAA(AATpye aatype) = 0;
     virtual void CloseAO() = 0;
     virtual void OpenAO() = 0;
+
     virtual void addTfCommand(size_t objId, sysID typeId, TfType Ttype, std::array<float, 3> value) = 0;
     virtual std::vector<std::string> addMesh(const std::string &filename) = 0;
     virtual size_t addObjects(const std::string &meshName) = 0;
-    virtual sysID addPixLight(Lights &light) = 0;
+    virtual sysID addPixLight(uint8_t r, uint8_t g, uint8_t b, LType type) = 0;
     virtual size_t addVexLight(Lights &light) = 0;
     virtual void setResolution(size_t w, size_t h) = 0;
+
+    virtual void setCameraFov(float fov) = 0;
+    virtual void setCameraNear(float near) = 0;
+    virtual void setCameraFar(float far) = 0;
 
     virtual std::array<size_t, 2> getTriVexNums() = 0;
 
     virtual void RenderFrame(const std::vector<uint16_t>& models) = 0;  // 绘制每帧的入口，帧绘制管理
+    virtual void startLoop(std::vector<uint16_t> objs, IFrameReceiver *receiver) = 0;
+    virtual void stopLoop() = 0;
 };
 
 // 导出工厂函数，用于创建和销毁实例

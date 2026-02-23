@@ -46,6 +46,7 @@ Column {
         width: parent.width
         CheckLight {
             stext: "Env Light"
+            checked: true
             Layout.alignment: Qt.AlignLeft
             onCheckedChanged: {
                 settingProxy.enableEnv(checked)

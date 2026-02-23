@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
+import QtMultimedia
 
 // 导入自定义组件
 import "components" as Components
@@ -23,6 +24,14 @@ ApplicationWindow {
         anchors.verticalCenter: parent.verticalCenter
         anchors.left: parent.left
         anchors.leftMargin: 10
+        VideoOutput {
+            id: videoOutput
+            anchors.fill: parent
+            fillMode: VideoOutput.Stretch
+            Component.onCompleted: {
+                frameProvider.videoSink = videoOutput.videoSink
+            }
+        }
     }
 
     // 右侧标签页

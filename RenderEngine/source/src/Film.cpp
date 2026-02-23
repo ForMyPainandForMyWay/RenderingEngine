@@ -58,9 +58,7 @@ Film::Film(const size_t width, const std::size_t height) {
     this->width = width;
     this->height = height;
     // 通道组织方式为R:0 G:1 B:2
-    // this->image.reserve(width * height);
-    image.resize(width * height);
-    this->fill(255, 255, 255, 255);  // 默认白色背景
+    image.resize(width * height, {255, 255, 255, 255});  // 默认白色背景
 }
 
 void Film::clear() {

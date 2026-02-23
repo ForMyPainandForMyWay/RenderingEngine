@@ -8,10 +8,10 @@
 #include "Film.hpp"
 #include "MatPro.hpp"
 #include "Transform.hpp"
+#include "IEngine.hpp"
 
 
 struct TextureMap;
-enum LType{Direct, Point, Spot, Ambient};
 
 
 // 不同类型的光源
@@ -26,6 +26,7 @@ public:
     void setColor(uint8_t r = 255, uint8_t g = 255,
                   uint8_t b = 255, uint8_t a = 255);
     void setI(float i = 1);
+    void setLtype(const LType type){ LightType = type; }
 
     void updateP(const Vec3 &translate);   // 更新位姿
     void updateQ(const Vec4 &quaternion);  // 更新旋转

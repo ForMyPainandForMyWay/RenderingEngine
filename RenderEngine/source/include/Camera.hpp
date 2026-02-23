@@ -5,7 +5,6 @@
 #ifndef UNTITLED_CAMERA_H
 #define UNTITLED_CAMERA_H
 
-#include "MatPro.hpp"
 #include "Transform.hpp"
 
 
@@ -14,6 +13,9 @@ public:
     Camera();
     void setParameters(float F, float Near, float Far, float A);
     void setAsp(float Asp);
+    void setFOV(float fov);
+    void setNear(float near);
+    void setFar(float far);
 
     const Mat4& ViewMat();        // 视角变换矩阵
     const Mat4& ProjectionMat();  // 返回投影矩阵P，自动更新

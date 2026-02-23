@@ -4,48 +4,50 @@
 
 #include <QDebug>
 
+#include "IEngine.hpp"
 #include "SettingProxy.hpp"
 
 // 灯光设置
 void SettingProxy::enableEnv(const bool &enableEnv) {
     if (enableEnv == currentEnv) return;
     currentEnv = enableEnv;
-    qDebug() << "enableEnv: " << enableEnv;
     if (currentEnv) {
-
+        engine->SetEnvLight(envCorlor[0], envCorlor[1], envCorlor[2], 1.0f);
     } else {
-
+        engine->SetEnvLight(0, 0, 0, 1.0f);
     }
 }
 
 void SettingProxy::enableSpot(const bool &enableSpot) {
     if (enableSpot == currentSpot) return;
     currentSpot = enableSpot;
-    qDebug() << "enableSpot: " << enableSpot;
     if (currentSpot) {
-
+        engine->SetMainLight(spotColor[0], spotColor[1], spotColor[2], 1.0f);
     } else {
-
+        engine->SetMainLight(0, 0, 0, 1.0f);
     }
 }
 
 void SettingProxy::enablePoint(const bool &enablePoint) {
     if (enablePoint == currentPoint) return;
     currentPoint = enablePoint;
-    qDebug() << "enablePoint: " << enablePoint;
     if (currentPoint) {
-
+        engine->SetPixLight(PixL1, pointColor[0], pointColor[1], pointColor[2], 1.0f);
     } else {
-
+        engine->SetPixLight(PixL1, 0, 0, 0, 1.0f);
     }
 }
 
 void SettingProxy::setPitch(const float &pitch) {
-    qDebug() << "Pitch: " << pitch;
-
+    if (objID == -1) return;
+    const float delta = currentPitch - pitch;
+    currentPitch = pitch;
+    engine->addTfCommand(objID, RenderObject, ROTATE, {0, delta*180, 0});
 }
 
 void SettingProxy::setYaw(const float &yaw) {
-    qDebug() << "Yaw: " << yaw;
-
+    if (objID == -1) return;
+    const float delta = currentYaw - yaw;
+    currentYaw = yaw;
+    engine->addTfCommand(objID, RenderObject, ROTATE, {delta*180, 0, 0});
 }

@@ -4,18 +4,17 @@
 
 #include <QDebug>
 
+#include "IEngine.hpp"
 #include "SettingProxy.hpp"
 
 
-void SettingProxy::setFOV(const float &FOV) {
-    qDebug() << "FOV: " << FOV;
+void SettingProxy::setFOV(const float &FOV) const {
+    engine->setCameraFov(FOV * 100);
+}
+void SettingProxy::setNear(const float &near) const {
+    engine->setCameraNear(near * 5);
 
 }
-void SettingProxy::setNear(const float &near) {
-    qDebug() << "Near: " << near;
-
-}
-void SettingProxy::setFar(const float &far) {
-    qDebug() << "Far: " << far;
-
+void SettingProxy::setFar(const float &far) const {
+    engine->setCameraFar(far * 100);
 }

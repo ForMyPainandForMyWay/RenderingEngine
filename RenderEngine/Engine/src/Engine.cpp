@@ -16,9 +16,7 @@ Engine::Engine(const size_t w, const size_t h, const bool Gamma, const bool RT)
     , height(h)
     , img(w, h)
     , graphic(this)
-    , globalU(w, h, w, h)
-    , frontBuffer(new Film(w, h))
-    , backBuffer(new Film(w, h)) {
+    , globalU(w, h, w, h) {
     // 预备分配缓冲
     SdMap = std::make_shared<ShadowMap>(w, h);
     ZBuffer.resize(w * h, 1.0f);
@@ -31,31 +29,35 @@ Engine::Engine(const size_t w, const size_t h, const bool Gamma, const bool RT)
     const float aspect = static_cast<float>(w) / static_cast<float>(h);
     camera.setAsp(aspect);
     if (mainLight) mainLight->setAsp(aspect);
-    settings[!renderSetting].IsRT = RT;
+    settings[1].IsRT = RT;
+    swapChain = std::make_unique<SwapChain>(w, h);
 }
 
 Engine::~Engine() {
-    delete backBuffer;
-    delete frontBuffer;
     delete mainLight;
-    delete envLight;
+    envLight = nullptr;
+    Engine::stopLoop();
 }
 
 // 设置主光源，并更新shadow map分辨率，需要光源与阴影贴图分辨率,不会更改阴影开关
-void Engine::SetMainLight() {
-    delete mainLight;
-    mainLight = new MainLight();  // 先不进行详细参数设置
-    mainLight->setI(5.0f);
+void Engine::SetMainLight(const uint8_t r, const uint8_t g, const uint8_t b, const float I) {
+    if (!mainLight) mainLight = new MainLight();
+    mainLight->intensity = 5.0f;
+    mainLight->color = Pixel{r, g, b};
     SdMap->resize(width, height);
     globalU.setShadowViewPort(width, height);
 }
 
 // 设置全局环境光
 void Engine::SetEnvLight(const uint8_t r, const uint8_t g, const uint8_t b, const float I) {
-    delete envLight;
-    envLight = new EnvironmentLight();
+    if (!envLight) envLight = new EnvironmentLight();
     envLight->setColor(r, g, b, 255);
     envLight->setI(I);
+}
+
+// 直接设置逐像素光源，不校验是否有效
+void Engine::SetPixLight(const sysID plId, const uint8_t r, const uint8_t g, const uint8_t b, float I) {
+    PixLights[plId - PixL1].setColor(r, g, b);
 }
 
 // 添加变换指令到队列中
@@ -90,12 +92,15 @@ size_t Engine::addObjects(const std::string &meshName) {
 }
 
 // 添加逐片元灯光，返回灯光索引。当i = 3时表示添加失败
-sysID Engine::addPixLight(Lights &light) {
-    light.alive = true;
+sysID Engine::addPixLight(uint8_t r, uint8_t g, uint8_t b, LType type) {
     for (int id_val = PixL1; id_val <= PixL3; ++id_val) {
         if (const auto id = static_cast<sysID>(id_val); !PixLights[id-PixL1].alive) {
-            PixLights[id-PixL1] = light;
-            return id;
+            auto& light = PixLights[id-PixL1];
+            light.alive = true;
+            light.setColor(r, g, b);
+            light.setI(5.0f);
+            light.setLtype(type);
+            return id;;
         }
     }
     return Error;
@@ -114,10 +119,7 @@ size_t Engine::addVexLight(Lights &light) {
 void Engine::setResolution(const size_t w, const size_t h) {
     width = w;
     height = h;
-    delete frontBuffer;
-    delete backBuffer;
-    frontBuffer = new Film(w, h);
-    backBuffer  = new Film(w, h);
+    swapChain = std::make_unique<SwapChain>(w, h);
     ZBuffer.resize(w * h, 1.0f);
     tmpBufferF.resize(w * h, FloatPixel{0.0f,0.0f,0.0f,0.0f});
     tmpBufferB.resize(w * h, FloatPixel{0.0f,0.0f,0.0f,0.0f});
@@ -130,8 +132,8 @@ void Engine::setResolution(const size_t w, const size_t h) {
 
 // 绘制场景-前向渲染
 void Engine::DrawScene(const std::vector<uint16_t>& models) {
-    const bool NeedSkyBoxPass = settings[renderSetting].NeedSkyBoxPass;
-    const bool NeedShadowPass = settings[renderSetting].NeedShadowPass;
+    const bool NeedSkyBoxPass = settings[0].NeedSkyBoxPass;
+    const bool NeedShadowPass = settings[0].NeedShadowPass;
     // SkyPass
     Mat4 PV;
     if (NeedSkyBoxPass) {
@@ -157,7 +159,7 @@ void Engine::DrawScene(const std::vector<uint16_t>& models) {
     PV = camera.ProjectionMat() * camera.ViewMat();
     globalU.setCameraViewM(camera.ViewMat());
     globalU.setCameraProjM(camera.ProjectionMat());
-    // globalU.setProjectView(PV);  // 更新全局Uniform相机相关内容
+    // 更新全局Uniform相机相关内容
     globalU.setCameraPos(camera.getPosi());
     for (const auto& model : models) {
         auto obj = renderObjs.at(model);
@@ -178,8 +180,8 @@ void Engine::DrawScenceRT(const std::vector<uint16_t>& models) {
 
 // 后处理阶段,工作集中于tmpBuffer
 void Engine::PostProcess() {
-    const bool NeedAo = settings[renderSetting].NeedAo;
-    const auto aaType = settings[renderSetting].aaType;
+    const bool NeedAo = settings[0].NeedAo;
+    const auto aaType = settings[0].aaType;
     // 环境光遮蔽
     if (NeedAo) {
         std::ranges::fill(tmpBufferB, FloatPixel{0.0f,0.0f,0.0f,0.0f});
@@ -201,18 +203,17 @@ void Engine::PostProcess() {
 
 // 帧绘制管理
 void Engine::RenderFrame(const std::vector<uint16_t>& models) {
-    // 交换双缓冲
-    renderSetting = !renderSetting;
-    const bool IsRT = settings[renderSetting].IsRT;
     BeginFrame();   // 初始化帧
-    Application();  // 应用变换
-    // 绘制指定models
-    if (IsRT) {
-    BuildTLAS(models);// 光线追踪需要初始化BVH
-    DrawScenceRT(models);
-    } else DrawScene(models);
-    PostProcess();   // 画面后处理
-    EndFrame();      // 交付帧
+    if (rendBuffer) {
+        Application();  // 应用变换
+        // 绘制指定models
+        if (settings[0].IsRT) {
+            BuildTLAS(models);// 光线追踪需要初始化BVH
+            DrawScenceRT(models);
+        } else DrawScene(models);
+        PostProcess();   // 画面后处理
+        EndFrame();      // 交付帧
+    }
 }
 
 void Engine::BeginFrame() {
@@ -220,23 +221,34 @@ void Engine::BeginFrame() {
     std::ranges::fill(ZBuffer, 1.0f);
     std::ranges::fill(tmpBufferF, FloatPixel{0.0f,0.0f,0.0f,0.0f});
     std::ranges::fill(tmpBufferB, FloatPixel{0.0f,0.0f,0.0f,0.0f});
-    SdMap->clear();    // 清空backBuffer
-    backBuffer->clear();
+    SdMap->clear();
+    rendBuffer = swapChain->acquireBackBuffer();
+    if (rendBuffer) rendBuffer->clear();
     gBuffer = std::make_unique<GBuffer>(width, height);
+
+    // 同步 设置双缓冲
+    {
+        std::lock_guard lock(settingMtx);
+        memcpy(&settings[0], &settings[1], sizeof(SettingCache));
+    }
+    camera.setFOV(settings[0].fov);
+    camera.setNear(settings[0].near);
+    camera.setFar(settings[0].far);
 }
 
 void Engine::EndFrame() {
     // 处理缓冲区的像素转到图像缓冲区
     Write2Front();
-    std::swap(frontBuffer, backBuffer);
-    frontBuffer->save("test.pam");
+    // rendBuffer->save("test.pam");
+    swapChain->commitBackBuffer(rendBuffer);
+    rendBuffer = nullptr;
 }
 
 // 写入绘制缓冲区,自行转换伽马矫正
 void Engine::Write2Front() {
     if (!NeedGammaCorrection) {
         for (auto i = 0; i < tmpBufferF.size(); ++i) {
-            backBuffer->image[i] = tmpBufferF[i].toPixel();
+            rendBuffer->image[i] = tmpBufferF[i].toPixel();
         }
         return;
     }
@@ -245,7 +257,7 @@ void Engine::Write2Front() {
         pix.r = linearToSrgb(pix.r);
         pix.g = linearToSrgb(pix.g);
         pix.b = linearToSrgb(pix.b);
-        backBuffer->image[i] = pix.toPixel();
+        rendBuffer->image[i] = pix.toPixel();
     }
 }
 
@@ -258,4 +270,39 @@ std::array<size_t, 2> Engine::getTriVexNums() {
         VexNums += mesh->getVBONums();
     }
     return {TriNums, VexNums};
+}
+
+void Engine::startLoop(std::vector<uint16_t> objs, IFrameReceiver* receiver) {
+    if (renderLoop || pullLoop) return;
+    if (!swapChain) swapChain = std::make_unique<SwapChain>(width, height);
+    renderLoop = true;
+    pullLoop = true;
+
+    RendWorker = std::thread([this, objs = std::move(objs)] {
+        while (renderLoop) {
+            RenderFrame(objs);
+        }
+    });
+
+    PullWorker = std::thread([this, receiver] {
+        while (pullLoop) {
+            const auto frame = swapChain->acquireFrontBuffer();
+            if (!frame) break;  // 当返回空时交换链被关闭
+            if (receiver) {
+                receiver->OnFrameReady(frame->image.data());
+            }
+            swapChain->releaseFrontBuffer(frame);  // 记得归还缓冲区
+        }
+    });
+}
+
+void Engine::stopLoop() {
+    renderLoop = false;
+    pullLoop = false;
+    if (swapChain) {
+        swapChain->stop();
+        swapChain = std::make_unique<SwapChain>(width, height);
+    }
+    if (RendWorker.joinable()) RendWorker.join();
+    if (PullWorker.joinable()) PullWorker.join();
 }

@@ -6,6 +6,8 @@
 #define MYQTAPP_SETTINGPROXY_HPP
 #include <qobject.h>
 
+class Receiver;
+class FrameProvider;
 class IEngine;
 
 class SettingProxy : public QObject{
@@ -14,9 +16,9 @@ class SettingProxy : public QObject{
     Q_PROPERTY(int VertexNums READ VertexNums NOTIFY VertexNumsChanged)
 
 public:
-    explicit SettingProxy(IEngine* engine, QObject *parent = nullptr);
+    explicit SettingProxy(std::unique_ptr<IEngine> engine, FrameProvider* fp, QObject *parent = nullptr);
     ~SettingProxy() override;
-    IEngine* engine{};
+    std::unique_ptr<IEngine> engine = nullptr;
 
 public slots:
     // 全局渲染设置
@@ -37,31 +39,47 @@ public slots:
     void enableSpot(const bool &enableSpot);
     void enablePoint(const bool &enablePoint);
 
-    static void setPitch(const float &pitch);
-    static void setYaw(const float &yaw);
+    // 这里就先做成物体的旋转了
+    void setPitch(const float &pitch);
+    void setYaw(const float &yaw);
 
     // 相机设置
-    static void setFOV(const float &FOV);
-    static void setNear(const float &near);
-    static void setFar(const float &far);
+    void setFOV(const float &FOV) const;
+    void setNear(const float &near) const;
+    void setFar(const float &far) const;
 
 signals:
     void TriangleNumsChanged();
     void VertexNumsChanged();
 
 private:
+    int objID = -1;
+
+    FrameProvider* fp = nullptr;  // 引用不拥有
+    Receiver* currentRecv = nullptr;  // 拥有
     int triNums = 0;
     int vexNums = 0;
 
     bool currentMode = true;
-    int currentFXAA = 0;
+    uint8_t currentFXAA = 0;  // FXAA档位,0-3为从无到高
     bool currentSky = false;
     bool currentSSAO = false;
     bool currentShadow = false;
 
-    bool currentEnv = false;
+    bool currentEnv = true;
     bool currentSpot = false;
     bool currentPoint = false;
+
+    uint8_t envCorlor[3] = {100, 100, 100};
+    uint8_t spotColor[3] = {255, 255, 255};
+    uint8_t pointColor[3] = {255, 255, 255};
+
+    float currentYaw = 0.5f;
+    float currentPitch = 0.5f;
+
+    // float FOV = 0.45f;  // 参数倍率为10
+    // float near = 0.05f;  // 参数倍率为5 0.0 ~ 5.0
+    // float far = 0.2f;  // 参数倍率为100 0.0 ～ 100
 };
 
 

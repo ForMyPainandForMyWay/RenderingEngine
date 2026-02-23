@@ -14,7 +14,7 @@ ColumnLayout {
         color: "transparent"
         Slider{
             id: fovSlide
-            value: 0.5
+            value: 0.45
             width: parent.width * 0.8
             height: parent.height * 0.2
             anchors.top: parent.top
@@ -60,7 +60,7 @@ ColumnLayout {
         color: "transparent"
         Slider{
             id: farPlaneSlide
-            value: 0.5
+            value: 0.2
             width: parent.width * 0.8
             height: parent.height * 0.2
             anchors.top: parent.top

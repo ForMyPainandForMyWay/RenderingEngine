@@ -83,39 +83,39 @@ void Graphic::BasePass(const RenderObjects &obj,const Uniform &u, const GlobalUn
     std::unordered_map<std::shared_ptr<Material>, std::vector<Fragment>> FragMap;
     {
         std::unordered_map<std::shared_ptr<Material>, std::vector<Triangle>> TriMap;
-        auto start = std::chrono::high_resolution_clock::now();
+        // auto start = std::chrono::high_resolution_clock::now();
         VertexShading(TriMap, u, gu, mesh, pass);
-        auto end = std::chrono::high_resolution_clock::now();
-        auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
-        std::cout << "顶点着色耗时: " << duration.count() << " 微秒\n";
+        // auto end = std::chrono::high_resolution_clock::now();
+        // auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+        // std::cout << "顶点着色耗时: " << duration.count() << " 微秒\n";
 
-        start = std::chrono::high_resolution_clock::now();
+        // start = std::chrono::high_resolution_clock::now();
         // 完成顶点处理阶段后进行剔除、裁剪,最后齐次除法、面剔除
         Clip(TriMap);
-        end = std::chrono::high_resolution_clock::now();
-        duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
-        std::cout << "clip耗时: " << duration.count() << " 微秒\n";
+        // end = std::chrono::high_resolution_clock::now();
+        // duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+        // std::cout << "clip耗时: " << duration.count() << " 微秒\n";
 
-        start = std::chrono::high_resolution_clock::now();
+        // start = std::chrono::high_resolution_clock::now();
         // 退化检测、视口变换
         ScreenMapping(TriMap, gu.getScreenViewPort());
-        end = std::chrono::high_resolution_clock::now();
-        duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
-        std::cout << "视口变换耗时: " << duration.count() << " 微秒\n";
+        // end = std::chrono::high_resolution_clock::now();
+        // duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+        // std::cout << "视口变换耗时: " << duration.count() << " 微秒\n";
 
-        start = std::chrono::high_resolution_clock::now();
+        // start = std::chrono::high_resolution_clock::now();
         // 几何着色
         GeometryShading(TriMap, u, mesh, pass);
-        end = std::chrono::high_resolution_clock::now();
-        duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
-        std::cout << "几何着色耗时: " << duration.count() << " 微秒\n";
+        // end = std::chrono::high_resolution_clock::now();
+        // duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+        // std::cout << "几何着色耗时: " << duration.count() << " 微秒\n";
 
         // 光栅化阶段，生成片元
-        start = std::chrono::high_resolution_clock::now();
+        // start = std::chrono::high_resolution_clock::now();
         Rasterization(TriMap, FragMap);
-        end = std::chrono::high_resolution_clock::now();
-        duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
-        std::cout << "光栅化耗时: " << duration.count() << " 微秒\n";
+        // end = std::chrono::high_resolution_clock::now();
+        // duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+        // std::cout << "光栅化耗时: " << duration.count() << " 微秒\n";
     }
     // 片段着色阶段，计算每个片元的颜色、光照和阴影处理
     // Early-Z,这里不清空ZBuffer，ZBuffer在每一帧的开始清空,由Engine控制
@@ -132,29 +132,29 @@ void Graphic::BasePass(const RenderObjects &obj,const Uniform &u, const GlobalUn
     std::vector<F2P> result;
     result.reserve(count);  // 预分配
 
-    auto start = std::chrono::high_resolution_clock::now();
+    // auto start = std::chrono::high_resolution_clock::now();
     // 基础颜色/纹理贴图采样(texture自动完成各向异性过滤和MipMap)
     FragmentShading(FragMap, result, u, pass);
-    auto end = std::chrono::high_resolution_clock::now();
-    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
-    std::cout << "片元着色耗时: " << duration.count() << " 微秒\n";
+    // auto end = std::chrono::high_resolution_clock::now();
+    // auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+    // std::cout << "片元着色耗时: " << duration.count() << " 微秒\n";
 
-    start = std::chrono::high_resolution_clock::now();
+    // start = std::chrono::high_resolution_clock::now();
     // 写入GBuffer
     for (auto &Frag: FragMap | std::views::values) {
         WriteGBuffer(Frag);
     }
-    end = std::chrono::high_resolution_clock::now();
-    duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
-    std::cout << "写入GBuffer耗时: " << duration.count() << " 微秒\n";
+    // end = std::chrono::high_resolution_clock::now();
+    // duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+    // std::cout << "写入GBuffer耗时: " << duration.count() << " 微秒\n";
 
-    start = std::chrono::high_resolution_clock::now();
+    // start = std::chrono::high_resolution_clock::now();
     // 写入tmpBufferF
     WriteBuffer(result);
-    end = std::chrono::high_resolution_clock::now();
-    duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
-    std::cout << "写入tmpBuffer耗时: " << duration.count() << " 微秒\n";
-    std::cout << std::endl;
+    // end = std::chrono::high_resolution_clock::now();
+    // duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+    // std::cout << "写入tmpBuffer耗时: " << duration.count() << " 微秒\n";
+    // std::cout << std::endl;
 }
 
 void Graphic::RT(

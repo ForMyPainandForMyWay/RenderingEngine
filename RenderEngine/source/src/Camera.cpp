@@ -24,6 +24,23 @@ void Camera::setAsp(const float Asp) {
     ProjIsDirty = true;
 }
 
+void Camera::setFOV(const float fov) {
+    if (fabs(fov - FOV) <= 1e-4) return;
+    this->FOV = fov;
+    ProjIsDirty = true;
+}
+
+void Camera::setNear(const float near) {
+    if (fabs(near - NearPlane) <= 1e-4) return;
+    this->NearPlane = near;
+    ProjIsDirty = true;
+}
+void Camera::setFar(const float far) {
+    if (fabs(far - FarPlane) <= 1e-4) return;
+    this->FarPlane = far;
+    ProjIsDirty = true;
+}
+
 // 返回视角矩阵V，自动更新
 const Mat4& Camera::ViewMat() {
     return tf.getViewMat();
