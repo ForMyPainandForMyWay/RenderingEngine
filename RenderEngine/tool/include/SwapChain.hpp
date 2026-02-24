@@ -6,6 +6,8 @@
 #define RENDERINGENGINE_SWAPCHAIN_HPP
 
 #include <atomic>
+#include <condition_variable>
+#include <memory>
 #include <mutex>
 #include <queue>
 

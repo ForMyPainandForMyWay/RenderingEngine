@@ -18,7 +18,18 @@ qt_add_executable(RenderGUI
 
 target_link_libraries(RenderGUI PRIVATE Qt6::Core Qt6::Gui Qt6::Quick Qt6::Qml Qt6::Multimedia)
 # 链接动态库
-target_link_libraries(RenderGUI PRIVATE ${PROJECT_SOURCE_DIR}/bin/libRenderEngine.dylib)
+if(APPLE)
+    set(RENDER_ENGINE_LIB "${PROJECT_SOURCE_DIR}/bin/libRenderEngine.dylib")
+elseif(WIN32)
+    set(RENDER_ENGINE_LIB "${PROJECT_SOURCE_DIR}/bin/libRenderEngine.dll")
+else()
+    set(RENDER_ENGINE_LIB "${PROJECT_SOURCE_DIR}/bin/libRenderEngine.so")
+endif()
+if(EXISTS ${RENDER_ENGINE_LIB})
+    target_link_libraries(RenderGUI PRIVATE ${RENDER_ENGINE_LIB})
+else()
+    message(FATAL_ERROR "RenderEngine library not found at: ${RENDER_ENGINE_LIB}")
+endif()
 
 target_include_directories(RenderGUI PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/Backend/include
