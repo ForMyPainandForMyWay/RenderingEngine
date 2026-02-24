@@ -2,3 +2,7 @@
 /RenderEngine/bin/
 /RenderEngine/cmake-build-debug/
 /RenderEngine/cmake-build-release/
+
+/GUI/bin/
+/GUI/cmake-build-debug/
+/GUI/cmake-build-release/
