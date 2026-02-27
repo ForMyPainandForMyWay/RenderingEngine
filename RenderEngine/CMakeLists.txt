@@ -32,6 +32,13 @@ else()
     set(USE_CUDA 0)
 endif()
 
+# 开启LTO支持
+include(CheckIPOSupported)
+check_ipo_supported(RESULT isLTO OUTPUT errorOut)
+if(isLTO)
+    set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
+endif()
+
 # 动态链接库
 file(GLOB_RECURSE SRC "${PROJECT_SOURCE_DIR}/*/src/*.cpp")
 add_library(RenderEngine SHARED ${SRC})
