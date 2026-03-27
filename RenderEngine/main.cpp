@@ -222,10 +222,61 @@ void testLight() {
     }
 }
 
+void testSpeed() {
+    IEngine* engine = CreateEngine(800, 800, false, false);
+
+    const auto meshName = R"(./test4.obj)";
+    const auto meshId = engine->addMesh(meshName);
+    uint16_t objID = engine->addObjects(meshId[0]);
+
+    // 灯光
+    const auto meshName3 = R"(./Light.obj)";
+    const auto meshId3 = engine->addMesh(meshName3);
+    const uint16_t objID3 = engine->addObjects(meshId3[0]);
+
+    // 墙壁
+    const auto meshName4 = R"(./test.obj)";
+    const auto meshId4 = engine->addMesh(meshName4);
+    const uint16_t objID4 = engine->addObjects(meshId4[0]);
+    const uint16_t objID5 = engine->addObjects(meshId4[0]);
+    const uint16_t objID6 = engine->addObjects(meshId4[0]);
+    const uint16_t objID7 = engine->addObjects(meshId4[0]);
+
+    const auto [t, v] = engine->getTriVexNums();
+    std::cout << "三角形数量: " << t << " 顶点数量: " << v << std::endl;
+
+    // 苏珊娜
+    engine->addTfCommand(objID, RenderObject, SCALE, {0.7f, 0.7f, 0.7f});
+    engine->addTfCommand(objID, RenderObject, ROTATE, {-45.0f, 0.0f, 0.0f});
+    engine->addTfCommand(objID, RenderObject, TRANSLATE, {0.0f, -0.5f, 0.0f});
+
+    // 墙壁
+    engine->addTfCommand(objID3, RenderObject, TfType::TRANSLATE, {0.0f, 2.0f,0.0f});
+    engine->addTfCommand(objID4, RenderObject, TfType::TRANSLATE, {0.0f,-2.0f,0.0f});
+    engine->addTfCommand(objID5, RenderObject, TfType::TRANSLATE, {2.0f, 0.0f,0.0f});
+    engine->addTfCommand(objID6, RenderObject, TfType::TRANSLATE, {-2.0f,0.f,0.0f});
+    engine->addTfCommand(objID7, RenderObject, TfType::TRANSLATE, {0.0f,0.f,-2.0f});
+
+    // 相机灯光转动
+    engine->addTfCommand(0, CameraID, TRANSLATE, {0.0f, 0.0f, 3.0f});
+    engine->addTfCommand(1, MainLightID, TRANSLATE, {0.0f, 0.0f, 4.0f});
+
+    int batch = 100;
+    auto start = std::chrono::high_resolution_clock::now();
+    for (int i = 0; i < batch; i++) {
+            engine->RenderFrame({ objID, objID3, objID4, objID5, objID6, objID7});
+    }
+    auto end = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+    std::cout << "平均渲染耗时: " << duration.count() /  batch << " 微秒\n";
+    std::cout << "平均帧率: " <<   (batch * 1000000.0 / duration.count()) << std::endl;
+}
+
 int main() {
     // testRt();
     // testRas();
-    testLight();
+    // testLight();
+    testSpeed();
     return 0;
 }
 
