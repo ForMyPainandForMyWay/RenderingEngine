@@ -67,7 +67,7 @@ public:
     std::vector<std::string> addMesh(const std::string &filename) override;
     size_t addObjects(const std::string &meshName) override;
     sysID addPixLight(uint8_t r, uint8_t g, uint8_t b, LType type) override;
-    size_t addVexLight(Lights &light) override;
+    size_t addVexLight(uint8_t r, uint8_t g, uint8_t b, LType type) override;
     void setResolution(size_t w, size_t h) override;
 
     void setCameraFov(const float fov) override { std::lock_guard lock(settingMtx); settings[1].fov = fov; }

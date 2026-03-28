@@ -107,11 +107,15 @@ sysID Engine::addPixLight(uint8_t r, uint8_t g, uint8_t b, LType type) {
 }
 
 // 添加逐顶点灯光，返回灯光ID。
-size_t Engine::addVexLight(Lights &light) {
+size_t Engine::addVexLight(uint8_t r, uint8_t g, uint8_t b, LType type) {
+    Lights light;
     light.alive = true;
-    VexLights.clear();
+    light.setColor(r, g, b);
+    light.setI(5.0f);
+    light.setLtype(type);
+    // VexLights.clear();
     const auto updateCounter = VexLights.size();
-    VexLights.push_back(std::move(light));
+    VexLights.push_back(light);
     return updateCounter;
 }
 

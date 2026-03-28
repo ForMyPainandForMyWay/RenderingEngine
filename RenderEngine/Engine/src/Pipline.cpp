@@ -226,9 +226,6 @@ void Graphic::GeometryShading(
     // 遍历每个材质的三角形列表
     for (auto& [material, triangles] : TriMap) {
         const auto shader = material->getShader(pass);
-        if (material->NormalMap == nullptr) {
-            continue;
-        }
         size_t count = triangles.size();
         if (count == 0) continue;
         constexpr size_t BLOCK_SIZE = 512;

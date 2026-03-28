@@ -175,6 +175,8 @@ void testLight() {
 
     engine->SetEnvLight(100, 100, 100, 1.0f);
     engine->SetMainLight(255 ,255, 255, 1.0f);
+    // auto pl = engine->addPixLight(255,255, 255, LType::Point);
+    // auto vl = engine->addVexLight(255, 255, 255, LType::Point);
 
     // 灯光
     const auto meshName3 = R"(./Light.obj)";
@@ -204,12 +206,18 @@ void testLight() {
     engine->addTfCommand(objID6, RenderObject, TfType::TRANSLATE, {-2.0f,0.f,0.0f});
     engine->addTfCommand(objID7, RenderObject, TfType::TRANSLATE, {0.0f,0.f,-2.0f});
 
-    // 相机灯光转动
+    // 相机转动
     engine->addTfCommand(0, CameraID, TRANSLATE, {0.0f, 0.0f, 3.0f});
     // engine->addTfCommand(0, CameraID, ROTATE, {0.0f, 0.0f, 0.0f});
 
+    // 主光源
     engine->addTfCommand(1, MainLightID, TRANSLATE, {0.0f, 2.0f, 0.0f});
     engine->addTfCommand(1, MainLightID, ROTATE, {-90.0f, 0.0f, 0.0f});
+
+    // PixLight测试
+    // engine->addTfCommand(pl, PixL1, TRANSLATE, {0.0f, 2.0f, 0.0f});
+    // VexLight测试
+    // engine->addTfCommand(vl, VexLight, TRANSLATE, {0.0f, 2.0f, 0.0f});
 
     engine->OpenShadow();
 
@@ -275,8 +283,8 @@ void testSpeed() {
 int main() {
     // testRt();
     // testRas();
-    // testLight();
-    testSpeed();
+    testLight();
+    // testSpeed();
     return 0;
 }
 

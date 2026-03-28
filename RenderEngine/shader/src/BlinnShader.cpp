@@ -38,6 +38,25 @@ void BlinnShader::GeometryShader(
     const std::shared_ptr<ShadowMap> &shadowMap,
     const EnvironmentLight *envlight,
     const GlobalUniform &gu) {
+    // 没有法线贴图时不需要计算 TBN，只做逐顶点光照累加
+    if (material->NormalMap == nullptr) {
+        for (int i = 0; i < 3; ++i) {
+            const Vec3 triPosi{tri[i].worldPosi[0], tri[i].worldPosi[1], tri[i].worldPosi[2]};
+            const Vec3 N = tri[i].normal;  // 世界空间法线
+            tri[i].VexLightF = {0.0f, 0.0f, 0.0f};
+            for (const auto &l : VexLight) {
+                if (!l.alive) continue;
+                const Vec3 Lvec = l.getPosi() - triPosi;
+                const Vec3 L = normalize(Lvec);
+                const float R = dot(Lvec, Lvec);
+                const Vec3 radiance = l.getColor().toFloat() * l.getI() / R;
+                Vec3 diffF = material->Kd * std::max(normalize(N) * L, 0.0f);
+                diffF = Hadamard(diffF, radiance);
+                tri[i].VexLightF += diffF;
+            }
+        }
+        return;
+    }
     // 对三角形顶点计算TBN矩阵并应用于光源相机的位置向量
     // TBN计算(世界空间下)
     const Vec4 E1 = tri[1].worldPosi - tri[0].worldPosi;
@@ -158,8 +177,8 @@ F2P BlinnShader::FragmentShader(
         V = normalize(gu.getCameraPos() - fragPos); // 世界空间视线
     }
     // 初始化最终颜色：顶点光照为基础
-    Vec3 finalColorF = frag.VexLightF;
     const Vec3 Albedo = pix.Albedo.toFloat();
+    Vec3 finalColorF = Hadamard(frag.VexLightF, Albedo);
     // 环境光（与方向无关）
     if (envlight != nullptr) {
         Vec3 ambientF = Hadamard(Albedo, material->Ka);
