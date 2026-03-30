@@ -2,9 +2,9 @@
 // Created by 冬榆 on 2026/1/17.
 //
 
-#include "SkyBox.hpp"
-
 #include <memory>
+
+#include "SkyBox.hpp"
 #include "Mesh.hpp"
 #include "Shape.hpp"
 
@@ -13,10 +13,7 @@ SkyBox::SkyBox() : mesh(std::make_shared<Mesh>()){
     SubMesh subMesh(this->mesh);
     subMesh.setMaterial(std::make_shared<Material>());
     mesh->addSubMesh(subMesh);
-    Vertex v1;
-    Vertex v2;
-    Vertex v3;
-    Vertex v4;
+    Vertex v1,v2,v3,v4;
     v1.position = {-1, -1, 1};
     v2.position = {1, -1, 1};
     v3.position = {-1, 1, 1};

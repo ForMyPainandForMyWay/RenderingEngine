@@ -244,9 +244,8 @@ float BlinnShader::CalcHardShadow(
     const Vec3 L = normalize(mainLight->getPosi() - fragPos);  // 光照方向
     const float bias = biasConst + biasSlope * (1.0f - dot(N, L));
     const auto Z = projPos[2];  // 片元在光源空间的深度(NDC空间)
-    // const float depth = ShadowMap.Sample(U, V);
-    // const float shadow = (Z - bias > depth) ? 0.0f : 1.0f;
-    // const float shadow = ShadowMap.SamplePCSS(Z, bias, U, V,0.005f, 3, 1, 15);
-    const float shadow = ShadowMap->SamplePCF(Z, bias, U, V, 1);
+    const float shadow = (Z - bias > ShadowMap->Sample(U, V)) ? 0.0f : 1.0f;
+    // const float shadow = ShadowMap->SamplePCSS(Z, bias, U, V,0.1f, 5, 1, 15);
+    // const float shadow = ShadowMap->SamplePCF(Z, bias, U, V, 5);
     return shadow;
 }
