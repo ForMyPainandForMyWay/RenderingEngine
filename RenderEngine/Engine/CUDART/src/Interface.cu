@@ -4,6 +4,9 @@
 #include <iostream>
 
 #include "Interface.cuh"
+
+#include <ranges>
+
 #include "DATAPackegGPU.cuh"
 #include "F2P.hpp"
 #include "Mesh.cuh"
@@ -91,20 +94,20 @@ void __host__ Inter(
     error = cudaMemcpy(h_materialsGPU, scenceData.MatGPU, sizeof(MaterialGPU) * scenceData.MaterialCount, cudaMemcpyHostToDevice);
 
     // 材质数据
-    error = cudaMalloc(&h_materialsGPU, sizeof(MaterialGPU) * scenceData.MaterialCount);
-    if (checkErrorFail(error)) return;
-    error = cudaMemcpy(h_materialsGPU, scenceData.MatGPU, sizeof(MaterialGPU) * scenceData.MaterialCount, cudaMemcpyHostToDevice);
-    if (checkErrorFail(error)) return;
+    // error = cudaMalloc(&h_materialsGPU, sizeof(MaterialGPU) * scenceData.MaterialCount);
+    // if (checkErrorFail(error)) return;
+    // error = cudaMemcpy(h_materialsGPU, scenceData.MatGPU, sizeof(MaterialGPU) * scenceData.MaterialCount, cudaMemcpyHostToDevice);
+    // if (checkErrorFail(error)) return;
 
     // 符号注入
-    cudaMemcpyToSymbol(vboGPU, &h_vboGPU, sizeof(VertexGPU*));
-    cudaMemcpyToSymbol(eboGPU, &h_eboGPU, sizeof(uint32_t*));
-    cudaMemcpyToSymbol(meshesGPU, &h_meshesGPU, sizeof(MeshGPU*));
-    cudaMemcpyToSymbol(subMeshesGPU, &h_subMeshesGPU, sizeof(SubMeshGPU*));
-    cudaMemcpyToSymbol(materialsGPU, &h_materialsGPU, sizeof(MaterialGPU*));
-    cudaMemcpyToSymbol(blasGPU, &h_blasGPU, sizeof(BLASGPU*));
-    cudaMemcpyToSymbol(BlasTriGPU, &h_BlasTriGPU, sizeof(uint32_t*));
-    cudaMemcpyToSymbol(BlasNodesGPU, &h_BlasNodesGPU, sizeof(BVHNodeGPU*));
+    cudaMemcpyToSymbol(vboGPU, &h_vboGPU, sizeof(void*));
+    cudaMemcpyToSymbol(eboGPU, &h_eboGPU, sizeof(void*));
+    cudaMemcpyToSymbol(meshesGPU, &h_meshesGPU, sizeof(void*));
+    cudaMemcpyToSymbol(subMeshesGPU, &h_subMeshesGPU, sizeof(void*));
+    cudaMemcpyToSymbol(materialsGPU, &h_materialsGPU, sizeof(void*));
+    cudaMemcpyToSymbol(blasGPU, &h_blasGPU, sizeof(void*));
+    cudaMemcpyToSymbol(BlasTriGPU, &h_BlasTriGPU, sizeof(void*));
+    cudaMemcpyToSymbol(BlasNodesGPU, &h_BlasNodesGPU, sizeof(void*));
 
     // 纹理数据
     // 构建资源描述符（指定底层存储）
@@ -159,4 +162,28 @@ void __host__ Inter(
     totalPixels * sizeof(F2P),  // 字节数
     cudaMemcpyDeviceToHost);
     checkErrorFail(error);
+
+    // 同步确保所有操作完成
+    cudaError_t syncError = cudaDeviceSynchronize();
+    if (checkErrorFail(syncError)) {
+        cudaFree(resultGPU);
+        delete[] texObjsHost;
+        return;
+    }
+    // 释放 GPU 内存
+    cudaFree(resultGPU);
+    cudaFree(h_blasGPU);
+    cudaFree(h_BlasTriGPU);
+    cudaFree(h_BlasNodesGPU);
+    cudaFree(h_vboGPU);
+    cudaFree(h_eboGPU);
+    cudaFree(h_meshesGPU);
+    cudaFree(h_subMeshesGPU);
+    cudaFree(h_materialsGPU);
+
+    // 销毁纹理对象并释放数组
+    for (const auto& texId : scenceData.TextMap | std::views::values) {
+        cudaDestroyTextureObject(texObjsHost[texId]);
+    }
+    delete[] texObjsHost;
 }

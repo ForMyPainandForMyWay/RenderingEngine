@@ -231,7 +231,7 @@ void testLight() {
 }
 
 void testSpeed() {
-    IEngine* engine = CreateEngine(800, 800, false, false);
+    IEngine* engine = CreateEngine(800, 800, false, true);
 
     const auto meshName = R"(./test4.obj)";
     const auto meshId = engine->addMesh(meshName);
@@ -277,6 +277,8 @@ void testSpeed() {
     auto end = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
     std::cout << "平均渲染耗时: " << duration.count() /  batch << " 微秒\n";
+    std::cout << "平均渲染耗时: " << duration.count() /  (batch*1000.0) << " 毫秒\n";
+    std::cout << "平均渲染耗时: " << duration.count() /  (batch*1000000.0) << " 秒\n";
     std::cout << "平均帧率: " <<   (batch * 1000000.0 / duration.count()) << std::endl;
 }
 
