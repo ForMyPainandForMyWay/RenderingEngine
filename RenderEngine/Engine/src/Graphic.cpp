@@ -204,6 +204,7 @@ void Graphic::RT(
         if (!KdMap) {  // 记录纹理贴图Id，当没有贴图的时候赋值为-1
             MaterialsGPU[materialIdx].KdMapId = -1;
             MaterialsGPU[materialIdx].KdPixCount = 0;
+            materialIdx++;
             continue;
         }
         MaterialsGPU[materialIdx].KdMapId = TextMap[KdMap];
