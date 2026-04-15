@@ -69,7 +69,7 @@ void testRt() {
     // 相机灯光转动
     engine->addTfCommand(0, CameraID, TRANSLATE, {0.0f, 0.0f, 3.0f});
 
-    engine->startLoop({ objID, objID3, objID4, objID5, objID6, objID7, }, new Reciver());
+    engine->startLoop({ objID, objID3, objID4, objID5, objID6, objID7, objID8}, new Reciver());
     while (true) {
         if (Reciver::i > 0) {
             engine->stopLoop();

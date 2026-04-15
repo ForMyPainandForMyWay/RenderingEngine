@@ -16,12 +16,8 @@ struct Mat4GPU{
 #ifdef __CUDACC__
 
 __device__ __forceinline__ float4 normalize(const float4& v) {
-    const float lenSq = v.x * v.x + v.y * v.y + v.z * v.z; // 只计算xyz分量，忽略w分量
-    if (lenSq > 1e-8f) {
-        const float invLen = rsqrtf(lenSq);  // 使用快速倒数平方根
-        return {v.x * invLen, v.y * invLen, v.z * invLen, v.w};
-    }
-    return {0.0f, 0.0f, 0.0f, v.w};
+    const float invLen = rsqrtf(v.x * v.x + v.y * v.y + v.z * v.z);  // 快速倒数平方根
+    return {v.x * invLen, v.y * invLen, v.z * invLen, v.w};
 }
 
 __device__ __forceinline__ float dot(const float4& a, const float4& b) {
@@ -73,10 +69,8 @@ __device__ __forceinline__ float3 cross(const float3& a, const float3& b) {
 }
 
 __device__ __forceinline__ float3 normalize(const float3& v) {
-    if (const float length = rsqrtf(v.x * v.x + v.y * v.y + v.z * v.z); length > 0.0f) {
-        return {v.x / length, v.y / length, v.z / length};
-    }
-    return {0.0f, 0.0f, 0.0f};
+    const float invLen =rsqrtf(v.x * v.x + v.y * v.y + v.z * v.z);
+    return {v.x * invLen, v.y * invLen, v.z * invLen};
 }
 
 __device__ __forceinline__ float3 operator*(const float3& v, const float& s) {

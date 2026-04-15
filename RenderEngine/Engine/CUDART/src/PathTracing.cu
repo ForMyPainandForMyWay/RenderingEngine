@@ -57,6 +57,7 @@ __global__ void pathTracing(F2PGPU* resultGPU, int SPP, int maxDepth) {
             // BSDF
             float4 hitPos = currentRay.orignPosi + currentRay.Direction * hitInfo.t;
             float4 nextDir = SampleCosineHemisphere(hitInfo.hitNormal);
+            // if (dot(nextDir, hitInfo.hitNormal) < 0.0f) break;  // 避免分支发散，去掉这个分支
             throughput = Hadamard(throughput, hitAlbedo);
             constexpr float EPS = 1e-4f;
             currentRay.orignPosi = hitPos + hitInfo.hitNormal * EPS;
