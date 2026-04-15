@@ -5,7 +5,7 @@
 #include "TransfomTool.cuh"
 #include "AABB.cuh"
 #include "AABB.hpp"
-#include "Mat.hpp"
+#include "MatPro.hpp"
 #include "Math.cuh"
 
 float4 Vec4ToFloat4(const Vec4& vec4) {

@@ -126,7 +126,7 @@ std::optional<HitInfo> Engine::GetClosestHit(const Ray& worldRay) const {
                 Mat4 invTrans = inst.invTransform.Transpose();
                 Vec4 localN = {subHit->hitNormal[0], subHit->hitNormal[1], subHit->hitNormal[2], 0.0f}; // w=0
                 Vec4 worldN = invTrans * localN;
-                worldHit.hitNormal = normalize({worldN[0], worldN[1], worldN[2], 0.0f});
+                worldHit.hitNormal = normalize<4>({worldN[0], worldN[1], worldN[2], 0.0f});
                 worldHit.mat = subHit->mat; // 材质传递
                 worldHit.hitUV = subHit->hitUV;
                 closestHit = worldHit;

@@ -7,9 +7,7 @@
 
 #include <vector>
 
-#include "Vec.hpp"
-#include "Mat.hpp"
-#include "Shape.hpp"
+#include "MatPro.hpp"
 
 
 struct TextureMap;

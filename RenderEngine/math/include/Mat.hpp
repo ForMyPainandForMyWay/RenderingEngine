@@ -139,5 +139,10 @@ MatMN<N,M> MatMN<M,N>::Transpose() const {
     return result;
 }
 
+template<size_t M, size_t N>
+MatMN<N, M> Transpose(MatMN<M, N> in) {
+    return in.Transpose();
+}
+
 
 #endif //UNTITLED_MAT_HPP

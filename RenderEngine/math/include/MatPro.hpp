@@ -7,6 +7,7 @@
 
 #include "Mat.hpp"
 #include "VecPro.hpp"
+#if ENABLE_SIMD
 
 #if defined(__x86_64__) || defined(_M_X64)
     #include <immintrin.h>
@@ -194,4 +195,5 @@ inline Mat4 diagMatInverse(const Mat4& mat) {
 
     return result;
 }
+#endif
 #endif //RENDERINGENGINE_MATVECPRO_HPP

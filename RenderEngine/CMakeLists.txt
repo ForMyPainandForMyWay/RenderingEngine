@@ -31,6 +31,7 @@ if(CMAKE_CUDA_COMPILER AND NOT DEFINED ENV{FORCE_CPU})
 else()
     set(USE_CUDA 0)
 endif()
+set(USE_CUDA 0)
 
 # 开启LTO支持
 include(CheckIPOSupported)
@@ -42,7 +43,7 @@ endif()
 # 动态链接库
 file(GLOB_RECURSE SRC "${PROJECT_SOURCE_DIR}/*/src/*.cpp")
 add_library(RenderEngine SHARED ${SRC})
-target_compile_definitions(RenderEngine PRIVATE USE_CUDA=${USE_CUDA})
+target_compile_definitions(RenderEngine PRIVATE USE_CUDA=${USE_CUDA} ENABLE_SIMD=${ENABLE_SIMD})
 # 导出动态库接口头文件
 set(outpath "${PROJECT_SOURCE_DIR}/bin/IEngine.hpp")
 set(inpath "${PROJECT_SOURCE_DIR}/Engine/include/IEngine.hpp")

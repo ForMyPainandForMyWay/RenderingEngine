@@ -6,12 +6,7 @@
 #define RENDERINGENGINE_HITINFO_HPP
 #include <cstdint>
 #include <memory>
-#if defined(__x86_64__) || defined(_M_X64) || defined(__aarch64__) || defined(_M_ARM64)
 #include "MatPro.hpp"
-#else
-#include "Vec.hpp"
-#include "Mat.hpp"
-#endif
 
 struct Material;
 

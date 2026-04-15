@@ -6,7 +6,6 @@
 #define UNTITLED_LIGHTS_H
 
 #include "Film.hpp"
-#include "MatPro.hpp"
 #include "Transform.hpp"
 #include "IEngine.hpp"
 

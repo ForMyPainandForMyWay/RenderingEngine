@@ -122,13 +122,24 @@ void testRas() {
     // engine->addTfCommand(plight, PixL1, TRANSLATE, {0.0f, 0.0f, 4.0f});
 
 
-    engine->startLoop({ objID, objID2,}, new Reciver());
-    while (true) {
-        if (Reciver::i > 0) {
-            engine->stopLoop();
-            break;
-        }
+    // engine->startLoop({ objID, objID2,}, new Reciver());
+    // while (true) {
+    //     if (Reciver::i > 0) {
+    //         engine->stopLoop();
+    //         break;
+    //     }
+    // }
+    int batch = 1000;
+    auto start = std::chrono::high_resolution_clock::now();
+    for (int i = 0; i < batch; i++) {
+        engine->RenderFrame({ objID, objID2,});
     }
+    auto end = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+    std::cout << "平均渲染耗时: " << duration.count() /  batch << " 微秒\n";
+    std::cout << "平均渲染耗时: " << duration.count() /  (batch*1000.0) << " 毫秒\n";
+    std::cout << "平均渲染耗时: " << duration.count() /  (batch*1000000.0) << " 秒\n";
+    std::cout << "平均帧率: " <<   (batch * 1000000.0 / duration.count()) << std::endl;
 }
 
 void testLoop() {
@@ -291,8 +302,8 @@ void testSpeed() {
 
 int main() {
     // testRt();
-    // testRas();
-    testLight();
+    testRas();
+    // testLight();
     // testSpeed();
     return 0;
 }

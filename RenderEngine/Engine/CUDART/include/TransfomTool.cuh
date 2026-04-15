@@ -5,7 +5,7 @@
 #ifndef RENDERINGENGINE_TRANSFOMTOOL_CUH
 #define RENDERINGENGINE_TRANSFOMTOOL_CUH
 
-#include "Mat.hpp"
+#include "MatPro.hpp"
 
 struct AABB;
 struct AABBGPU;

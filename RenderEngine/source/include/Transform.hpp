@@ -4,9 +4,7 @@
 
 #ifndef UNTITLED_TRANSFORM_H
 #define UNTITLED_TRANSFORM_H
-#include "Mat.hpp"
 #include "MatPro.hpp"
-#include "Vec.hpp"
 
 
 class RenderObjects;

@@ -5,7 +5,7 @@
 #ifndef RENDERINGENGINE_VECPRO_HPP
 #define RENDERINGENGINE_VECPRO_HPP
 #include "Vec.hpp"
-
+#if ENABLE_SIMD
 #if defined(__x86_64__) || defined(_M_X64)
     #include <immintrin.h>
 #elif defined(__aarch64__) || defined(_M_ARM64)
@@ -77,5 +77,5 @@ inline VecN<4> Hadamard(const VecN<4> &a, const VecN<4> &b) {
     return result;
 }
 
-
+#endif
 #endif //RENDERINGENGINE_VECPRO_HPP
