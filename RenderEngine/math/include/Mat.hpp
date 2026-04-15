@@ -104,7 +104,6 @@ bool operator > (const MatMN<M, N> &lhs, float scalar) {
     return true;
 }
 
-// 优化写法是读取 lhs[i][k] 后，将其与 rhs 的第 k 行整行相乘累加
 template<size_t M, size_t K, size_t N>
 MatMN<M, N> operator * (const MatMN<M, K> &lhs, const MatMN<K, N>& rhs) {
     MatMN<M, N> result; // 默认初始化为0
