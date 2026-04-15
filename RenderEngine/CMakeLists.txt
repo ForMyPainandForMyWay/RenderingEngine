@@ -31,7 +31,6 @@ if(CMAKE_CUDA_COMPILER AND NOT DEFINED ENV{FORCE_CPU})
 else()
     set(USE_CUDA 0)
 endif()
-set(USE_CUDA 0)
 
 # 开启LTO支持
 include(CheckIPOSupported)
