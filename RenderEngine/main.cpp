@@ -15,8 +15,8 @@ public:
         Film film(800, 800);
         film.copyFromPtr(static_cast<const unsigned char*>(data));
         std::string filename = "./test/" +
-            std::to_string(i) + ".pam";
-        film.save(filename);  // 转为 const char*
+            std::to_string(i) + ".bmp";
+        film.saveBMP(filename);
         ++i;
         std::cout << "保存第 " << i-1 << " 张图片" << std::endl;
     }
@@ -122,24 +122,24 @@ void testRas() {
     // engine->addTfCommand(plight, PixL1, TRANSLATE, {0.0f, 0.0f, 4.0f});
 
 
-    // engine->startLoop({ objID, objID2,}, new Reciver());
-    // while (true) {
-    //     if (Reciver::i > 0) {
-    //         engine->stopLoop();
-    //         break;
-    //     }
-    // }
-    int batch = 1000;
-    auto start = std::chrono::high_resolution_clock::now();
-    for (int i = 0; i < batch; i++) {
-        engine->RenderFrame({ objID, objID2,});
+    engine->startLoop({ objID, objID2,}, new Reciver());
+    while (true) {
+        if (Reciver::i > 0) {
+            engine->stopLoop();
+            break;
+        }
     }
-    auto end = std::chrono::high_resolution_clock::now();
-    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
-    std::cout << "平均渲染耗时: " << duration.count() /  batch << " 微秒\n";
-    std::cout << "平均渲染耗时: " << duration.count() /  (batch*1000.0) << " 毫秒\n";
-    std::cout << "平均渲染耗时: " << duration.count() /  (batch*1000000.0) << " 秒\n";
-    std::cout << "平均帧率: " <<   (batch * 1000000.0 / duration.count()) << std::endl;
+    // int batch = 1000;
+    // auto start = std::chrono::high_resolution_clock::now();
+    // for (int i = 0; i < batch; i++) {
+    //     engine->RenderFrame({ objID, objID2,});
+    // }
+    // auto end = std::chrono::high_resolution_clock::now();
+    // auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+    // std::cout << "平均渲染耗时: " << duration.count() /  batch << " 微秒\n";
+    // std::cout << "平均渲染耗时: " << duration.count() /  (batch*1000.0) << " 毫秒\n";
+    // std::cout << "平均渲染耗时: " << duration.count() /  (batch*1000000.0) << " 秒\n";
+    // std::cout << "平均帧率: " <<   (batch * 1000000.0 / duration.count()) << std::endl;
 }
 
 void testLoop() {

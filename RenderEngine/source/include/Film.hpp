@@ -54,6 +54,7 @@ struct Film {
     Film(size_t width, std::size_t height);
 
     void save(const std::string &filename) const;
+    void saveBMP(const std::string &filename) const;
     void copyFromPtr(const unsigned char *data);
     void clear();
     void fill(uint8_t r, uint8_t g, uint8_t b, uint8_t a=255);
