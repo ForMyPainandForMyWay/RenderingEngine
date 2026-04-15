@@ -100,13 +100,13 @@ inline Mat4 Transpose(const Mat4& m) {
     const __m128 row2 = _mm_load_ps(src + 8);   // m20 m21 m22 m23
     const __m128 row3 = _mm_load_ps(src + 12);  // m30 m31 m32 m33
 
-    // 第一步：拆低/高位
+    // 拆低/高位
     const __m128 t0 = _mm_unpacklo_ps(row0, row1); // m00 m10 m01 m11
     const __m128 t1 = _mm_unpackhi_ps(row0, row1); // m02 m12 m03 m13
     const __m128 t2 = _mm_unpacklo_ps(row2, row3); // m20 m30 m21 m31
     const __m128 t3 = _mm_unpackhi_ps(row2, row3); // m22 m32 m23 m33
 
-    // 第二步：组合成转置矩阵的行
+    // 组合成转置矩阵的行
     const __m128 col0 = _mm_movelh_ps(t0, t2); // m00 m10 m20 m30
     const __m128 col1 = _mm_movehl_ps(t2, t0); // m01 m11 m21 m31
     const __m128 col2 = _mm_movelh_ps(t1, t3); // m02 m12 m22 m32
@@ -123,16 +123,15 @@ inline Mat4 Transpose(const Mat4& m) {
 
 // 对角阵求逆
 inline Mat4 diagMatInverse(const Mat4& mat) {
-    // 提取对角线元素到一个 __m128 寄存器
+    // 提取对角线元素到一个 __m128
     const __m128 diag = _mm_set_ps(
-        mat[3][3], // 注意：_mm_set_ps 是 [a,b,c,d] -> [d,c,b,a] 存储顺序
+        mat[3][3], // _mm_set_ps 是 [a,b,c,d] -> [d,c,b,a] 存储顺序
         mat[2][2],
         mat[1][1],
         mat[0][0]
     );
 
-    // 计算倒数：_mm_rcp_ps（快速近似）或精确除法
-    // 若需高精度，用_mm_div_ps(1.0f, diag)
+    // 计算倒数
     const __m128 ones = _mm_set1_ps(1.0f);
     const __m128 inv_diag = _mm_div_ps(ones, diag); // 精确倒数
 
