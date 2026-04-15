@@ -25,7 +25,6 @@ public:
     void stop();
 
 private:
-    size_t w, h;
     std::atomic<bool> isRunning;
     std::mutex mutex;
     std::condition_variable Producer;

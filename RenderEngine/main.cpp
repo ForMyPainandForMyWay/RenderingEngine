@@ -35,10 +35,13 @@ void testRt() {
     const auto meshId3 = engine->addMesh(meshName3);
     const uint16_t objID3 = engine->addObjects(meshId3[0]);
 
+    // 天花板
+    const uint16_t objID8 = engine->addObjects(engine->addMesh(R"(./Cube.obj)")[0]);
+
     // 墙壁
     const auto meshName4 = R"(./test.obj)";
     const auto meshId4 = engine->addMesh(meshName4);
-    const uint16_t objID4 = engine->addObjects(engine->addMesh(R"(./Cube.obj)")[0]);
+    const uint16_t objID4 = engine->addObjects(engine->addMesh(R"(./Cube.obj)")[0]);  // 地板
     const uint16_t objID5 = engine->addObjects(meshId4[0]);
     const uint16_t objID6 = engine->addObjects(meshId4[0]);
     const uint16_t objID7 = engine->addObjects(meshId4[0]);
@@ -53,18 +56,20 @@ void testRt() {
 
     // 墙壁
     engine->addTfCommand(objID3, RenderObject, TfType::TRANSLATE, {0.0f, 2.0f,0.0f});
+    engine->addTfCommand(objID3, RenderObject, TfType::SCALE, {0.5f, 1.f,0.5f});
     engine->addTfCommand(objID4, RenderObject, TfType::TRANSLATE, {0.0f,-2.0f,0.0f});
     engine->addTfCommand(objID5, RenderObject, TfType::TRANSLATE, {2.0f, 0.0f,0.0f});
     engine->addTfCommand(objID5, RenderObject, TfType::ROTATE, {0.0f, 90.0f,0.0f});
     engine->addTfCommand(objID6, RenderObject, TfType::TRANSLATE, {-2.0f,0.f,0.0f});
     engine->addTfCommand(objID7, RenderObject, TfType::TRANSLATE, {0.0f,0.f,-2.0f});
+    // 天花板
+    engine->addTfCommand(objID8, RenderObject, TfType::TRANSLATE, {0.0f, 2.0f,0.0f});
+    engine->addTfCommand(objID8, RenderObject, TfType::ROTATE, {0.0f, 180.0f,0.0f});
 
     // 相机灯光转动
     engine->addTfCommand(0, CameraID, TRANSLATE, {0.0f, 0.0f, 3.0f});
-    engine->addTfCommand(1, MainLightID, TRANSLATE, {0.0f, 0.0f, 4.0f});
 
-
-    engine->startLoop({ objID, objID3, objID4, objID5, objID6, objID7}, new Reciver());
+    engine->startLoop({ objID, objID3, objID4, objID5, objID6, objID7, }, new Reciver());
     while (true) {
         if (Reciver::i > 0) {
             engine->stopLoop();

@@ -1,8 +1,6 @@
 /.idea/
 /RenderEngine/bin/
-/RenderEngine/cmake-build-debug/
-/RenderEngine/cmake-build-release/
+/RenderEngine/cmake-*/
 
 /GUI/bin/
-/GUI/cmake-build-debug/
-/GUI/cmake-build-release/
+/GUI/cmake-*/

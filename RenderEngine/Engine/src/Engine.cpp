@@ -293,9 +293,10 @@ void Engine::startLoop(std::vector<uint16_t> objs, IFrameReceiver* receiver) {
             const auto frame = swapChain->acquireFrontBuffer();
             if (!frame) break;  // 当返回空时交换链被关闭
             if (receiver) {
+                // 接收器拿到缓冲区数据进行显示等操作
                 receiver->OnFrameReady(frame->image.data());
             }
-            swapChain->releaseFrontBuffer(frame);  // 记得归还缓冲区
+            swapChain->releaseFrontBuffer(frame);  // 归还缓冲区
         }
     });
 }

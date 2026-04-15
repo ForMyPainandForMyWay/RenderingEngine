@@ -59,7 +59,7 @@ public:
     virtual std::vector<std::string> addMesh(const std::string &filename) = 0;
     virtual size_t addObjects(const std::string &meshName) = 0;
     virtual sysID addPixLight(uint8_t r, uint8_t g, uint8_t b, LType type) = 0;
-    virtual size_t addVexLight(Lights &light) = 0;
+    virtual size_t addVexLight(uint8_t r, uint8_t g, uint8_t b, LType type) = 0;
     virtual void setResolution(size_t w, size_t h) = 0;
 
     virtual void setCameraFov(float fov) = 0;
