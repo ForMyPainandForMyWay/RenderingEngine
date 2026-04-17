@@ -5,6 +5,7 @@
 #include "Engine.hpp"
 #include "Graphic.hpp"
 
+#include <algorithm>
 #include <vector>
 #include <cmath>
 #include <random>
@@ -48,45 +49,95 @@ void Graphic::SSAO(
     const int sampleCount) const {
     const auto w = engine->width;
     const auto h = engine->height;
+    const float fw = static_cast<float>(w);
+    const float fh = static_cast<float>(h);
+    const float p00 = Projection[0][0];
+    const float p11 = Projection[1][1];
+    const float p22 = Projection[2][2];
+    const float p23 = Projection[2][3];
+    constexpr float backgroundDepth = 0.9999f;
+    constexpr float depthBias = 0.01f;
+
+    auto reconstructViewPos = [&](const int px, const int py, const float ndcZ) {
+        const float ndcX = (2.0f * (static_cast<float>(px) + 0.5f) / fw) - 1.0f;
+        const float ndcY = 1.0f - (2.0f * (static_cast<float>(py) + 0.5f) / fh);
+        const float viewZ = -p23 / (ndcZ + p22);
+        const float viewX = ndcX * (-viewZ) / p00;
+        const float viewY = ndcY * (-viewZ) / p11;
+        return Vec3{viewX, viewY, viewZ};
+    };
+
     // 临时存储原始 AO
     std::vector<FloatPixel> rawAO(outBuffer.size());
-    // ---------- Step 1: 计算原始 AO ----------
+    // 计算原始 AO
     for (auto y = 0; y < h; y++) {
         for (auto x = 0; x < w; x++) {
             const auto idx = y * w + x;
-            const Vec4& worldPos = Gdata[idx].worldPosi; // 从Gdata中获取世界坐标
-            auto viewPos = ViewMat * worldPos;
+            const float ndcDepth = depthBuffer[idx];
+            if (ndcDepth >= backgroundDepth) {
+                rawAO[idx].r = 1.0f;
+                rawAO[idx].g = 1.0f;
+                rawAO[idx].b = 1.0f;
+                rawAO[idx].i = 0.0f;
+                continue;
+            }
+
+            const Vec3 viewPos = reconstructViewPos(x, y, ndcDepth);
             auto& worldnormal = Gdata[idx].normal; // 从Gdata中获取法线
             auto viewnormaltmp = ViewMat * Vec4{worldnormal[0], worldnormal[1], worldnormal[2], 0};
             Vec3 normal = normalize(Vec3{viewnormaltmp[0], viewnormaltmp[1], viewnormaltmp[2]});
+            if (dot(normal, normal) < 1e-6f) {
+                rawAO[idx].r = 1.0f;
+                rawAO[idx].g = 1.0f;
+                rawAO[idx].b = 1.0f;
+                rawAO[idx].i = 0.0f;
+                continue;
+            }
 
             // 构建 TBN
             Vec3 randvec = normalize(randomNoiseVector());
-            Vec3 tangent = normalize(randvec - normal * dot(randvec, normal));
-            Mat3 TBN = Mat3(tangent, cross(normal, tangent), normal).Transpose();
-            int count = 0;
+            Vec3 tangent = randvec - normal * dot(randvec, normal);
+            if (dot(tangent, tangent) < 1e-6f) {
+                tangent = std::abs(normal[2]) < 0.999f
+                    ? normalize(cross(Vec3{0.0f, 0.0f, 1.0f}, normal))
+                    : normalize(cross(Vec3{0.0f, 1.0f, 0.0f}, normal));
+            } else {
+                tangent = normalize(tangent);
+            }
+            Vec3 bitangent = normalize(cross(normal, tangent));
+            Mat3 TBN = Mat3(tangent, bitangent, normal).Transpose();
+            float occlusion = 0.0f;
             for (int i = 0; i < sampleCount; i++) {
                 Vec3 randomVec = TBN * randomUnitHemisphere();
-                Vec4 tmp = {randomVec[0], randomVec[1], randomVec[2], 0.f};
-                const Vec4 randomPos = viewPos + tmp * radius;
-                Vec4 rclipPos = Projection * randomPos;
+                const Vec3 samplePos = viewPos + randomVec * radius;
+                Vec4 rclipPos = Projection * Vec4{samplePos[0], samplePos[1], samplePos[2], 1.0f};
+                if (std::abs(rclipPos[3]) < 1e-6f) continue;
                 Vec4 rndcPos = rclipPos / rclipPos[3];
-                const int sx = static_cast<int>((rndcPos[0] * 0.5f + 0.5f) * static_cast<float>(w));
-                const int sy = static_cast<int>((1.0f - (rndcPos[1] * 0.5f + 0.5f)) * static_cast<float>(h));
+                const int sx = static_cast<int>((rndcPos[0] * 0.5f + 0.5f) * fw);
+                const int sy = static_cast<int>((1.0f - (rndcPos[1] * 0.5f + 0.5f)) * fh);
                 if (sx < 0 || sx >= w || sy < 0 || sy >= h) continue;
-                const float ndcDepth = depthBuffer[sx + sy * w];
-                if (const float sampleViewDepth = rndcPos[2]; ndcDepth < sampleViewDepth - 3e-3f)
-                    count++;
+                const float sampleDepth = depthBuffer[sx + sy * w];
+                if (sampleDepth >= backgroundDepth) continue;
+
+                const Vec3 geoViewPos = reconstructViewPos(sx, sy, sampleDepth);
+                if (geoViewPos[2] < samplePos[2] + depthBias) continue;
+
+                const Vec3 delta = geoViewPos - viewPos;
+                const float dist = std::sqrt(dot(delta, delta));
+                if (dist >= radius) continue;
+
+                const float rangeCheck = 1.0f - dist / radius;
+                occlusion += rangeCheck;
             }
-            const float ao = 1.0f - (static_cast<float>(count) / static_cast<float>(sampleCount));
+            const float ao = 1.0f - (occlusion / static_cast<float>(sampleCount));
             rawAO[idx].r = ao;
             rawAO[idx].g = ao;
             rawAO[idx].b = ao;
+            rawAO[idx].i = 0.0f;
         }
     }
 
-    // ---------- Step 2: 双边模糊 ----------
-    // 参数，可根据需要调整
+    // 双边模糊
     constexpr float sigma_s = 2.0f;
     auto SpatialWeight = [&](const int dx, const int dy) {
         const auto dist2 = static_cast<float>(dx * dx + dy * dy);
@@ -99,6 +150,11 @@ void Graphic::SSAO(
             FloatPixel sum{0,0,0};
             float wsum = 0.0f;
             const float centerDepth = depthBuffer[y*w + x];
+            if (centerDepth >= backgroundDepth) {
+                const auto idx = y * w + x;
+                outBuffer[idx] = inBuffer[idx];
+                continue;
+            }
             for (int dy = -radiusBlur; dy <= radiusBlur; dy++) {
                 const int ny = y + dy;
                 if (ny < 0 || ny >= h) continue;
@@ -117,9 +173,15 @@ void Graphic::SSAO(
                 }
             }
             const auto idx = y * w + x;
-            outBuffer[idx].r = sum.r / wsum * inBuffer[idx].r;
-            outBuffer[idx].g = sum.g / wsum * inBuffer[idx].g;
-            outBuffer[idx].b = sum.b / wsum * inBuffer[idx].b;
+            const float ao = wsum > 1e-6f ? std::clamp(sum.r / wsum, 0.0f, 1.0f) : 1.0f;
+            constexpr float aoExponent = 2.0f;
+            constexpr float aoStrength = 1.35f;
+            const float boostedAO = std::pow(ao, aoExponent);
+            const float shadedAO = std::clamp(1.0f - aoStrength * (1.0f - boostedAO), 0.0f, 1.0f);
+            outBuffer[idx].r = shadedAO * inBuffer[idx].r;
+            outBuffer[idx].g = shadedAO * inBuffer[idx].g;
+            outBuffer[idx].b = shadedAO * inBuffer[idx].b;
+            outBuffer[idx].i = inBuffer[idx].i;
         }
     }
 }
