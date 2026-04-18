@@ -300,10 +300,38 @@ void testSpeed() {
     std::cout << "平均帧率: " <<   (batch * 1000000.0 / duration.count()) << std::endl;
 }
 
+void testAO() {
+    IEngine* engine = CreateEngine(800, 800, false, false);
+    const auto meshName = R"(./AO.obj)";
+    const auto meshId = engine->addMesh(meshName);
+    uint16_t objID = engine->addObjects(meshId[0]);
+
+    engine->SetEnvLight(100, 100, 100, 1.0f);
+    engine->SetMainLight(255 ,255, 255, 5.0f);
+    // 相机
+    engine->addTfCommand(0, CameraID, TRANSLATE, {0.0f, 0.0f, 3.0f});
+    // 主光源
+    engine->addTfCommand(1, MainLightID, TRANSLATE, {0.0f, 0.0f, 3.0f});
+    engine->addTfCommand(1, MainLightID, ROTATE, {0.0f, 0.0f, 0.0f});
+    // 物品
+    engine->addTfCommand(objID, RenderObject, ROTATE, {60.0f, 0.0f, 0.0f});
+
+    engine->OpenAO();
+
+    engine->startLoop({ objID}, new Reciver());
+    while (true) {
+        if (Reciver::i > 0) {
+            engine->stopLoop();
+            break;
+        }
+    }
+}
+
 int main() {
     // testRt();
     testRas();
     // testLight();
+    // testAO();
     // testSpeed();
     return 0;
 }

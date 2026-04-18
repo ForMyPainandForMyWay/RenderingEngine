@@ -146,7 +146,7 @@ void Film::saveBMP(const std::string &filename) const {
         for (size_t x = 0; x < width; ++x) {
             const Pixel& pixel = image[y * width + x];
             // BMP使用BGR顺序
-            unsigned char bgr[3] = {pixel.b, pixel.g, pixel.r};
+            const unsigned char bgr[3] = {pixel.b, pixel.g, pixel.r};
             fwrite(bgr, 1, 3, fp);
         }
         // 写入填充字节

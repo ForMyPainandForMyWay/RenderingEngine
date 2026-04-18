@@ -49,8 +49,8 @@ void Graphic::SSAO(
     const int sampleCount) const {
     const auto w = engine->width;
     const auto h = engine->height;
-    const float fw = static_cast<float>(w);
-    const float fh = static_cast<float>(h);
+    const auto fw = static_cast<float>(w);
+    const auto fh = static_cast<float>(h);
     const float p00 = Projection[0][0];
     const float p11 = Projection[1][1];
     const float p22 = Projection[2][2];
@@ -181,6 +181,10 @@ void Graphic::SSAO(
             outBuffer[idx].r = shadedAO * inBuffer[idx].r;
             outBuffer[idx].g = shadedAO * inBuffer[idx].g;
             outBuffer[idx].b = shadedAO * inBuffer[idx].b;
+            // Debug 代码
+            // outBuffer[idx].r = shadedAO;
+            // outBuffer[idx].g = shadedAO;
+            // outBuffer[idx].b = shadedAO;
             outBuffer[idx].i = inBuffer[idx].i;
         }
     }
