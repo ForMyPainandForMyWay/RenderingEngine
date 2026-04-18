@@ -42,7 +42,7 @@ endif()
 # 动态链接库
 file(GLOB_RECURSE SRC "${PROJECT_SOURCE_DIR}/*/src/*.cpp")
 add_library(RenderEngine SHARED ${SRC})
-target_compile_definitions(RenderEngine PRIVATE USE_CUDA=${USE_CUDA} ENABLE_SIMD=${ENABLE_SIMD})
+target_compile_definitions(RenderEngine PRIVATE USE_CUDA=${USE_CUDA} ENABLE_SIMD=${ENABLE_SIMD} ENGINE_EXPORTS)
 # 导出动态库接口头文件
 set(outpath "${PROJECT_SOURCE_DIR}/bin/IEngine.hpp")
 set(inpath "${PROJECT_SOURCE_DIR}/Engine/include/IEngine.hpp")
@@ -92,5 +92,5 @@ target_include_directories(RenderEngine PUBLIC
 )
 
 # 用于测试的可执行文件
-add_executable(RenderTest ${PROJECT_SOURCE_DIR}/main.cpp)
+add_executable(RenderTest ${PROJECT_SOURCE_DIR}/main.cpp ${PROJECT_SOURCE_DIR}/source/src/Film.cpp)
 target_link_libraries(RenderTest PRIVATE RenderEngine)

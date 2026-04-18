@@ -33,13 +33,13 @@ inline Mat4 operator * (const Mat4 &lhs, const Mat4 &rhs) {
     const __m128 bLine3 = _mm_load_ps(bPtr + 12);
 
     for (int i = 0; i < 4; i++) {
-        __m128 aLine = _mm_load_ps(aPtr + i * 4);
+        const __m128 aLine = _mm_load_ps(aPtr + i * 4);
         // shuffle重排 A 的分量以广播计算，不涉及内存访问
         // xxxx, yyyy, zzzz, wwww
-        __m128 x = _mm_shuffle_ps(aLine, aLine, _MM_SHUFFLE(0, 0, 0, 0));
-        __m128 y = _mm_shuffle_ps(aLine, aLine, _MM_SHUFFLE(1, 1, 1, 1));
-        __m128 z = _mm_shuffle_ps(aLine, aLine, _MM_SHUFFLE(2, 2, 2, 2));
-        __m128 w = _mm_shuffle_ps(aLine, aLine, _MM_SHUFFLE(3, 3, 3, 3));
+        const __m128 x = _mm_shuffle_ps(aLine, aLine, _MM_SHUFFLE(0, 0, 0, 0));
+        const __m128 y = _mm_shuffle_ps(aLine, aLine, _MM_SHUFFLE(1, 1, 1, 1));
+        const __m128 z = _mm_shuffle_ps(aLine, aLine, _MM_SHUFFLE(2, 2, 2, 2));
+        const __m128 w = _mm_shuffle_ps(aLine, aLine, _MM_SHUFFLE(3, 3, 3, 3));
 
         // res = x * b0 + y * b1 + z * b2 + w * b3
         __m128 sum = _mm_mul_ps(x, bLine0);

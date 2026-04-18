@@ -61,7 +61,7 @@ public:
         const std::vector<float> &depthBuffer,
         const Mat4 &ViewMat,
         const Mat4 &Projection,
-        float radius = 0.1f,
+        float radius = 0.05f,
         int sampleCount = 32) const;
     void FXAA(
         std::vector<FloatPixel>& inBuffer, std::vector<FloatPixel>& outBuffer) const;

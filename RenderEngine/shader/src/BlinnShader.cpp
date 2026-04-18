@@ -152,10 +152,10 @@ F2P BlinnShader::FragmentShader(
     // 若无有效材质或漫反射贴图，返回默认灰色
     if (material == nullptr || material->KdMap == nullptr) {
         pix.Albedo = {0.5, 0.5, 0.5};
-        return pix;
+    } else {
+        // 采样漫反射贴图
+        pix.Albedo = BilinearSample(frag.uv, material->KdMap);
     }
-    // 采样漫反射贴图
-    pix.Albedo = BilinearSample(frag.uv, material->KdMap);
     // 判断是否有法线贴图
     const bool hasNorm = (material->NormalMap != nullptr);
     // 法线贴图采样与解码（自动处理空指针）

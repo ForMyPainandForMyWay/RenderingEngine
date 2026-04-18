@@ -42,7 +42,7 @@ Engine::~Engine() {
 // 设置主光源，并更新shadow map分辨率，需要光源与阴影贴图分辨率,不会更改阴影开关
 void Engine::SetMainLight(const uint8_t r, const uint8_t g, const uint8_t b, const float I) {
     if (!mainLight) mainLight = new MainLight();
-    mainLight->intensity = 5.0f;
+    mainLight->intensity = I;
     mainLight->color = Pixel{r, g, b};
     SdMap->resize(width, height);
     globalU.setShadowViewPort(width, height);
@@ -92,7 +92,7 @@ size_t Engine::addObjects(const std::string &meshName) {
 }
 
 // 添加逐片元灯光，返回灯光索引。当i = 3时表示添加失败
-sysID Engine::addPixLight(uint8_t r, uint8_t g, uint8_t b, LType type) {
+sysID Engine::addPixLight(const uint8_t r, const uint8_t g, const uint8_t b, const LType type) {
     for (int id_val = PixL1; id_val <= PixL3; ++id_val) {
         if (const auto id = static_cast<sysID>(id_val); !PixLights[id-PixL1].alive) {
             auto& light = PixLights[id-PixL1];
@@ -107,7 +107,7 @@ sysID Engine::addPixLight(uint8_t r, uint8_t g, uint8_t b, LType type) {
 }
 
 // 添加逐顶点灯光，返回灯光ID。
-size_t Engine::addVexLight(uint8_t r, uint8_t g, uint8_t b, LType type) {
+size_t Engine::addVexLight(const uint8_t r, const uint8_t g, const uint8_t b, const LType type) {
     Lights light;
     light.alive = true;
     light.setColor(r, g, b);
