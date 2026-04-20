@@ -64,5 +64,5 @@ void Receiver::OnFrameReady(const void *data) {
     if (deltaT > std::chrono::milliseconds(1000/60)) {
         std::this_thread::sleep_for(deltaT);
     }
-    lastReady = std::chrono::high_resolution_clock::now();;
+    lastReady = std::chrono::high_resolution_clock::now();
 }
