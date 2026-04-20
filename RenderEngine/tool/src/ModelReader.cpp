@@ -26,6 +26,10 @@ void ModelReader::readMTLFile(
         return;
     }
 
+    // 获取MTL文件所在目录，用于解析相对路径
+    std::filesystem::path mtlPath(mtlFilename);
+    std::string mtlParentPath = mtlPath.parent_path().string();
+
     auto currentMat = std::make_shared<Material>();
     std::string line;
     while (std::getline(mtlFile, line)) {
@@ -50,7 +54,14 @@ void ModelReader::readMTLFile(
             else if (prefix == "Ke") ss >> currentMat->Ke[0] >> currentMat->Ke[1] >> currentMat->Ke[2];
             else if (prefix == "Ns") ss >> currentMat->Ns;
             else if (prefix == "map_Kd") {
-                ss >> currentMat->map_Kd;  // 记录纹理贴图名字（路径）
+                std::string texturePath;
+                ss >> texturePath;
+                // 如果纹理路径是相对路径，则基于MTL文件所在目录解析
+                std::filesystem::path texPath(texturePath);
+                if (!texPath.is_absolute()) {
+                    texturePath = (std::filesystem::path(mtlParentPath) / texPath).string();
+                }
+                currentMat->map_Kd = texturePath;
                 // 查找哈希表,如果没有该元素,则存入哈希表
                 if (!textureMap.contains(currentMat->map_Kd)) {
                     auto texture = std::make_shared<TextureMap>(currentMat->map_Kd);
@@ -64,7 +75,14 @@ void ModelReader::readMTLFile(
                 } else currentMat->KdMap = textureMap[currentMat->map_Kd];
             }
             else if (prefix == "norm") {
-                ss >> currentMat->map_Normal;
+                std::string normalPath;
+                ss >> normalPath;
+                // 如果法线贴图路径是相对路径，则基于MTL文件所在目录解析
+                std::filesystem::path normPath(normalPath);
+                if (!normPath.is_absolute()) {
+                    normalPath = (std::filesystem::path(mtlParentPath) / normPath).string();
+                }
+                currentMat->map_Normal = normalPath;
                 if (!normalMap.contains(currentMat->map_Normal)) {
                     auto texture = std::make_shared<TextureMap>(currentMat->map_Normal);
                     texture->uvImg->Trans2FloatPixel();
