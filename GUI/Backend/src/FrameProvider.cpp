@@ -5,6 +5,7 @@
 #include "FrameProvider.hpp"
 
 #include <iostream>
+#include <thread>
 
 
 FrameProvider::FrameProvider(QObject *parent) : QObject(parent) {}
@@ -19,7 +20,7 @@ void FrameProvider::setVideoSink(QVideoSink* newVideoSink) {
     m_videoSink = newVideoSink; // QPointer 会自动监测对象销毁
     emit videoSinkChanged();
 }
-void FrameProvider::updateTexture(const uchar *data, int width, int height) {
+void FrameProvider::updateTexture(const uchar *data, const int width, const int height) {
     // data 指针指向的内容随时会变
     const QSize size(width, height);
     const QVideoFrameFormat format(size, QVideoFrameFormat::Format_RGBA8888);
@@ -57,5 +58,11 @@ void FrameProvider::updateTexture(const uchar *data, int width, int height) {
 void Receiver::OnFrameReady(const void *data) {
     if (m_frameProvider == nullptr) return;
     const auto frame = static_cast<const uchar*>(data);
+    const auto deltaT = std::chrono::high_resolution_clock::now() - lastReady;
     m_frameProvider->updateTexture(frame, m_width, m_height);
+    // 渲染当前帧时，如果间隔小于1/60s，则阻塞直至下一帧
+    if (deltaT > std::chrono::milliseconds(1000/60)) {
+        std::this_thread::sleep_for(deltaT);
+    }
+    lastReady = std::chrono::high_resolution_clock::now();;
 }
