@@ -18,7 +18,7 @@ endif()
 # CUDA支持
 include(CheckLanguage)
 check_language(CUDA)
-if(CMAKE_CUDA_COMPILER AND NOT DEFINED ENV{FORCE_CPU})
+if(CMAKE_CUDA_COMPILER)
     enable_language(CUDA)
     find_package(CUDAToolkit REQUIRED)
     if(CUDAToolkit_FOUND)

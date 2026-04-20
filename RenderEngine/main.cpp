@@ -26,22 +26,22 @@ std::atomic<size_t> Reciver::i = 0;
 void testRt() {
     IEngine* engine = CreateEngine(800, 800, true, true);
 
-    const auto meshName = R"(./test4.obj)";
+    const auto meshName = R"(./model/test4.obj)";
     const auto meshId = engine->addMesh(meshName);
     uint16_t objID = engine->addObjects(meshId[0]);
 
     // 灯光
-    const auto meshName3 = R"(./Light.obj)";
+    const auto meshName3 = R"(./model/Light.obj)";
     const auto meshId3 = engine->addMesh(meshName3);
     const uint16_t objID3 = engine->addObjects(meshId3[0]);
 
     // 天花板
-    const uint16_t objID8 = engine->addObjects(engine->addMesh(R"(./Cube.obj)")[0]);
+    const uint16_t objID8 = engine->addObjects(engine->addMesh(R"(./model/Cube.obj)")[0]);
 
     // 墙壁
-    const auto meshName4 = R"(./test.obj)";
+    const auto meshName4 = R"(./model/test.obj)";
     const auto meshId4 = engine->addMesh(meshName4);
-    const uint16_t objID4 = engine->addObjects(engine->addMesh(R"(./Cube.obj)")[0]);  // 地板
+    const uint16_t objID4 = engine->addObjects(engine->addMesh(R"(./model/Cube.obj)")[0]);  // 地板
     const uint16_t objID5 = engine->addObjects(meshId4[0]);
     const uint16_t objID6 = engine->addObjects(meshId4[0]);
     const uint16_t objID7 = engine->addObjects(meshId4[0]);
@@ -82,12 +82,12 @@ void testRt() {
 void testRas() {
     IEngine* engine = CreateEngine(800, 800, true, false);
 
-    const auto meshName = R"(./test4.obj)";
+    const auto meshName = R"(./model/test4.obj)";
     const auto meshId = engine->addMesh(meshName);
     uint16_t objID = engine->addObjects(meshId[0]);
 
     // 物品
-    const auto meshName2 = R"(./Cube.obj)";
+    const auto meshName2 = R"(./model/Cube.obj)";
     const auto meshId2 = engine->addMesh(meshName2);
     const uint16_t objID2 = engine->addObjects(meshId2[0]);
 
@@ -145,12 +145,12 @@ void testRas() {
 void testLoop() {
     IEngine* engine = CreateEngine(800, 800, false, false);
 
-    const auto meshName = R"(./test4.obj)";
+    const auto meshName = R"(./model/test4.obj)";
     const auto meshId = engine->addMesh(meshName);
     uint16_t objID = engine->addObjects(meshId[0]);
 
     // 物品
-    const auto meshName2 = R"(./Cube.obj)";
+    const auto meshName2 = R"(./model/Cube.obj)";
     const auto meshId2 = engine->addMesh(meshName2);
     const uint16_t objID2 = engine->addObjects(meshId2[0]);
 
@@ -186,7 +186,7 @@ void testLoop() {
 void testLight() {
     IEngine* engine = CreateEngine(800, 800, false, false);
 
-    const auto meshName = R"(./test4.obj)";
+    const auto meshName = R"(./model/test4.obj)";
     const auto meshId = engine->addMesh(meshName);
     uint16_t objID = engine->addObjects(meshId[0]);
 
@@ -196,12 +196,12 @@ void testLight() {
     // auto vl = engine->addVexLight(255, 255, 255, LType::Point);
 
     // 灯光
-    const auto meshName3 = R"(./Light.obj)";
+    const auto meshName3 = R"(./model/Light.obj)";
     const auto meshId3 = engine->addMesh(meshName3);
     const uint16_t objID3 = engine->addObjects(meshId3[0]);
 
     // 墙壁
-    const auto meshName4 = R"(./test.obj)";
+    const auto meshName4 = R"(./model/test.obj)";
     const auto meshId4 = engine->addMesh(meshName4);
     const uint16_t objID4 = engine->addObjects(meshId4[0]);
     const uint16_t objID5 = engine->addObjects(meshId4[0]);
@@ -251,17 +251,17 @@ void testLight() {
 void testSpeed() {
     IEngine* engine = CreateEngine(800, 800, false, true);
 
-    const auto meshName = R"(./test4.obj)";
+    const auto meshName = R"(./model/test4.obj)";
     const auto meshId = engine->addMesh(meshName);
     uint16_t objID = engine->addObjects(meshId[0]);
 
     // 灯光
-    const auto meshName3 = R"(./Light.obj)";
+    const auto meshName3 = R"(./model/Light.obj)";
     const auto meshId3 = engine->addMesh(meshName3);
     const uint16_t objID3 = engine->addObjects(meshId3[0]);
 
     // 墙壁
-    const auto meshName4 = R"(./test.obj)";
+    const auto meshName4 = R"(./model/test.obj)";
     const auto meshId4 = engine->addMesh(meshName4);
     const uint16_t objID4 = engine->addObjects(meshId4[0]);
     const uint16_t objID5 = engine->addObjects(meshId4[0]);
@@ -302,7 +302,7 @@ void testSpeed() {
 
 void testAO() {
     IEngine* engine = CreateEngine(800, 800, false, false);
-    const auto meshName = R"(./AO.obj)";
+    const auto meshName = R"(./model/AO.obj)";
     const auto meshId = engine->addMesh(meshName);
     uint16_t objID = engine->addObjects(meshId[0]);
 
