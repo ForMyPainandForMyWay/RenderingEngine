@@ -40,7 +40,7 @@ public:
     FrameProvider* m_frameProvider = nullptr;  // 不拥有，只引用
 private:
     int m_width{}, m_height{};
-    std::chrono::time_point<std::chrono::steady_clock> lastReady = std::chrono::steady_clock::now();
+    std::chrono::time_point<std::chrono::high_resolution_clock> lastReady = std::chrono::high_resolution_clock::now();
 };
 
 #endif //RENDERGUI_FRAMEPROVIDER_HPP
