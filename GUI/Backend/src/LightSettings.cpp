@@ -22,9 +22,9 @@ void SettingProxy::enableSpot(const bool &enableSpot) {
     if (enableSpot == currentSpot) return;
     currentSpot = enableSpot;
     if (currentSpot) {
-        engine->SetMainLight(spotColor[0], spotColor[1], spotColor[2], 1.0f);
+        engine->SetMainLight(spotColor[0], spotColor[1], spotColor[2], 5.0f);
     } else {
-        engine->SetMainLight(0, 0, 0, 1.0f);
+        engine->SetMainLight(0, 0, 0, 0.0f);
     }
 }
 
