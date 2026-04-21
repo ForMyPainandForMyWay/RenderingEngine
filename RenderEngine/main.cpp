@@ -110,11 +110,6 @@ void testRas() {
     engine->addTfCommand(1, MainLightID, TRANSLATE, {0.0f, 0.0f, 3.0f});
 
     engine->OpenShadow();
-    // auto start = std::chrono::high_resolution_clock::now();
-    // engine->RenderFrame({ objID, objID2});
-    // auto end = std::chrono::high_resolution_clock::now();
-    // auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
-    // std::cout << "渲染耗时: " << duration.count() << " 微秒\n";
 
     // 点光源测试
     // const auto plight = engine->addPixLight(255, 0, 0, LType::Point);
