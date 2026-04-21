@@ -3,6 +3,7 @@
 //
 
 #include <ranges>
+#include <thread>
 
 #include "Engine.hpp"
 #include "F2P.hpp"
@@ -250,18 +251,41 @@ void Engine::EndFrame() {
 
 // 写入绘制缓冲区,自行转换伽马矫正
 void Engine::Write2Front() {
+    const auto totalPixels = tmpBufferF.size();
+    const auto threadCount = std::thread::hardware_concurrency();
+    const int chunkSize = std::max(1, static_cast<int>((totalPixels + threadCount - 1) / threadCount));
+    
     if (!NeedGammaCorrection) {
-        for (auto i = 0; i < tmpBufferF.size(); ++i) {
-            rendBuffer->image[i] = tmpBufferF[i].toPixel();
+        std::vector<std::future<void>> futures;
+        for (int startIdx = 0; startIdx < totalPixels; startIdx += chunkSize) {
+            const int endIdx = std::min(startIdx + chunkSize, static_cast<int>(totalPixels));
+            futures.emplace_back(pool.addTask([&, startIdx, endIdx]() {
+                for (auto i = startIdx; i < endIdx; ++i) {
+                    rendBuffer->image[i] = tmpBufferF[i].toPixel();
+                }
+            }));
+        }
+        for (auto& future : futures) {
+            future.wait();
         }
         return;
     }
-    for (auto i = 0; i < tmpBufferF.size(); ++i) {
-        auto& pix = tmpBufferF[i];
-        pix.r = linearToSrgb(pix.r);
-        pix.g = linearToSrgb(pix.g);
-        pix.b = linearToSrgb(pix.b);
-        rendBuffer->image[i] = pix.toPixel();
+    
+    std::vector<std::future<void>> futures;
+    for (int startIdx = 0; startIdx < totalPixels; startIdx += chunkSize) {
+        const int endIdx = std::min(startIdx + chunkSize, static_cast<int>(totalPixels));
+        futures.emplace_back(pool.addTask([&, startIdx, endIdx]() {
+            for (auto i = startIdx; i < endIdx; ++i) {
+                auto& pix = tmpBufferF[i];
+                pix.r = linearToSrgb(pix.r);
+                pix.g = linearToSrgb(pix.g);
+                pix.b = linearToSrgb(pix.b);
+                rendBuffer->image[i] = pix.toPixel();
+            }
+        }));
+    }
+    for (auto& future : futures) {
+        future.wait();
     }
 }
 
