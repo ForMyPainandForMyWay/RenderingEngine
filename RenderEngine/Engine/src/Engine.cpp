@@ -185,10 +185,9 @@ void Engine::DrawScenceRT(const std::vector<uint16_t>& models) {
 
 // 后处理阶段,工作集中于tmpBuffer
 void Engine::PostProcess() {
-    const bool NeedAo = settings[0].NeedAo;
     const auto aaType = settings[0].aaType;
-    // 环境光遮蔽
-    if (NeedAo) {
+    // 环境光遮蔽(光线追踪时不起作用)
+    if (settings[0].NeedAo && !settings[0].IsRT) {
         std::ranges::fill(tmpBufferB, FloatPixel{0.0f,0.0f,0.0f,0.0f});
         graphic.SSAO(tmpBufferF, tmpBufferB, gBuffer->Gdata, ZBuffer, globalU.getCameraView(), globalU.getCameraProj());
         std::swap(tmpBufferF, tmpBufferB);
