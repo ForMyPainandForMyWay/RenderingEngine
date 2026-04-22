@@ -4,8 +4,6 @@
 
 #include "Film.hpp"
 
-#include "VecPro.hpp"
-
 
 void FloatPixel::operator+=(const FloatPixel& other) {
     r += other.r;

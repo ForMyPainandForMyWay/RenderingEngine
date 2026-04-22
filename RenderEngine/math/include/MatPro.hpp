@@ -9,12 +9,6 @@
 #include "VecPro.hpp"
 #if ENABLE_SIMD
 
-#if defined(__x86_64__) || defined(_M_X64)
-    #include <immintrin.h>
-#elif defined(__aarch64__) || defined(_M_ARM64)
-    #include "sse2neon.h" // 使用转换层
-#endif
-
 
 // Mat4 * Mat4
 // C = A * B

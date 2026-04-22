@@ -8,7 +8,7 @@
 #include <filesystem>
 #include <vector>
 
-#if defined(__x86_64__) || defined(_M_X64) || defined(__aarch64__) || defined(_M_ARM64)
+#if ENABLE_SIMD
 #include "VecPro.hpp"
 #else
 #include "Vec.hpp"

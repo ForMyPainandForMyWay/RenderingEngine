@@ -42,7 +42,7 @@ endif()
 # 动态链接库
 file(GLOB_RECURSE SRC "${PROJECT_SOURCE_DIR}/*/src/*.cpp")
 add_library(RenderEngine SHARED ${SRC})
-target_compile_definitions(RenderEngine PRIVATE USE_CUDA=${USE_CUDA} ENABLE_SIMD=${ENABLE_SIMD} ENGINE_EXPORTS)
+target_compile_definitions(RenderEngine PUBLIC USE_CUDA=${USE_CUDA} ENABLE_SIMD=${ENABLE_SIMD} ENGINE_EXPORTS)
 # 导出动态库接口头文件
 set(outpath "${PROJECT_SOURCE_DIR}/bin/IEngine.hpp")
 set(inpath "${PROJECT_SOURCE_DIR}/Engine/include/IEngine.hpp")
