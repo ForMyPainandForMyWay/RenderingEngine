@@ -28,7 +28,7 @@ public slots:
     void enableSSAO(const bool &enableSSAO);
     void enableShadow(const bool &enableShadow);
     void openObj(const QUrl &url);
-    static  void saveImg(const QUrl &url);
+    void saveImg(const QUrl &url) const;
 
     // 统计数据
     [[nodiscard]] int TriangleNums() const;

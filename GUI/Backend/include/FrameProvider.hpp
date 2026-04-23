@@ -18,10 +18,12 @@ class FrameProvider : public QObject {
 
 public:
     explicit FrameProvider(QObject *parent = nullptr);
+    std::atomic<bool> m_needSaveFrame = false; // 标志是否需要保存帧数据
 
     [[nodiscard]] QVideoSink* videoSink() const;
     void setVideoSink(QVideoSink* newVideoSink);
     void updateTexture(const uchar* data, int width, int height) ;
+    QImage getCurrentFrame();
 
     signals:
     void videoSinkChanged();
@@ -29,6 +31,7 @@ public:
 private:
     QPointer<QVideoSink> m_videoSink;
     QMutex m_mutex; // 互斥锁
+    QImage m_currentFrame; // 存储当前帧
 };
 
 class Receiver: public IFrameReceiver {

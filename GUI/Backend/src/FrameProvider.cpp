@@ -45,6 +45,11 @@ void FrameProvider::updateTexture(const uchar *data, const int width, const int 
             memcpy(bits + y * stride, data + y * lineBytes, lineBytes);
         }
     }
+    // 只在需要保存帧时才更新当前帧
+    if (m_needSaveFrame) {
+        m_currentFrame = QImage(bits, width, height, QImage::Format_RGBA8888).copy();
+        m_needSaveFrame = false; // 重置标志
+    }
     frame.unmap();
     {
         QMutexLocker locker(&m_mutex);
@@ -53,6 +58,12 @@ void FrameProvider::updateTexture(const uchar *data, const int width, const int 
             m_videoSink->setVideoFrame(frame);
         }
     }
+}
+
+// 获取最近的一帧
+QImage FrameProvider::getCurrentFrame() {
+    QMutexLocker locker(&m_mutex);
+    return m_currentFrame;
 }
 
 void Receiver::OnFrameReady(const void *data) {

@@ -4,6 +4,7 @@
 
 #include <QDebug>
 #include <QUrl>
+#include <thread>
 
 #include "FrameProvider.hpp"
 #include "IEngine.hpp"
@@ -85,7 +86,17 @@ void SettingProxy::openObj(const QUrl &url) {
     emit VertexNumsChanged();
 }
 
-void SettingProxy::saveImg(const QUrl &url) {
-    const QString filepath = url.toLocalFile();
-    qDebug() << "openObj: " << filepath;
+void SettingProxy::saveImg(const QUrl &url) const {
+    if (!fp) return;
+    // 设置需要保存帧的标志
+    fp->m_needSaveFrame = true;
+    // 等待一帧数据更新
+    std::this_thread::sleep_for(std::chrono::milliseconds(16)); // 等待约一帧的时间
+    if (const QImage image = fp->getCurrentFrame();
+        !image.isNull()) {
+        if (const QString filePath = url.toLocalFile();
+            image.save(filePath)) {
+            qDebug() << "保存成功";
+        } else qDebug() << "保存失败";
+        }
 }
