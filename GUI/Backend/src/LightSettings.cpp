@@ -14,7 +14,7 @@ void SettingProxy::enableEnv(const bool &enableEnv) {
     if (currentEnv) {
         engine->SetEnvLight(envCorlor[0], envCorlor[1], envCorlor[2], 1.0f);
     } else {
-        engine->SetEnvLight(0, 0, 0, 1.0f);
+        engine->SetEnvLight(0, 0, 0, 5.0f);
     }
 }
 
@@ -32,7 +32,7 @@ void SettingProxy::enablePoint(const bool &enablePoint) {
     if (enablePoint == currentPoint) return;
     currentPoint = enablePoint;
     if (currentPoint) {
-        engine->SetPixLight(PixL1, pointColor[0], pointColor[1], pointColor[2], 1.0f);
+        engine->SetPixLight(PixL1, pointColor[0], pointColor[1], pointColor[2], 5.0f);
     } else {
         engine->SetPixLight(PixL1, 0, 0, 0, 1.0f);
     }
@@ -75,6 +75,6 @@ void SettingProxy::setPointColor(const float &r, const float &g, const float &b)
     pointColor[1] = static_cast<uint8_t>(g * 255);
     pointColor[2] = static_cast<uint8_t>(b * 255);
     if (currentPoint) {
-        engine->SetPixLight(PixL1, pointColor[0], pointColor[1], pointColor[2], 1.0f);
+        engine->SetPixLight(PixL1, pointColor[0], pointColor[1], pointColor[2], 5.0f);
     }
 }
