@@ -37,7 +37,10 @@ Column {
             property color keyColor: Qt.white
             onClicked: {
                 colorDialog.color = keyColor
-                colorDialog.applyCallback = c => keyColor = c
+                colorDialog.applyCallback = function(c) {
+                    keyColor = c
+                    settingProxy.setSpotColor(c.r, c.g, c.b)
+                }
                 colorDialog.open()
             }
         }
@@ -59,7 +62,10 @@ Column {
             property color keyColor: Qt.white
             onClicked: {
                 colorDialog.color = keyColor
-                colorDialog.applyCallback = c => keyColor = c
+                colorDialog.applyCallback = function(c) {
+                    keyColor = c
+                    settingProxy.setEnvColor(c.r, c.g, c.b)
+                }
                 colorDialog.open()
             }
         }
@@ -80,8 +86,12 @@ Column {
             property color keyColor: Qt.white
             onClicked: {
                 colorDialog.color = keyColor
-                colorDialog.applyCallback = c => keyColor = c
+                colorDialog.applyCallback = function(c) {
+                    keyColor = c
+                    settingProxy.setPointColor(c.r, c.g, c.b)
+                }
                 colorDialog.open()
-            }        }
+            }
+        }
     }
 }

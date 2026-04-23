@@ -38,6 +38,9 @@ public slots:
     void enableEnv(const bool &enableEnv);
     void enableSpot(const bool &enableSpot);
     void enablePoint(const bool &enablePoint);
+    void setEnvColor(const float &r, const float &g, const float &b);
+    void setSpotColor(const float &r, const float &g, const float &b);
+    void setPointColor(const float &r, const float &g, const float &b);
 
     // 这里就先做成物体的旋转了
     void setPitch(const float &pitch);

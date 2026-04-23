@@ -51,3 +51,30 @@ void SettingProxy::setYaw(const float &yaw) {
     currentYaw = yaw;
     engine->addTfCommand(objID, RenderObject, ROTATE, {delta*180, 0, 0});
 }
+
+void SettingProxy::setEnvColor(const float &r, const float &g, const float &b) {
+    envCorlor[0] = static_cast<uint8_t>(r * 255);
+    envCorlor[1] = static_cast<uint8_t>(g * 255);
+    envCorlor[2] = static_cast<uint8_t>(b * 255);
+    if (currentEnv) {
+        engine->SetEnvLight(envCorlor[0], envCorlor[1], envCorlor[2], 1.0f);
+    }
+}
+
+void SettingProxy::setSpotColor(const float &r, const float &g, const float &b) {
+    spotColor[0] = static_cast<uint8_t>(r * 255);
+    spotColor[1] = static_cast<uint8_t>(g * 255);
+    spotColor[2] = static_cast<uint8_t>(b * 255);
+    if (currentSpot) {
+        engine->SetMainLight(spotColor[0], spotColor[1], spotColor[2], 5.0f);
+    }
+}
+
+void SettingProxy::setPointColor(const float &r, const float &g, const float &b) {
+    pointColor[0] = static_cast<uint8_t>(r * 255);
+    pointColor[1] = static_cast<uint8_t>(g * 255);
+    pointColor[2] = static_cast<uint8_t>(b * 255);
+    if (currentPoint) {
+        engine->SetPixLight(PixL1, pointColor[0], pointColor[1], pointColor[2], 1.0f);
+    }
+}
