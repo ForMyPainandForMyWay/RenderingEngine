@@ -2,10 +2,14 @@
 // Created by 冬榆 on 2026/2/22.
 //
 #include <QDebug>
-#include "FrameProvider.hpp"
-
 #include <iostream>
 #include <thread>
+
+#include "FrameProvider.hpp"
+
+std::vector<uint16_t> envObjs;
+std::atomic<bool> EnvChangeed = true;
+std::atomic<uint8_t> SSP = 1;
 
 
 FrameProvider::FrameProvider(QObject *parent) : QObject(parent) {}
@@ -75,5 +79,12 @@ void Receiver::OnFrameReady(const void *data) {
     if (deltaT > std::chrono::milliseconds(1000/60)) {
         std::this_thread::sleep_for(deltaT);
     }
+    // 若场景未发生变换，则每帧递增SSP
+    if (!EnvChangeed && SSP < 128) {
+        ++SSP;
+    }
+    // 清除场景变化标志
+    EnvChangeed = false;
+    m_sspCallback(SSP);
     lastReady = std::chrono::high_resolution_clock::now();
 }

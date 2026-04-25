@@ -46,6 +46,7 @@ public:
 
     virtual void SetRtMode() = 0;
     virtual void SetRasMode() = 0;
+    virtual void SetSSP(uint8_t SSP) = 0;
 
     virtual void CloseShadow() = 0;
     virtual void OpenShadow() = 0;

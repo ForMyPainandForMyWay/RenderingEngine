@@ -24,10 +24,11 @@ MenuBar {
             FileDialog {
                 id: fileSaveDialog
                 title: "保存渲染图片文件"
-                nameFilters: ["(*.png)", "(*.jpg)"]
+                nameFilters: ["PNG 图片 (*.png)", "JPEG 图片 (*.jpg *.jpeg)"]
+                defaultSuffix: "png"
                 fileMode: FileDialog.SaveFile
                 onAccepted: {
-                    settingProxy.saveImg(fileSaveDialog.currentFile)
+                    settingProxy.saveImg(fileSaveDialog.selectedFile)
                 }
             }
         }

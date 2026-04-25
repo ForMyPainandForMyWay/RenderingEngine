@@ -29,11 +29,11 @@ enum sysID : size_t{CameraID, MainLightID, PixL1, PixL2, PixL3, RenderObject, Ve
 enum TfType { TRANSLATE, ROTATE, SCALE };
 enum LType{Direct, Point, Spot, Ambient};
 
-
+// 帧接收器，渲染好之后引擎将缓冲区传递给回调函数OnFrameReady
 class IFrameReceiver {
 public:
     virtual ~IFrameReceiver() = default;
-    virtual void OnFrameReady(const void* data) = 0;
+    virtual void OnFrameReady(const void* data) = 0;  // 接收器回调
 };
 
 class IEngine {
@@ -46,6 +46,7 @@ public:
 
     virtual void SetRtMode() = 0;
     virtual void SetRasMode() = 0;
+    virtual void SetSSP(uint8_t SSP) = 0;
 
     virtual void CloseShadow() = 0;
     virtual void OpenShadow() = 0;

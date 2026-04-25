@@ -4,6 +4,7 @@
 
 #include <QDebug>
 
+#include "FrameProvider.hpp"
 #include "IEngine.hpp"
 #include "SettingProxy.hpp"
 
@@ -42,6 +43,7 @@ void SettingProxy::setPitch(const float &pitch) {
     if (objID == -1) return;
     const float delta = currentPitch - pitch;
     currentPitch = pitch;
+    MarkSceneChanged();
     engine->addTfCommand(objID, RenderObject, ROTATE, {0, delta*180, 0});
 }
 
@@ -49,6 +51,7 @@ void SettingProxy::setYaw(const float &yaw) {
     if (objID == -1) return;
     const float delta = currentYaw - yaw;
     currentYaw = yaw;
+    MarkSceneChanged();
     engine->addTfCommand(objID, RenderObject, ROTATE, {delta*180, 0, 0});
 }
 

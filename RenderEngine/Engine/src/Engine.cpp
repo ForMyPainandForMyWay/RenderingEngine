@@ -180,7 +180,7 @@ void Engine::DrawScenceRT(const std::vector<uint16_t>& models) {
         auto& renderObj = renderObjs.at(model);
         renderObj.ModelMat();  // 更新M
     }
-    graphic.RT();
+    graphic.RT(settings[0].SSP);
 }
 
 // 后处理阶段,工作集中于tmpBuffer

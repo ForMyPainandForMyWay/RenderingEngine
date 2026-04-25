@@ -13,6 +13,7 @@
 
 void SettingProxy::setRenderMode(const bool &isRaster) {
     if (isRaster == currentMode) return;
+    MarkSceneChanged();
     currentMode = isRaster;
     if (!currentMode) {
         engine->SetRtMode();
@@ -70,12 +71,16 @@ void SettingProxy::openObj(const QUrl &url) {
     // 注意这里读取完毕后，需要更新一下统计数据再发送信号
     engine->stopLoop();
     const auto meshId = engine->addMesh(filepath);
-    uint16_t objID_ = engine->addObjects(meshId[0]);
-
+    const uint16_t objID_ = engine->addObjects(meshId[0]);
+    engine->addTfCommand(objID_, RenderObject, SCALE, {0.6f, 0.6f, 0.6f});
     delete currentRecv;
     if (fp) {
         currentRecv = new Receiver(fp, 400, 400);
-        engine->startLoop({objID_}, currentRecv);
+        currentRecv->m_sspCallback = [this](const uint8_t ssp) {engine->SetSSP(ssp);};  // 设置回调函数
+        std::vector objects = {objID_};  // 把环境模型打包进去
+        objects.insert(objects.end(), envObjs.begin(), envObjs.end());
+        MarkSceneChanged();  // 记录环境变更
+        engine->startLoop(objects, currentRecv);
     }
     objID = objID_;
     const auto [tri, vex] = engine->getTriVexNums();
