@@ -63,7 +63,7 @@ private:
     int triNums = 0;
     int vexNums = 0;
 
-    bool currentMode = true;
+    bool currentMode = true;  // 渲染模式，true为光栅模式，false为光追模式
     uint8_t currentFXAA = 0;  // FXAA档位,0-3为从无到高
     bool currentSky = false;
     bool currentSSAO = false;
@@ -79,10 +79,6 @@ private:
 
     float currentYaw = 0.5f;
     float currentPitch = 0.5f;
-
-    // float FOV = 0.45f;  // 参数倍率为10
-    // float near = 0.05f;  // 参数倍率为5 0.0 ~ 5.0
-    // float far = 0.2f;  // 参数倍率为100 0.0 ～ 100
 };
 
 

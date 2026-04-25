@@ -42,6 +42,7 @@ struct SettingCache {
     float near = 0.1f;
     float far = 20.0f;
     AATpye aaType = NOAA;
+    uint8_t SSP = 1;
 };
 
 class Engine: public IEngine {
@@ -54,6 +55,7 @@ public:
 
     void SetRtMode() override { std::lock_guard lock(settingMtx); settings[1].IsRT = true; }
     void SetRasMode() override { std::lock_guard lock(settingMtx); settings[1].IsRT = false; }
+    void SetSSP(const uint8_t SSP) override {std::lock_guard lock(settingMtx); settings[1].SSP = SSP; }
 
     void CloseShadow() override { std::lock_guard lock(settingMtx); settings[1].NeedShadowPass = false; }
     void OpenShadow() override { std::lock_guard lock(settingMtx); settings[1].NeedShadowPass = true; }
