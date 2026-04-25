@@ -8,6 +8,7 @@
 #include <unordered_map>
 #include <vector>
 
+#include "F2P.hpp"
 #include "Shape.hpp"
 
 struct HitInfo;
@@ -38,6 +39,12 @@ public:
     void Rasterization(
         std::unordered_map<std::shared_ptr<Material>, std::vector<Triangle>> &TriMap,
         std::unordered_map<std::shared_ptr<Material>, std::vector<Fragment>> &FragMap) const;  // 光栅化
+
+    // 数据流式接口（尽量复用原逻辑：在单个三角形/片元粒度上复用原阶段实现）
+    void RasterizeTriangle(Triangle &triangle, std::vector<Fragment> &outFrags) const;
+    bool Ztest(Fragment &frag, std::vector<float> &ZBuffer) const; // single-fragment Z test
+    void WriteBuffer(const F2P& f2p) const; // single-pixel color write
+    void WriteGBuffer(const Fragment& frag) const; // single-pixel gbuffer write
     void VertexShading(
         std::unordered_map<std::shared_ptr<Material>, std::vector<Triangle>>& TriMap,
         const Uniform &u, const GlobalUniform &gu, const std::shared_ptr<Mesh>& mesh, int pass) const;  // 顶点处理

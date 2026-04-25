@@ -328,6 +328,14 @@ void Graphic::Rasterization(
     }
 }
 
+void Graphic::RasterizeTriangle(Triangle &triangle, std::vector<Fragment> &outFrags) const {
+    outFrags.clear();
+    if (!triangle.alive) return;
+    const int width = static_cast<int>(engine->width);
+    const int height = static_cast<int>(engine->height);
+    Scanline(triangle, outFrags, width, height);
+}
+
 // ZTest组件
 bool Graphic::ZTestPix(const size_t locate, const float depth, std::vector<float> &ZBuffer) {
     // 创建对 ZBuffer[locate] 的原子引用
@@ -341,6 +349,17 @@ bool Graphic::ZTestPix(const size_t locate, const float depth, std::vector<float
             return true;
         }
     }
+}
+
+bool Graphic::Ztest(Fragment &frag, std::vector<float> &ZBuffer) const {
+    if (!frag.alive) return false;
+    const size_t locate = frag.x + frag.y * engine->width;
+    if (ZTestPix(locate, frag.depth, ZBuffer)) {
+        frag.keep();
+        return true;
+    }
+    frag.drop();
+    return false;
 }
 
 // ZTest传入Fragment

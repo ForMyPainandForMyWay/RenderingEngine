@@ -3,14 +3,17 @@
 //
 
 #include <iostream>
+#include <cmath>
 #include <ranges>
 
 #include "Engine.hpp"
 #include "F2P.hpp"
 #include "FragTool.hpp"
+#include "MathTool.hpp"
 #include "Mesh.hpp"
 #include "Ray.hpp"
 #include "RayTraceTool.hpp"
+#include "Shader.hpp"
 #include "HitInfo.hpp"
 #include "RenderObjects.hpp"
 #if USE_CUDA
@@ -30,22 +33,32 @@ Graphic::Graphic(Engine *eg) {
 // 天空盒Pass
 void Graphic::SkyPass(const SkyBox &obj,const Uniform &u, const GlobalUniform &gu, const int pass) const {
     const auto mesh = obj.getMesh();
-    std::unordered_map<std::shared_ptr<Material>, std::vector<Fragment> > FragMap;
-    {
-        std::unordered_map<std::shared_ptr<Material>, std::vector<Triangle> > TriMap;
-        VertexShading(TriMap, u, gu, mesh, pass);
-        Clip(TriMap);
-        ScreenMapping(TriMap, gu.getShadowViewPort()); // 注意是ShadowViewport,用的是Light的视窗参数
-        Rasterization(TriMap, FragMap);
+    std::unordered_map<std::shared_ptr<Material>, std::vector<Triangle> > TriMap;
+    VertexShading(TriMap, u, gu, mesh, pass);
+    Clip(TriMap);
+    ScreenMapping(TriMap, gu.getShadowViewPort()); // 注意是ShadowViewport,用的是Light的视窗参数
+
+    const bool& NeedShadowPass = engine->settings[0].NeedShadowPass;
+    const auto& PixLights = engine->PixLights;
+    const auto& mainLight = engine->mainLight;
+    const auto& SdMap = engine->SdMap;
+    const auto& envLight = engine->envLight;
+    const auto& globalU = engine->globalU;
+
+    std::vector<Fragment> frags;
+    for (auto& [material, triangles] : TriMap) {
+        const auto shader = material->getShader(pass);
+        for (auto& tri : triangles) {
+            if (!tri.alive) continue;
+            frags.reserve(static_cast<size_t>(std::ceil(std::fabs(TriScreenArea2(tri)))) + 8);
+            RasterizeTriangle(tri, frags);
+            for (const auto& frag : frags) {
+                if (!frag.alive) continue;
+                WriteBuffer(shader->FragmentShader(
+                    frag, material, PixLights, mainLight, SdMap, envLight, globalU, NeedShadowPass));
+            }
+        }
     }
-    size_t count = 0;
-    for (auto &Frag: FragMap | std::views::values) {
-        count += Frag.size();
-    }
-    std::vector<F2P> result;
-    result.reserve(count);
-    FragmentShading(FragMap, result, u, pass);
-    WriteBuffer(result);
 }
 
 // 阴影Pass
@@ -53,18 +66,22 @@ void Graphic::ShadowPass(const RenderObjects &obj,const Uniform &u, const Global
     const auto mesh = obj.getMesh();
     if (mesh == nullptr) return;
     if (mesh->getVBONums() == 0) return;
-    std::unordered_map<std::shared_ptr<Material>, std::vector<Fragment> > FragMap;
-    {
-        std::unordered_map<std::shared_ptr<Material>, std::vector<Triangle> > TriMap;
-        VertexShading(TriMap, u, gu, mesh, pass);
-        Clip(TriMap);
-        ScreenMapping(TriMap, gu.getShadowViewPort()); // 注意是ShadowViewport,用的是Light的视窗参数
-        Rasterization(TriMap, FragMap);
-    }
-    size_t count = 0;
-    for (auto &FragVec: FragMap | std::views::values) {
-        Ztest(FragVec, engine->SdMap->ZBufferShadow);
-        count += FragVec.size();
+    std::unordered_map<std::shared_ptr<Material>, std::vector<Triangle> > TriMap;
+    VertexShading(TriMap, u, gu, mesh, pass);
+    Clip(TriMap);
+    ScreenMapping(TriMap, gu.getShadowViewPort()); // 注意是ShadowViewport,用的是Light的视窗参数
+
+    std::vector<Fragment> frags;
+    auto& zbuf = engine->SdMap->ZBufferShadow;
+    for (auto& triangles : TriMap | std::views::values) {
+        for (auto& tri : triangles) {
+            if (!tri.alive) continue;
+            frags.reserve(static_cast<size_t>(std::ceil(std::fabs(TriScreenArea2(tri)))) + 8);
+            RasterizeTriangle(tri, frags);
+            for (auto& frag : frags) {
+                Ztest(frag, zbuf);
+            }
+        }
     }
     // engine->SdMap->save();  // 将shadowMap写入文件
 }
@@ -80,7 +97,6 @@ void Graphic::BasePass(const RenderObjects &obj,const Uniform &u, const GlobalUn
        在剔除比例较高时，考虑剔除时直接新建一个vector然后逐个将有效面移动过去
        这涉及到CPU的分支预测，后期可以进行优化
     */
-    std::unordered_map<std::shared_ptr<Material>, std::vector<Fragment>> FragMap;
     {
         std::unordered_map<std::shared_ptr<Material>, std::vector<Triangle>> TriMap;
         // auto start = std::chrono::high_resolution_clock::now();
@@ -110,51 +126,60 @@ void Graphic::BasePass(const RenderObjects &obj,const Uniform &u, const GlobalUn
         // duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
         // std::cout << "几何着色耗时: " << duration.count() << " 微秒\n";
 
-        // 光栅化阶段，生成片元
-        // start = std::chrono::high_resolution_clock::now();
-        Rasterization(TriMap, FragMap);
-        // end = std::chrono::high_resolution_clock::now();
-        // duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
-        // std::cout << "光栅化耗时: " << duration.count() << " 微秒\n";
-    }
-    // 片段着色阶段，计算每个片元的颜色、光照和阴影处理
-    // Early-Z,这里不清空ZBuffer，ZBuffer在每一帧的开始清空,由Engine控制
-    size_t count = 0;
-    for (auto &Frag: FragMap | std::views::values) {
-        Ztest(Frag, engine->ZBuffer);
-        count += Frag.size();
-    }
-    // 双重Z测试
-    for (auto &Frag: FragMap | std::views::values) {
-        Ztest(Frag, engine->ZBuffer);
-        count += Frag.size();
-    }
-    std::vector<F2P> result;
-    result.reserve(count);  // 预分配
+        // 数据流式光栅化：逐三角形生成片元并立即完成 ZTest + Shading + 写缓冲
+        const bool& NeedShadowPass = engine->settings[0].NeedShadowPass;
+        const auto& PixLights = engine->PixLights;
+        const auto& mainLight = engine->mainLight;
+        const auto& SdMap = engine->SdMap;
+        const auto& envLight = engine->envLight;
+        const auto& globalU = engine->globalU;
 
-    // auto start = std::chrono::high_resolution_clock::now();
-    // 基础颜色/纹理贴图采样(texture自动完成各向异性过滤和MipMap)
-    FragmentShading(FragMap, result, u, pass);
-    // auto end = std::chrono::high_resolution_clock::now();
-    // auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
-    // std::cout << "片元着色耗时: " << duration.count() << " 微秒\n";
+        std::vector<Fragment> frags;
+        auto& zbuf = engine->ZBuffer;
 
-    // start = std::chrono::high_resolution_clock::now();
-    // 写入GBuffer
-    for (auto &Frag: FragMap | std::views::values) {
-        WriteGBuffer(Frag);
+        for (auto& [material, triangles] : TriMap) {
+            const auto shader = material->getShader(pass);
+            for (auto& tri : triangles) {
+                if (!tri.alive) continue;
+                frags.reserve(static_cast<size_t>(std::ceil(std::fabs(TriScreenArea2(tri)))) + 8);
+                RasterizeTriangle(tri, frags);
+                const size_t fragCount = frags.size();
+
+                if (constexpr size_t MIN_PARALLEL_FRAGS = 10000;
+                    fragCount < MIN_PARALLEL_FRAGS) {
+                    for (auto& frag : frags) {
+                        if (!frag.alive) continue;
+                        if (!Ztest(frag, zbuf)) continue;
+                        WriteGBuffer(frag);
+                        WriteBuffer(shader->FragmentShader(
+                            frag, material, PixLights, mainLight, SdMap, envLight, globalU, NeedShadowPass));
+                    }
+                } else {
+                    constexpr size_t BLOCK_SIZE = 8192;
+                    std::vector<std::future<void>> futures;
+                    futures.reserve((fragCount + BLOCK_SIZE - 1) / BLOCK_SIZE);
+                    for (size_t i = 0; i < fragCount; i += BLOCK_SIZE) {
+                        const size_t start = i;
+                        const size_t end = std::min(i + BLOCK_SIZE, fragCount);
+                        futures.emplace_back(engine->pool.addTask(
+                            [this, &frags, &zbuf, shader, material, start, end,
+                             PixLights, mainLight, SdMap, envLight, globalU, NeedShadowPass] {
+                                for (size_t k = start; k < end; ++k) {
+                                    auto& frag = frags[k];
+                                    if (!frag.alive) continue;
+                                    if (!Ztest(frag, zbuf)) continue;
+                                    WriteGBuffer(frag);
+                                    WriteBuffer(shader->FragmentShader(
+                                        frag, material, PixLights, mainLight, SdMap, envLight, globalU, NeedShadowPass));
+                                }
+                            }
+                        ));
+                    }
+                    for (auto& f : futures) f.get();
+                }
+            }
+        }
     }
-    // end = std::chrono::high_resolution_clock::now();
-    // duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
-    // std::cout << "写入GBuffer耗时: " << duration.count() << " 微秒\n";
-
-    // start = std::chrono::high_resolution_clock::now();
-    // 写入tmpBufferF
-    WriteBuffer(result);
-    // end = std::chrono::high_resolution_clock::now();
-    // duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
-    // std::cout << "写入tmpBuffer耗时: " << duration.count() << " 微秒\n";
-    // std::cout << std::endl;
 }
 
 void Graphic::RT(
@@ -423,6 +448,12 @@ void Graphic::RT(
     WriteBuffer(finalResult);
 }
 
+void Graphic::WriteBuffer(const F2P& f2p) const {
+    if (!f2p.alive) return;
+    const size_t width = engine->width;
+    engine->tmpBufferF[f2p.x + f2p.y * width] = f2p.Albedo;
+}
+
 void Graphic::WriteBuffer(const std::vector<F2P>& f2pVec) const {
     const size_t count = f2pVec.size();
     if (count == 0) return;
@@ -458,6 +489,15 @@ void Graphic::WriteBuffer(const std::vector<F2P>& f2pVec) const {
         ));
     }
     for (auto& f : futures) f.get();
+}
+
+void Graphic::WriteGBuffer(const Fragment& frag) const {
+    if (!frag.alive) return;
+    const size_t width = engine->width;
+    auto& gData = engine->gBuffer->Gdata;
+    const auto idx = frag.x + frag.y * width;
+    gData[idx].normal = frag.normal;
+    gData[idx].worldPosi = frag.worldPosi;
 }
 
 void Graphic::WriteGBuffer(const std::vector<Fragment>& f2pVec) const {
