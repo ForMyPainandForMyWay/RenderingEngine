@@ -33,31 +33,28 @@ public:
     void SkyPass(const SkyBox &obj, const Uniform &u, const GlobalUniform &gu, int pass=0) const;
     void ShadowPass(const RenderObjects &obj, const Uniform &u, const GlobalUniform &gu, int pass=1) const;
     void BasePass(const RenderObjects &obj, const Uniform &u, const GlobalUniform &gu, int pass=2) const;
-    void Clip(std::unordered_map<std::shared_ptr<Material>, std::vector<Triangle>> &map) const;
-    void ScreenMapping(std::unordered_map<std::shared_ptr<Material>, std::vector<Triangle>> &map, const Mat4&ViewPort) const ;
+    // 几何着色阶段
+    void GeometryShading(Triangle &triangle, const std::shared_ptr<Material>& material, const Uniform &u, int pass) const;
 
-    void Rasterization(
-        std::unordered_map<std::shared_ptr<Material>, std::vector<Triangle>> &TriMap,
-        std::unordered_map<std::shared_ptr<Material>, std::vector<Fragment>> &FragMap) const;  // 光栅化
+    // 处理单个三角形：完成顶点着色、裁剪、光栅化、片段着色等完整流程
+    void ProcessTriangle(
+        size_t idx,
+        const std::vector<uint32_t>& EBOcache,
+        const std::vector<Vertex>& VBO,
+        const std::shared_ptr<Material>& material,
+        const Uniform& u,
+        const GlobalUniform& gu,
+        int pass,
+        const Mat4& viewPort,
+        bool shadowPass = false) const;
 
-    // 数据流式接口（尽量复用原逻辑：在单个三角形/片元粒度上复用原阶段实现）
-    void RasterizeTriangle(Triangle &triangle, std::vector<Fragment> &outFrags) const;
-    bool Ztest(Fragment &frag, std::vector<float> &ZBuffer) const; // single-fragment Z test
-    void WriteBuffer(const F2P& f2p) const; // single-pixel color write
-    void WriteGBuffer(const Fragment& frag) const; // single-pixel gbuffer write
-    void VertexShading(
-        std::unordered_map<std::shared_ptr<Material>, std::vector<Triangle>>& TriMap,
-        const Uniform &u, const GlobalUniform &gu, const std::shared_ptr<Mesh>& mesh, int pass) const;  // 顶点处理
-    void GeometryShading(
-        std::unordered_map<std::shared_ptr<Material>, std::vector<Triangle>>& TriMap,
-        const Uniform &u, const std::shared_ptr<Mesh>& mesh, int pass) const;  // 几何着色
-    void FragmentShading(
-        const std::unordered_map<std::shared_ptr<Material>, std::vector<Fragment>>& fragMap,
-        std::vector<F2P> &result, const Uniform &u, int pass) const;  // 片元着色
+    bool Ztest(Fragment &frag, std::vector<float> &ZBuffer) const;
     static bool ZTestPix(size_t locate, float depth, std::vector<float> &ZBuffer) ;
-    void Ztest(std::vector<Fragment> &TestFrag, std::vector<float> &ZBuffer) const;  // EarlyZ
+    // 批量写入帧缓冲区
     void WriteBuffer(const std::vector<F2P>& f2pVec) const;
-    void WriteGBuffer(const std::vector<Fragment>& f2pVec) const;
+    // 单个像素写入帧缓冲区
+    void WriteBuffer(const F2P& f2p) const;
+    void WriteGBuffer(const Fragment& frag) const;
 
     void RT(uint8_t SSP = 1, uint8_t maxDepth = 8) const;  // 光线追踪
 

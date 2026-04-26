@@ -2,20 +2,22 @@
 // Created by 冬榆 on 2025/12/31.
 //
 
-#include <iostream>
 #include <cmath>
+#include <future>
 #include <ranges>
 
 #include "Engine.hpp"
 #include "F2P.hpp"
 #include "FragTool.hpp"
-#include "MathTool.hpp"
 #include "Mesh.hpp"
 #include "Ray.hpp"
 #include "RayTraceTool.hpp"
 #include "Shader.hpp"
 #include "HitInfo.hpp"
 #include "RenderObjects.hpp"
+#include "ClipTool.hpp"
+#include "RasterTool.hpp"
+#include "MathTool.hpp"
 #if USE_CUDA
 #include "BVH.cuh"
 #include "DATAPackegGPU.cuh"
@@ -33,31 +35,38 @@ Graphic::Graphic(Engine *eg) {
 // 天空盒Pass
 void Graphic::SkyPass(const SkyBox &obj,const Uniform &u, const GlobalUniform &gu, const int pass) const {
     const auto mesh = obj.getMesh();
-    std::unordered_map<std::shared_ptr<Material>, std::vector<Triangle> > TriMap;
-    VertexShading(TriMap, u, gu, mesh, pass);
-    Clip(TriMap);
-    ScreenMapping(TriMap, gu.getShadowViewPort()); // 注意是ShadowViewport,用的是Light的视窗参数
+    if (mesh == nullptr) return;
+    if (mesh->getVBONums() == 0) return;
 
-    const bool& NeedShadowPass = engine->settings[0].NeedShadowPass;
-    const auto& PixLights = engine->PixLights;
-    const auto& mainLight = engine->mainLight;
-    const auto& SdMap = engine->SdMap;
-    const auto& envLight = engine->envLight;
-    const auto& globalU = engine->globalU;
+    const auto& VBO = mesh->VBO;
+    const auto& EBO = mesh->EBO;
+    const auto& shadowViewPort = gu.getShadowViewPort();
 
-    std::vector<Fragment> frags;
-    for (auto& [material, triangles] : TriMap) {
-        const auto shader = material->getShader(pass);
-        for (auto& tri : triangles) {
-            if (!tri.alive) continue;
-            frags.reserve(static_cast<size_t>(std::ceil(std::fabs(TriScreenArea2(tri)))) + 8);
-            RasterizeTriangle(tri, frags);
-            for (const auto& frag : frags) {
-                if (!frag.alive) continue;
-                WriteBuffer(shader->FragmentShader(
-                    frag, material, PixLights, mainLight, SdMap, envLight, globalU, NeedShadowPass));
-            }
+    for (const auto &sub : *mesh) {
+        auto material = sub.getMaterial();
+        const auto oft = sub.getOffset();
+        const auto count = sub.getIdxCount();
+        const auto oftEnd = count + oft;
+
+        std::vector<uint32_t> EBOcache;
+        EBOcache.reserve(count);
+        for (auto idx = oft; idx < oftEnd; idx++) {
+            EBOcache.push_back(EBO[idx]);
         }
+
+        constexpr size_t BLOCK_SIZE = 16;
+        std::vector<std::future<void>> futures;
+        futures.reserve(EBOcache.size() / 3 / BLOCK_SIZE + 1);
+        for (size_t i = 0; i < EBOcache.size(); i += 3 * BLOCK_SIZE) {
+            const size_t start = i;
+            const size_t end = std::min(i + 3 * BLOCK_SIZE, EBOcache.size());
+            futures.emplace_back(engine->pool.addTask([&, start, end] {
+                for (size_t idx = start; idx < end; idx += 3) {
+                    ProcessTriangle(idx, EBOcache, VBO, material, u, gu, pass, shadowViewPort);
+                }
+            }));
+        }
+        for (auto& f : futures) f.get();
     }
 }
 
@@ -66,22 +75,36 @@ void Graphic::ShadowPass(const RenderObjects &obj,const Uniform &u, const Global
     const auto mesh = obj.getMesh();
     if (mesh == nullptr) return;
     if (mesh->getVBONums() == 0) return;
-    std::unordered_map<std::shared_ptr<Material>, std::vector<Triangle> > TriMap;
-    VertexShading(TriMap, u, gu, mesh, pass);
-    Clip(TriMap);
-    ScreenMapping(TriMap, gu.getShadowViewPort()); // 注意是ShadowViewport,用的是Light的视窗参数
 
-    std::vector<Fragment> frags;
-    auto& zbuf = engine->SdMap->ZBufferShadow;
-    for (auto& triangles : TriMap | std::views::values) {
-        for (auto& tri : triangles) {
-            if (!tri.alive) continue;
-            frags.reserve(static_cast<size_t>(std::ceil(std::fabs(TriScreenArea2(tri)))) + 8);
-            RasterizeTriangle(tri, frags);
-            for (auto& frag : frags) {
-                Ztest(frag, zbuf);
-            }
+    const auto& VBO = mesh->VBO;
+    const auto& EBO = mesh->EBO;
+    const auto& shadowViewPort = gu.getShadowViewPort();
+
+    for (const auto &sub : *mesh) {
+        auto material = sub.getMaterial();
+        const auto oft = sub.getOffset();
+        const auto count = sub.getIdxCount();
+        const auto oftEnd = count + oft;
+
+        std::vector<uint32_t> EBOcache;
+        EBOcache.reserve(count);
+        for (auto idx = oft; idx < oftEnd; idx++) {
+            EBOcache.push_back(EBO[idx]);
         }
+
+        constexpr size_t BLOCK_SIZE = 16;
+        std::vector<std::future<void>> futures;
+        futures.reserve(EBOcache.size() / 3 / BLOCK_SIZE + 1);
+        for (size_t i = 0; i < EBOcache.size(); i += 3 * BLOCK_SIZE) {
+            const size_t start = i;
+            const size_t end = std::min(i + 3 * BLOCK_SIZE, EBOcache.size());
+            futures.emplace_back(engine->pool.addTask([&, start, end] {
+                for (size_t idx = start; idx < end; idx += 3) {
+                    ProcessTriangle(idx, EBOcache, VBO, material, u, gu, pass, shadowViewPort, true);
+                }
+            }));
+        }
+        for (auto& f : futures) f.get();
     }
     // engine->SdMap->save();  // 将shadowMap写入文件
 }
@@ -91,42 +114,97 @@ void Graphic::BasePass(const RenderObjects &obj,const Uniform &u, const GlobalUn
     const auto mesh = obj.getMesh();
     if (mesh == nullptr) return;
     if (mesh->getVBONums() == 0) return;
-    // 顶点着色阶段
-    /*
-       更新：使用脏标记+Vector更好，不过需要注意
-       在剔除比例较高时，考虑剔除时直接新建一个vector然后逐个将有效面移动过去
-       这涉及到CPU的分支预测，后期可以进行优化
-    */
-    {
-        std::unordered_map<std::shared_ptr<Material>, std::vector<Triangle>> TriMap;
-        // auto start = std::chrono::high_resolution_clock::now();
-        VertexShading(TriMap, u, gu, mesh, pass);
-        // auto end = std::chrono::high_resolution_clock::now();
-        // auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
-        // std::cout << "顶点着色耗时: " << duration.count() << " 微秒\n";
+    const auto& VBO = mesh->VBO;
+    const auto& EBO = mesh->EBO;
+    const auto& screenViewPort = gu.getScreenViewPort();
 
-        // start = std::chrono::high_resolution_clock::now();
-        // 完成顶点处理阶段后进行剔除、裁剪,最后齐次除法、面剔除
-        Clip(TriMap);
-        // end = std::chrono::high_resolution_clock::now();
-        // duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
-        // std::cout << "clip耗时: " << duration.count() << " 微秒\n";
+    for (const auto &sub : *mesh) {
+        auto material = sub.getMaterial();
+        const auto oft = sub.getOffset();
+        const auto count = sub.getIdxCount();
+        const auto oftEnd = count + oft;
 
-        // start = std::chrono::high_resolution_clock::now();
-        // 退化检测、视口变换
-        ScreenMapping(TriMap, gu.getScreenViewPort());
-        // end = std::chrono::high_resolution_clock::now();
-        // duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
-        // std::cout << "视口变换耗时: " << duration.count() << " 微秒\n";
+        std::vector<uint32_t> EBOcache;
+        EBOcache.reserve(count);
+        for (auto idx = oft; idx < oftEnd; idx++) {
+            EBOcache.push_back(EBO[idx]);
+        }
 
-        // start = std::chrono::high_resolution_clock::now();
-        // 几何着色
-        GeometryShading(TriMap, u, mesh, pass);
-        // end = std::chrono::high_resolution_clock::now();
-        // duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
-        // std::cout << "几何着色耗时: " << duration.count() << " 微秒\n";
+        constexpr size_t BLOCK_SIZE = 16;
+        std::vector<std::future<void>> futures;
+        futures.reserve(EBOcache.size() / 3 / BLOCK_SIZE + 1);
+        for (size_t i = 0; i < EBOcache.size(); i += 3 * BLOCK_SIZE) {
+            const size_t start = i;
+            const size_t end = std::min(i + 3 * BLOCK_SIZE, EBOcache.size());
+            futures.emplace_back(engine->pool.addTask([&, start, end] {
+                for (size_t idx = start; idx < end; idx += 3) {
+                    ProcessTriangle(idx, EBOcache, VBO, material, u, gu, pass, screenViewPort);
+                }
+            }));
+        }
+        for (auto& f : futures) f.get();
+    }
+}
 
-        // 数据流式光栅化：逐三角形生成片元并立即完成 ZTest + Shading + 写缓冲
+void Graphic::ProcessTriangle(
+    const size_t idx,
+    const std::vector<uint32_t>& EBOcache,
+    const std::vector<Vertex>& VBO,
+    const std::shared_ptr<Material>& material,
+    const Uniform& u,
+    const GlobalUniform& gu,
+    const int pass,
+    const Mat4& viewPort,
+    const bool shadowPass) const {
+
+    if (material == nullptr) return;
+    const auto shader = material->getShader(pass);
+    if (shader == nullptr) return;
+
+    V2F v1 = shader->VertexShader(VBO[EBOcache[idx]], u, gu);
+    V2F v2 = shader->VertexShader(VBO[EBOcache[idx + 1]], u, gu);
+    V2F v3 = shader->VertexShader(VBO[EBOcache[idx + 2]], u, gu);
+    Triangle triangle{{v1, v2, v3}};
+
+    if (AllVertexOutside(triangle[0], triangle[1], triangle[2])) return;
+
+    auto screenMap = [&viewPort](Triangle& tri) {
+        auto clampCoord = [](Vec4& p) {
+            if (p[0] < 0 && p[0] > -1e-4) p[0] = 0.0f;
+            if (p[1] < 0 && p[1] > -1e-4) p[1] = 0.0f;
+        };
+        tri[0].clipPosi = viewPort * tri[0].clipPosi;
+        tri[1].clipPosi = viewPort * tri[1].clipPosi;
+        tri[2].clipPosi = viewPort * tri[2].clipPosi;
+        clampCoord(tri[0].clipPosi);
+        clampCoord(tri[1].clipPosi);
+        clampCoord(tri[2].clipPosi);
+        DegenerateClip(tri);
+    };
+
+    auto rasterize = [&](Triangle& tri) {
+        if (!tri.alive) return;
+        if (shadowPass && engine->SdMap == nullptr) return;
+
+        std::vector<Fragment> fragments;
+        fragments.reserve(static_cast<size_t>(std::ceil(std::fabs(TriScreenArea2(tri)))) + 8);
+
+        const int width = shadowPass ? static_cast<int>(engine->SdMap->width) : static_cast<int>(engine->width);
+        const int height = shadowPass ? static_cast<int>(engine->SdMap->height) : static_cast<int>(engine->height);
+        Scanline(tri, fragments, width, height);
+
+        if (shadowPass) {
+            auto& zbuf = engine->SdMap->ZBufferShadow;
+            const size_t zWidth = engine->SdMap->width;
+            for (auto& frag : fragments) {
+                if (!frag.alive) continue;
+                if (const size_t locate = frag.x + frag.y * zWidth;
+                    ZTestPix(locate, frag.depth, zbuf)) frag.keep();
+                else frag.drop();
+            }
+            return;
+        }
+
         const bool& NeedShadowPass = engine->settings[0].NeedShadowPass;
         const auto& PixLights = engine->PixLights;
         const auto& mainLight = engine->mainLight;
@@ -134,52 +212,37 @@ void Graphic::BasePass(const RenderObjects &obj,const Uniform &u, const GlobalUn
         const auto& envLight = engine->envLight;
         const auto& globalU = engine->globalU;
 
-        std::vector<Fragment> frags;
-        auto& zbuf = engine->ZBuffer;
-
-        for (auto& [material, triangles] : TriMap) {
-            const auto shader = material->getShader(pass);
-            for (auto& tri : triangles) {
-                if (!tri.alive) continue;
-                frags.reserve(static_cast<size_t>(std::ceil(std::fabs(TriScreenArea2(tri)))) + 8);
-                RasterizeTriangle(tri, frags);
-                const size_t fragCount = frags.size();
-
-                if (constexpr size_t MIN_PARALLEL_FRAGS = 10000;
-                    fragCount < MIN_PARALLEL_FRAGS) {
-                    for (auto& frag : frags) {
-                        if (!frag.alive) continue;
-                        if (!Ztest(frag, zbuf)) continue;
-                        WriteGBuffer(frag);
-                        WriteBuffer(shader->FragmentShader(
-                            frag, material, PixLights, mainLight, SdMap, envLight, globalU, NeedShadowPass));
-                    }
-                } else {
-                    constexpr size_t BLOCK_SIZE = 8192;
-                    std::vector<std::future<void>> futures;
-                    futures.reserve((fragCount + BLOCK_SIZE - 1) / BLOCK_SIZE);
-                    for (size_t i = 0; i < fragCount; i += BLOCK_SIZE) {
-                        const size_t start = i;
-                        const size_t end = std::min(i + BLOCK_SIZE, fragCount);
-                        futures.emplace_back(engine->pool.addTask(
-                            [this, &frags, &zbuf, shader, material, start, end,
-                             PixLights, mainLight, SdMap, envLight, globalU, NeedShadowPass] {
-                                for (size_t k = start; k < end; ++k) {
-                                    auto& frag = frags[k];
-                                    if (!frag.alive) continue;
-                                    if (!Ztest(frag, zbuf)) continue;
-                                    WriteGBuffer(frag);
-                                    WriteBuffer(shader->FragmentShader(
-                                        frag, material, PixLights, mainLight, SdMap, envLight, globalU, NeedShadowPass));
-                                }
-                            }
-                        ));
-                    }
-                    for (auto& f : futures) f.get();
-                }
-            }
+        for (auto& frag : fragments) {
+            if (!Ztest(frag, engine->ZBuffer)) continue;
+            WriteGBuffer(frag);
+            const F2P f2p = shader->FragmentShader(
+                frag, material, PixLights, mainLight, SdMap, envLight, globalU, NeedShadowPass);
+            WriteBuffer(f2p);
         }
+    };
+
+    if (!AllVertexInside(triangle[0], triangle[1], triangle[2])) {
+        for (auto tris = PolyClip(triangle[0], triangle[1], triangle[2]); auto &t : tris) {
+            PersDiv(t);
+            FaceClip(t);
+            if (!t.alive) continue;
+            screenMap(t);
+            if (!t.alive) continue;
+            GeometryShading(t, material, u, pass);
+            if (!t.alive) continue;
+            rasterize(t);
+        }
+        return;
     }
+
+    PersDiv(triangle);
+    FaceClip(triangle);
+    if (!triangle.alive) return;
+    screenMap(triangle);
+    if (!triangle.alive) return;
+    GeometryShading(triangle, material, u, pass);
+    if (!triangle.alive) return;
+    rasterize(triangle);
 }
 
 void Graphic::RT(
@@ -448,12 +511,14 @@ void Graphic::RT(
     WriteBuffer(finalResult);
 }
 
+// 单个像素写入帧缓冲区：将一个F2P数据写入渲染结果缓冲区
 void Graphic::WriteBuffer(const F2P& f2p) const {
     if (!f2p.alive) return;
     const size_t width = engine->width;
     engine->tmpBufferF[f2p.x + f2p.y * width] = f2p.Albedo;
 }
 
+// 批量写入帧缓冲区：将F2P数据写入渲染结果缓冲区（支持并行优化）
 void Graphic::WriteBuffer(const std::vector<F2P>& f2pVec) const {
     const size_t count = f2pVec.size();
     if (count == 0) return;
@@ -491,6 +556,7 @@ void Graphic::WriteBuffer(const std::vector<F2P>& f2pVec) const {
     for (auto& f : futures) f.get();
 }
 
+// 写入G-Buffer：将片段的法线和世界坐标信息写入延迟渲染缓冲区
 void Graphic::WriteGBuffer(const Fragment& frag) const {
     if (!frag.alive) return;
     const size_t width = engine->width;
@@ -498,41 +564,4 @@ void Graphic::WriteGBuffer(const Fragment& frag) const {
     const auto idx = frag.x + frag.y * width;
     gData[idx].normal = frag.normal;
     gData[idx].worldPosi = frag.worldPosi;
-}
-
-void Graphic::WriteGBuffer(const std::vector<Fragment>& f2pVec) const {
-    const size_t count = f2pVec.size();
-    if (count == 0) return;
-    const size_t width = engine->width;
-    auto& gData = engine->gBuffer->Gdata;
-    constexpr size_t BLOCK_SIZE = 10240;
-    std::vector<std::future<void>> futures;
-    // 如果量太少，直接串行写，没必要启动线程池
-    if (count < BLOCK_SIZE) {
-        for (const auto& frag : f2pVec) {
-            if (!frag.alive) continue;
-            const auto i = frag.x + frag.y * width;
-            gData[i].normal = frag.normal;
-            gData[i].worldPosi = frag.worldPosi;
-        }
-        return;
-    }
-    // 启动线程池任务
-    for (size_t i = 0; i < count; i += BLOCK_SIZE) {
-        size_t start = i;
-        size_t end = std::min(i + BLOCK_SIZE, count);
-        futures.emplace_back(engine->pool.addTask(
-            [&f2pVec, &gData, width, start, end]() {
-                for (size_t k = start; k < end; ++k) {
-                    const auto& frag = f2pVec[k];
-                    if (!frag.alive) continue;  // 剔除的跳过
-                    const auto idx = frag.x + frag.y * width;
-                    // 无锁直接写入。不同的 alive frag 绝不会拥有相同的 x, y
-                    gData[idx].normal = frag.normal;
-                    gData[idx].worldPosi = frag.worldPosi;
-                }
-            }
-        ));
-    }
-    for (auto& f : futures) f.get();
 }
