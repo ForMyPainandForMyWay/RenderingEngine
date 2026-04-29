@@ -106,3 +106,64 @@ __device__  HitInfo BLASGPU::Intersect(
         }
     return result;
 }
+
+__device__ bool BLASGPU::OcclusionIntersect(
+    const Ray& localRay, const float& tMaxLimit) const {
+    if (tlasNodeNums == 0) return false;
+    const float3 rayPos = {localRay.orignPosi.x, localRay.orignPosi.y, localRay.orignPosi.z};
+    const float3 rayDir = {localRay.Direction.x, localRay.Direction.y, localRay.Direction.z};
+    const float3 rayDirInv = {1.0f / rayDir.x, 1.0f / rayDir.y, 1.0f / rayDir.z};
+    float closestT = tMaxLimit;
+    int nodeStack[64];
+    int stackPtr = 0;
+    nodeStack[stackPtr++] = 0;
+    const auto meshId = this->MeshGPUId;
+    const MeshGPU& mesh = meshesGPU[meshId];
+    const auto EBOft = mesh.MeshEBOffset;
+    const auto VBOft = mesh.MeshVBOffset;
+    while (stackPtr > 0) {
+        const int nodeIdx = nodeStack[--stackPtr] + nodeOffset;
+        const auto& node = BlasNodesGPU[nodeIdx];
+        float tEntry;
+        if (!IntersectAABBGPU(node.bbox, rayPos, rayDirInv, closestT, tEntry)) {
+            continue;
+        }
+        if (node.isLeaf) {
+            const int triStart = triangleOffset + node.contentRef;
+            const int triCount = node.rightChild < 0 ? 1 : node.rightChild;
+            for (int i = 0; i < triCount; ++i) {
+                const uint32_t eboIdx = EBOft + BlasTriGPU[triStart + i];
+                const VertexGPU v1 = vboGPU[VBOft + eboGPU[eboIdx + 0]];
+                const VertexGPU v2 = vboGPU[VBOft + eboGPU[eboIdx + 1]];
+                const VertexGPU v3 = vboGPU[VBOft + eboGPU[eboIdx + 2]];
+                float t = closestT;
+                HitInfo hit = MollerTrumbore(v1, v2, v3, rayPos, rayDir, t);
+                if (hit.Valid) {
+                    return true;
+                }
+            }
+        } else {
+            const int leftChild = node.leftChild + nodeOffset;
+            const int rightChild = node.rightChild + nodeOffset;
+            float tLeft = 0, tRight = 0;
+            const bool hitLeft = IntersectAABBGPU(
+                BlasNodesGPU[leftChild].bbox, rayPos, rayDirInv, closestT, tLeft);
+            const bool hitRight = IntersectAABBGPU(
+                BlasNodesGPU[rightChild].bbox, rayPos, rayDirInv, closestT, tRight);
+            if (hitLeft && hitRight) {
+                if (tLeft < tRight) {
+                    nodeStack[stackPtr++] = rightChild - nodeOffset;
+                    nodeStack[stackPtr++] = leftChild - nodeOffset;
+                } else {
+                    nodeStack[stackPtr++] = leftChild - nodeOffset;
+                    nodeStack[stackPtr++] = rightChild - nodeOffset;
+                }
+            } else if (hitLeft) {
+                nodeStack[stackPtr++] = leftChild - nodeOffset;
+            } else if (hitRight) {
+                nodeStack[stackPtr++] = rightChild - nodeOffset;
+            }
+        }
+    }
+    return false;
+}

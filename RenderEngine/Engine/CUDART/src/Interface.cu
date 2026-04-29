@@ -39,6 +39,8 @@ void __host__ Inter(
     MeshGPU* h_meshesGPU = nullptr;
     SubMeshGPU* h_subMeshesGPU = nullptr;
     MaterialGPU* h_materialsGPU = nullptr;
+    EmissiveTriGPU* h_emissiveTrisGPU = nullptr;
+    float* h_emissiveCDFGPU = nullptr;
     F2PGPU* resultGPU = nullptr;
     cudaTextureObject_t* texObjsHost = nullptr;
     std::vector<cudaArray_t> texArrays;
@@ -62,6 +64,8 @@ void __host__ Inter(
         cudaFree(h_meshesGPU);
         cudaFree(h_subMeshesGPU);
         cudaFree(h_materialsGPU);
+        cudaFree(h_emissiveTrisGPU);
+        cudaFree(h_emissiveCDFGPU);
     };
 
     // 这里拿到了打包好的数据
@@ -135,6 +139,27 @@ void __host__ Inter(
     if (checkErrorFail(error)) { cleanup(); return; }
     error = cudaMemcpyToSymbol(materialsGPU, &h_materialsGPU, sizeof(void*));
     if (checkErrorFail(error)) { cleanup(); return; }
+
+    // Emissive三角面数据
+    error = cudaMemcpyToSymbol(emissiveTriNums, &scenceData.emissiveTriCount, sizeof(size_t));
+    if (checkErrorFail(error)) { cleanup(); return; }
+    error = cudaMemcpyToSymbol(totalEmissiveArea, &scenceData.totalEmissiveArea, sizeof(float));
+    if (checkErrorFail(error)) { cleanup(); return; }
+    if (scenceData.emissiveTriCount > 0) {
+        error = cudaMalloc(&h_emissiveTrisGPU, sizeof(EmissiveTriGPU) * scenceData.emissiveTriCount);
+        if (checkErrorFail(error)) { cleanup(); return; }
+        error = cudaMemcpy(h_emissiveTrisGPU, scenceData.emissiveTrisGPU, sizeof(EmissiveTriGPU) * scenceData.emissiveTriCount, cudaMemcpyHostToDevice);
+        if (checkErrorFail(error)) { cleanup(); return; }
+        error = cudaMalloc(&h_emissiveCDFGPU, sizeof(float) * scenceData.emissiveTriCount);
+        if (checkErrorFail(error)) { cleanup(); return; }
+        error = cudaMemcpy(h_emissiveCDFGPU, scenceData.emissiveCDF, sizeof(float) * scenceData.emissiveTriCount, cudaMemcpyHostToDevice);
+        if (checkErrorFail(error)) { cleanup(); return; }
+    }
+    error = cudaMemcpyToSymbol(emissiveTrisGPU, &h_emissiveTrisGPU, sizeof(void*));
+    if (checkErrorFail(error)) { cleanup(); return; }
+    error = cudaMemcpyToSymbol(emissiveCDFGPU, &h_emissiveCDFGPU, sizeof(void*));
+    if (checkErrorFail(error)) { cleanup(); return; }
+
     error = cudaMemcpyToSymbol(blasGPU, &h_blasGPU, sizeof(void*));
     if (checkErrorFail(error)) { cleanup(); return; }
     error = cudaMemcpyToSymbol(BlasTriGPU, &h_BlasTriGPU, sizeof(void*));

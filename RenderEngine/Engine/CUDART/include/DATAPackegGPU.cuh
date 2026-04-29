@@ -27,6 +27,13 @@ struct CameraDataGPU {
     size_t pixelCount;
 };
 
+struct EmissiveTriGPU {
+    float3 v0, v1, v2;
+    float3 emission;
+    float area;
+    float _pad;
+};
+
 struct BVHDataGPU {
     BLASGPU* blas;
     uint32_t* BlasTriGPU;
@@ -51,6 +58,10 @@ struct ScenceDataGPU {
     size_t subMeshCount;
     std::unordered_map<std::shared_ptr<TextureMap>, int> TextMap;
     size_t texPixelCount;
+    EmissiveTriGPU* emissiveTrisGPU;
+    float* emissiveCDF;
+    size_t emissiveTriCount;
+    float totalEmissiveArea;
 };
 
 #endif //RENDERINGENGINE_DATAPACKEGGPU_CUH

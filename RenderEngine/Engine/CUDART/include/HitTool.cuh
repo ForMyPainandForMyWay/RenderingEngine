@@ -28,5 +28,6 @@ struct HitInfo {
 __device__ HitInfo GetClosestHit(const Ray& worldRay);
 __device__ HitInfo MollerTrumbore(const VertexGPU& v1, const VertexGPU& v2, const VertexGPU& v3,
                                   const float3& rayPosiModel, const float3& rayDirModel, float& closestT);
+__device__ bool OcclusionTest(const float3& origin, const float3& direction, float maxDist);
 
 #endif //RENDERINGENGINE_HITTOOL_CUH

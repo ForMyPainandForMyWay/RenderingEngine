@@ -19,10 +19,14 @@ CONST __constant__ BVHNodeGPU TlasNodesGPU[256];
 CONST __constant__ cudaTextureObject_t texObjsGPU[128];  // 纹理描述符
 CONST __constant__ size_t tlasNodeNums;
 CONST __constant__ size_t tlasInstanceNums;
+CONST __constant__ size_t emissiveTriNums;
+CONST __constant__ float totalEmissiveArea;
 
 CONST __device__ BLASGPU* blasGPU;
 CONST __device__ uint32_t* BlasTriGPU;  // 三角形的相对索引，使用时需要加上blas的offset
 CONST __device__ BVHNodeGPU* BlasNodesGPU;
+CONST __device__ EmissiveTriGPU* emissiveTrisGPU;
+CONST __device__ float* emissiveCDFGPU;
 // Mesh相关的数据
 CONST __device__ VertexGPU* vboGPU;
 CONST __device__ uint32_t* eboGPU;

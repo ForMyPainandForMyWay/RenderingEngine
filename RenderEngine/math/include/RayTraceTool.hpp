@@ -7,6 +7,7 @@
 
 #include <optional>
 #include <random>
+#include <vector>
 
 #if ENABLE_SIMD
 #include "VecPro.hpp"
@@ -18,6 +19,13 @@ struct Ray;
 struct Material;
 struct HitInfo;
 struct Vertex;
+class Engine;
+
+struct EmissiveTriCPU {
+    Vec3 v0, v1, v2;
+    Vec3 emission;
+    float area;
+};
 
 
 struct ScatterRecord {
@@ -38,6 +46,7 @@ std::optional<HitInfo> MollerTrumbore(
 
 float GetRandomFloat();
 Vec4 SampleCosineHemisphere(const Vec4& N_);
+bool OcclusionTestCPU(const Engine* engine, const Vec3& origin, const Vec3& direction, float maxDist);
 inline float RandomFloat() {
     static std::mt19937 rng(std::random_device{}());
     static std::uniform_real_distribution dist(0.0f, 1.0f);

@@ -140,3 +140,11 @@ std::optional<HitInfo> Engine::GetClosestHit(const Ray& worldRay) const {
     }
     return closestHit;
 }
+
+bool OcclusionTestCPU(const Engine* engine, const Vec3& origin, const Vec3& direction, const float maxDist) {
+    Ray ray;
+    ray.orignPosi = {origin[0], origin[1], origin[2], 1.0f};
+    ray.Direction = {direction[0], direction[1], direction[2], 0.0f};
+    const auto hit = engine->GetClosestHit(ray);
+    return hit.has_value() && hit->t < maxDist;
+}

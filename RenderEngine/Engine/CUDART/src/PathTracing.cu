@@ -44,6 +44,53 @@ __global__ void pathTracing(F2PGPU* resultGPU, int SPP, int maxDepth) {
             float3 hitEmission = Hadamard(material.Ke, hitAlbedo);
             radiance += Hadamard(throughput, hitEmission);
 
+            // NEE: 显式对 emissive 三角面光源采样
+            float3 hitPos3 = {hitInfo.hitPos.x, hitInfo.hitPos.y, hitInfo.hitPos.z};
+            float3 hitN3 = {hitInfo.hitNormal.x, hitInfo.hitNormal.y, hitInfo.hitNormal.z};
+            constexpr float SHADOW_EPS = 1e-4f;
+
+            if (emissiveTriNums > 0 && totalEmissiveArea > 0.0f) {
+                float rTri = GetRandomFloatGPU() * totalEmissiveArea;
+                size_t lo = 0, hi = emissiveTriNums;
+                while (lo < hi) {
+                    size_t mid = (lo + hi) / 2;
+                    if (emissiveCDFGPU[mid] < rTri) lo = mid + 1;
+                    else hi = mid;
+                }
+                if (lo >= emissiveTriNums) lo = emissiveTriNums - 1;
+                const EmissiveTriGPU& etri = emissiveTrisGPU[lo];
+
+                float r1 = GetRandomFloatGPU();
+                float r2 = GetRandomFloatGPU();
+                float sqrtR1 = sqrtf(r1);
+                float u = 1.0f - sqrtR1;
+                float v = r2 * sqrtR1;
+                float w = 1.0f - u - v;
+                float3 lightPoint = etri.v0 * u + etri.v1 * v + etri.v2 * w;
+
+                float3 e1 = etri.v1 - etri.v0;
+                float3 e2 = etri.v2 - etri.v0;
+                float3 lightN = normalize(cross(e1, e2));
+
+                float3 Lvec = lightPoint - hitPos3;
+                float dist2 = dot(Lvec, Lvec);
+                if (dist2 > 1e-8f) {
+                    float invDist = rsqrtf(dist2);
+                    float3 wi = Lvec * invDist;
+                    float NdotL = dot(hitN3, wi);
+                    float NdotL_light = -dot(lightN, wi);
+                    if (NdotL > 0.0f && NdotL_light > 0.0f) {
+                        float lightDist = 1.0f / invDist;
+                        float3 shadowOrigin = hitPos3 + hitN3 * SHADOW_EPS;
+                        if (!OcclusionTest(shadowOrigin, wi, lightDist - 2.0f * SHADOW_EPS)) {
+                            float G = NdotL * NdotL_light / dist2;
+                            float3 contrib = etri.emission * (G * totalEmissiveArea);
+                            radiance += Hadamard(throughput, Hadamard(hitAlbedo, contrib));
+                        }
+                    }
+                }
+            }
+
             // 俄罗斯轮盘赌
             if (depth >= 3) {
                 if (float maxC = max(throughput.x, max(throughput.y, throughput.z));

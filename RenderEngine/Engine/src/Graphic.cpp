@@ -177,6 +177,52 @@ void Graphic::RT(
     std::vector<F2P> finalResult;
     finalResult.reserve(pixelCount); // 预分配避免重复扩容
 
+    // 收集 emissive 三角面作为面光源（CUDA/CPU 共用）
+    std::vector<EmissiveTriCPU> emissiveTrisCPU;
+    std::vector<float> emissiveCDFCPU;
+    for (const auto& instance : engine->tlas->instances) {
+        const auto& blasCPU = engine->blasList[instance.blasIdx];
+        const auto& mesh = blasCPU->mesh;
+        const Mat4& worldMat = instance.transform;
+        for (const auto& submesh : *mesh) {
+            const auto& mat = submesh.getMaterial();
+            if (mat->Ke[0] == 0.0f && mat->Ke[1] == 0.0f && mat->Ke[2] == 0.0f) continue;
+            Vec3 emission = mat->Ke;
+            float lum = emission[0] * 0.2126f + emission[1] * 0.7152f + emission[2] * 0.0722f;
+            if (lum < 1e-6f) continue;
+            const uint32_t offset = submesh.getOffset();
+            const uint32_t count = submesh.getIdxCount();
+            for (uint32_t ti = 0; ti < count; ti += 3) {
+                const uint32_t i0 = mesh->EBO[offset + ti];
+                const uint32_t i1 = mesh->EBO[offset + ti + 1];
+                const uint32_t i2 = mesh->EBO[offset + ti + 2];
+                const Vec4 p0 = worldMat * mesh->VBO[i0].getHomoPosi();
+                const Vec4 p1 = worldMat * mesh->VBO[i1].getHomoPosi();
+                const Vec4 p2 = worldMat * mesh->VBO[i2].getHomoPosi();
+                const float e1x = p1[0] - p0[0], e1y = p1[1] - p0[1], e1z = p1[2] - p0[2];
+                const float e2x = p2[0] - p0[0], e2y = p2[1] - p0[1], e2z = p2[2] - p0[2];
+                const float cx = e1y * e2z - e1z * e2y;
+                const float cy = e1z * e2x - e1x * e2z;
+                const float cz = e1x * e2y - e1y * e2x;
+                const float area = 0.5f * sqrtf(cx * cx + cy * cy + cz * cz);
+                if (area < 1e-8f) continue;
+                EmissiveTriCPU etri;
+                etri.v0 = {p0[0], p0[1], p0[2]};
+                etri.v1 = {p1[0], p1[1], p1[2]};
+                etri.v2 = {p2[0], p2[1], p2[2]};
+                etri.emission = emission;
+                etri.area = area;
+                emissiveTrisCPU.push_back(etri);
+            }
+        }
+    }
+    float emissiveAreaSum = 0.0f;
+    emissiveCDFCPU.reserve(emissiveTrisCPU.size());
+    for (const auto& et : emissiveTrisCPU) {
+        emissiveAreaSum += et.area;
+        emissiveCDFCPU.push_back(emissiveAreaSum);
+    }
+
     #if USE_CUDA
     // 这里进入CUDA逻辑，先把数据打包好，然后送入接口函数
     // 打包相机数据
@@ -285,6 +331,20 @@ void Graphic::RT(
         texPixelNUms};
     // 上述代码打包了 cameraDataGPU VBO EBO MeshesGPU SubMeshesGPU MaterialsGPU texPixelsGPU -> cameraDataGPU scenceData
 
+    // 收集 emissive 三角面作为面光源（转换为 GPU 格式）
+    std::vector<EmissiveTriGPU> emissiveTrisVec;
+    emissiveTrisVec.reserve(emissiveTrisCPU.size());
+    for (const auto& ec : emissiveTrisCPU) {
+        emissiveTrisVec.push_back({{ec.v0[0], ec.v0[1], ec.v0[2]},
+                                   {ec.v1[0], ec.v1[1], ec.v1[2]},
+                                   {ec.v2[0], ec.v2[1], ec.v2[2]},
+                                   Vec3ToFloat3(ec.emission), ec.area, 0.0f});
+    }
+    scenceData.emissiveTrisGPU = emissiveTrisVec.data();
+    scenceData.emissiveCDF = emissiveCDFCPU.data();
+    scenceData.emissiveTriCount = emissiveTrisVec.size();
+    scenceData.totalEmissiveArea = emissiveAreaSum;
+
     // 打包TLAS数据
     TLASGPU tlasGPU{};
     tlasGPU.instanceCount = engine->tlas->instances.size();
@@ -374,6 +434,49 @@ void Graphic::RT(
                             Vec3 hitAlbedo = BilinearSample(hitInfo->hitUV, material->KdMap).toFloat();
                             Vec3 hitEmission = Hadamard(material->Ke, hitAlbedo);
                             radiance += Hadamard(throughput, hitEmission);
+
+                            // NEE: 显式对 emissive 三角面光源采样
+                            const Vec3 hitPos3{hitInfo->hitPos[0], hitInfo->hitPos[1], hitInfo->hitPos[2]};
+                            const Vec3 hitN3{hitInfo->hitNormal[0], hitInfo->hitNormal[1], hitInfo->hitNormal[2]};
+                            constexpr float SHADOW_EPS = 1e-4f;
+                            if (!emissiveTrisCPU.empty() && emissiveAreaSum > 0.0f) {
+                                float rTri = RandomFloat() * emissiveAreaSum;
+                                size_t lo = 0, hi = emissiveTrisCPU.size();
+                                while (lo < hi) {
+                                    size_t mid = (lo + hi) / 2;
+                                    if (emissiveCDFCPU[mid] < rTri) lo = mid + 1;
+                                    else hi = mid;
+                                }
+                                if (lo >= emissiveTrisCPU.size()) lo = emissiveTrisCPU.size() - 1;
+                                const auto& etri = emissiveTrisCPU[lo];
+                                float r1 = RandomFloat();
+                                float r2 = RandomFloat();
+                                float sqrtR1 = std::sqrt(r1);
+                                float u = 1.0f - sqrtR1;
+                                float v = r2 * sqrtR1;
+                                float w = 1.0f - u - v;
+                                Vec3 lightPoint = etri.v0 * u + etri.v1 * v + etri.v2 * w;
+                                Vec3 a = etri.v1 - etri.v0;
+                                Vec3 b = etri.v2 - etri.v0;
+                                Vec3 lightN = normalize(cross(a, b));
+                                Vec3 Lvec = lightPoint - hitPos3;
+                                float dist2 = dot(Lvec, Lvec);
+                                if (dist2 > 1e-8f) {
+                                    float invDist = 1.0f / std::sqrt(dist2);
+                                    Vec3 wi = Lvec * invDist;
+                                    float NdotL = dot(hitN3, wi);
+                                    float NdotL_light = -dot(lightN, wi);
+                                    if (NdotL > 0.0f && NdotL_light > 0.0f) {
+                                        float lightDist = 1.0f / invDist;
+                                        Vec3 shadowOrigin = hitPos3 + hitN3 * SHADOW_EPS;
+                                        if (!OcclusionTestCPU(engine, shadowOrigin, wi, lightDist - 2.0f * SHADOW_EPS)) {
+                                            float G = NdotL * NdotL_light / dist2;
+                                            radiance += Hadamard(throughput, Hadamard(hitAlbedo, etri.emission * (G * emissiveAreaSum)));
+                                        }
+                                    }
+                                }
+                            }
+
                             if (depth >= 3) {  // 俄罗斯轮盘赌
                                 if (float maxC = std::max({throughput[0], throughput[1], throughput[2]});
                                     maxC < 0.1f) {

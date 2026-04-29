@@ -35,6 +35,7 @@ struct BLASGPU {
     uint32_t nodeCount;
 
     __device__  HitInfo Intersect(const Ray& localRay, const float& tMaxLimit) const;
+    __device__  bool OcclusionIntersect(const Ray& localRay, const float& tMaxLimit) const;
 };
 
 // 注意内存结构需要和CPU版本一致

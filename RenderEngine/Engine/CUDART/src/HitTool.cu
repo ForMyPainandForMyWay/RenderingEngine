@@ -110,3 +110,33 @@ __device__ HitInfo MollerTrumbore(const VertexGPU& v1, const VertexGPU& v2, cons
         }}
     return hitFail;
 }
+
+__device__ bool OcclusionTest(const float3& origin, const float3& direction, const float maxDist) {
+    if (tlasNodeNums == 0) return false;
+    const float3 rayDirInv = {1.0f / direction.x, 1.0f / direction.y, 1.0f / direction.z};
+    int stack[64];
+    int stackPtr = 0;
+    stack[stackPtr++] = 0;
+    while (stackPtr > 0) {
+        const int nodeIdx = stack[--stackPtr];
+        const auto& [bbox, leftChild, rightChild, contentRef, isLeaf] = TlasNodesGPU[nodeIdx];
+        float tEntry;
+        if (!IntersectAABBGPU(bbox, origin, rayDirInv, maxDist, tEntry)) {
+            continue;
+        }
+        if (isLeaf) {
+            const InstanceGPU& inst = TlasInstanceGPU[contentRef];
+            Ray localRay;
+            localRay.orignPosi = inst.invTransform * make_float4(origin.x, origin.y, origin.z, 1.0f);
+            localRay.Direction = inst.invTransform * make_float4(direction.x, direction.y, direction.z, 0.0f);
+            const auto& blas = blasGPU[inst.blasIdx];
+            if (blas.OcclusionIntersect(localRay, maxDist)) {
+                return true;
+            }
+        } else {
+            stack[stackPtr++] = rightChild;
+            stack[stackPtr++] = leftChild;
+        }
+    }
+    return false;
+}
