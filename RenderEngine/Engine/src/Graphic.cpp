@@ -372,8 +372,8 @@ void Graphic::RT(
                             if (!hitInfo) break;
                             const auto material = hitInfo->mat;
                             Vec3 hitAlbedo = BilinearSample(hitInfo->hitUV, material->KdMap).toFloat();
-                            Vec3 hitEmission = Hadamard(material->Ke, hitAlbedo);
-                            radiance += Hadamard(throughput, hitEmission);
+                            // Vec3 hitEmission = Hadamard(material->Ke, hitAlbedo);
+                            radiance += Hadamard(throughput, material->Ke);
                             if (depth >= 3) {  // 俄罗斯轮盘赌
                                 if (float maxC = std::max({throughput[0], throughput[1], throughput[2]});
                                     maxC < 0.1f) {

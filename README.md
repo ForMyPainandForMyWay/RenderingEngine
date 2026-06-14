@@ -27,6 +27,7 @@
 - **抗锯齿** — 4 种模式：NOAA / FXAA / FXAAC / FXAAQ
 - **伽马校正**
 - **天空盒** (SkyBox)
+- **后处理多线程并行** — AA/AO 阶段采用线程池并行加速
 
 ### 路径追踪管线 (Path Tracing)
 
@@ -36,6 +37,7 @@
 - 俄罗斯轮盘赌 (Russian Roulette)
 - 余弦加权半球采样 (Cosine-weighted Hemisphere Sampling)
 - BSDF 评估
+- **SSP 动态超采样** (Super Sampling Pattern) — 场景静态时渐进提升采样数 (最高 128 SPP)，画面逐帧收敛
 
 ## 技术栈
 
@@ -141,8 +143,7 @@ Project/
 │   └── resources.qrc
 │
 ├── README.md
-├── LICENSE
-└── 重构总结.md                        # 光栅化管线重构记录
+└── LICENSE
 ```
 
 ## 核心架构
@@ -156,7 +157,7 @@ extern "C" ENGINE_API IEngine *CreateEngine(size_t w, size_t h, bool Gamma, bool
 extern "C" ENGINE_API void DestroyEngine(const IEngine* engine);
 ```
 
-接口覆盖：渲染模式切换（光栅化/路径追踪）、光源设置（环境光/主光源/逐像素光）、阴影/AO/AA/天空盒开关、模型加载、相机控制、变换指令、帧循环管理等。
+接口覆盖：渲染模式切换（光栅化/路径追踪）、SSP 超采样调节、光源设置（环境光/主光源/逐像素光/逐顶点光）、阴影/AO/AA/天空盒开关、模型加载、相机控制、变换指令、帧循环管理等。
 
 ### 渲染管线流程
 
@@ -253,11 +254,13 @@ open GUI/bin/RenderGUI.app
 | 菜单 | 功能 |
 |---|---|
 | `File → Open` | 加载 `.obj` 模型并开始渲染预览 |
-| `File → Save` | 保存当前帧（调试中，尚未完整实现） |
+| `File → Save` | 保存当前帧为图片文件 |
 | `Settings → Render modes` | 切换 `Rasterization` / `Path Tracing` |
 | `Settings → Rendering Settings` | 开关 AO / ShadowMapping / SkyBox / FXAA |
 
 右侧面板提供：光源颜色调节、相机参数（FOV/近远平面）、物体旋转控制、网格统计信息。
+
+GUI 启动时自动加载一个默认房间场景（墙壁、天花板、光源），用户可直接预览渲染效果，也可通过 `File → Open` 加载自定义 `.obj` 模型替换场景。
 
 ### CLI 模式 (RenderTest)
 
@@ -280,9 +283,11 @@ cd RenderEngine/bin
 - **CUDA GPU 加速**：路径追踪管线在 GPU 上并行处理，每个线程处理一个像素
 - **SIMD 指令集**：自动检测 CPU 支持 SSE4.1 或 ARM NEON 并启用
 - **LTO (Link-Time Optimization)**：构建时自动检测并开启
-- **线程池并行**：光栅化管线实现三角形级别的细粒度并行
+- **线程池并行**：光栅化管线实现三角形级别的细粒度并行；后处理阶段（AA/AO）采用多线程并行加速
+- **帧率控制**：GUI 后端限制渲染帧率上限 60fps，避免无效 GPU 占用
 - **双缓冲交换链**：避免渲染过程中的画面撕裂
 - **设置双缓冲**：`SettingCache settings[2]` 实现线程安全的运行时参数热更新
+- **SSP 自适应采样**：路径追踪模式下，场景静止时自动递增采样数，在交互流畅度与画面质量间动态平衡
 - **内存优化**：逐三角形/逐片元处理模式，减少中间数据结构，提升缓存利用率
 
 ## License

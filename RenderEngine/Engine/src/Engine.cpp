@@ -228,8 +228,7 @@ void Engine::BeginFrame() {
     SdMap->clear();
     rendBuffer = swapChain->acquireBackBuffer();
     if (rendBuffer) rendBuffer->clear();
-    gBuffer = std::make_unique<GBuffer>(width, height);
-
+    gBuffer->clear();
     // 同步 设置双缓冲
     {
         std::lock_guard lock(settingMtx);
