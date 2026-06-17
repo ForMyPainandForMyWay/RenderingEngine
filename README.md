@@ -44,11 +44,50 @@
 | 维度 | 内容 |
 |---|---|
 | **语言** | C++20 (主), CUDA (GPU 加速), QML/JavaScript (GUI) |
-| **构建系统** | CMake >= 4.1 |
+| **构建系统** | CMake >= 4.1 + Ninja |
 | **GUI 框架** | Qt 6 (Core, Gui, Quick, Qml, Multimedia) |
 | **GPU 加速** | 可选 CUDA Toolkit (路径追踪) |
 | **SIMD 优化** | x86 SSE4.1 / ARM NEON (自动检测) |
 | **许可协议** | GNU GPL v3.0 |
+
+## 环境要求
+
+### 编译器 C++20 特性支持
+
+项目使用的 C++20 特性：`std::ranges::fill` / `std::ranges::copy`、`std::views::values`、`std::atomic_ref`、容器 `contains()`。
+
+| 编译器 | 最低版本 | ranges | views | atomic_ref | contains() |
+|---|---|---|---|---|---|
+| GCC | **11** | 10.1 | 10.1 | 10.1 | 11 |
+| Clang (libc++) | **16** | 15 | 16 | 14 | 13 |
+| Apple Clang | **15.0** | 15 | 16 | 14 | 13 |
+| MSVC | **VS 2019 16.10** | 16.10 | 16.10 | 16.10 | 16.10 |
+
+> 表格数字为各特性首次完整支持的主版本号。最低版本（**加粗**）取所有特性支持的交集。Apple Clang 版本号需除以 10 换算 LLVM 主线版本（Apple Clang 15 ≈ LLVM 16）。Clang 系列需配合 libc++。
+
+### CUDA 要求（仅路径追踪管线）
+
+设备端内核（`.cu` 文件）仅使用 C++17，但宿主编译器需支持 C++20：
+
+| 约束 | 要求 | 说明 |
+|---|---|---|
+| CUDA Toolkit | **≥ 12.0** | CUDA 11.x 仅支持 GCC 6–10 / Clang 7–13 宿主编译器 |
+| 宿主编译器 | GCC ≥ 11 或 Clang ≥ 16 | 宿主编译器负责编译 `__host__` 侧 C++20 代码 |
+| NVCC 设备端标准 | C++17 | 无需 `CMAKE_CUDA_STANDARD=20` |
+| GPU 架构 | ≥ Maxwell (SM 5.0) | `CMAKE_CUDA_ARCHITECTURES=native` |
+| 可分离编译 | 需启用 | `CMAKE_CUDA_SEPARABLE_COMPILATION=ON` |
+
+> macOS ARM64 (Apple Silicon) 不支持 CUDA，仅可运行光栅化管线。
+
+### 已测试环境
+
+| 环境 | 版本 |
+|---|---|
+| Apple Clang | 21.0.0 (Xcode 26.5) |
+| Qt | 6.10.1 |
+| CMake | 4.2.3 |
+| Ninja | 1.13.2 (CLion 内置) |
+| 操作系统 | macOS 26 (Darwin 25.5.0) ARM64 |
 
 ## 项目结构
 
@@ -194,9 +233,9 @@ SwapChain ──→ IFrameReceiver::OnFrameReady() ──→ GUI 展示 / 文件
 ### 依赖
 
 - CMake >= 4.1
-- 支持 C++20 的编译器 (Clang / GCC / MSVC)
+- C++20 编译器：GCC ≥ 11 / Clang ≥ 16 / Apple Clang ≥ 15.0 / MSVC ≥ VS 2019 16.10（详见[编译器 C++20 特性支持](#编译器-c20-特性支持)）
 - Qt 6（GUI 需要）：`Core`, `Gui`, `Quick`, `Qml`, `Multimedia`
-- （可选）CUDA Toolkit — 自动检测，开启路径追踪加速
+- （可选）CUDA Toolkit ≥ 12.0（路径追踪，需 NVIDIA GPU，详见 [CUDA 要求](#cuda-要求仅路径追踪管线)）
 
 ### 1) 构建 RenderEngine
 
